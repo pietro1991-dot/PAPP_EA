@@ -16,7 +16,10 @@ input int     InpMagic   = 30062026;
 input int     InpFiltro1 = 365;       // Filtro 1: period MA (0=Median/3/7/14/30/121/182/365)
 input int     InpFiltro2 = 3;          // Filtro 2: period MA (0=Median/3/7/14/30/121/182/365)
 input int     InpSL_MA   = 0;          // SL: period MA (0=Median/3/7/14/30/121/182/365)
-input int     InpTPpt    = 35;
+input int     InpTP_MA   = 0;          // TP: period MA (0=Median/3/7/14/30/121/182/365, 0=disabilitato)
+input bool    InpUseTP_Line = true;    // Usa linea TP (MA/Median)
+input bool    InpUseTP_Points = true;  // Usa TP a punti fissi
+input int     InpTPpt    = 35;         // TP in punti (fallback)
 
 #define BUF_MEDIAN  0
 #define BUF_MA365   1
@@ -27,7 +30,7 @@ input int     InpTPpt    = 35;
 #define BUF_MA7     6
 #define BUF_MA3     7
 
-int      g_ind, g_buf1, g_buf2, g_bufSL;
+int      g_ind, g_buf1, g_buf2, g_bufSL, g_bufTP;
 datetime g_bar0;
 bool     g_ready;
 
@@ -148,7 +151,49 @@ void OpenTrade(ENUM_ORDER_TYPE type)
    double minSLDist = pipSize * 50.0;   // 500 pip minimi
    double sl = (slValid && realDist >= minSLDist) ? slLine : 0.0;
 
-   double tp  = (type == ORDER_TYPE_BUY) ? (entry + InpTPpt * pt) : (entry - InpTPpt * pt);
+   // --- TP Line (MA/Median) ---
+   double tpLine = 0.0;
+   bool tpLineValid = false;
+   if(InpUseTP_Line && g_bufTP != -1)
+   {
+      if(ReadBuf(g_bufTP, 0, tpLine) || ReadBuf(g_bufTP, 1, tpLine))
+      {
+         tpLineValid = (type == ORDER_TYPE_BUY) ? (tpLine > entry) : (tpLine < entry);
+      }
+   }
+
+   // --- TP Punti fissi ---
+   double tpPoints = (type == ORDER_TYPE_BUY) ? (entry + InpTPpt * pt) : (entry - InpTPpt * pt);
+   bool tpPointsValid = InpUseTP_Points;
+
+   // --- Scegli TP: priorità linea se valida, altrimenti punti ---
+   double tp = 0.0;
+   string tpSrc = "";
+   if(InpUseTP_Line && tpLineValid)
+   {
+      tp = tpLine;
+      tpSrc = "linea";
+   }
+   else if(InpUseTP_Points && tpPointsValid)
+   {
+      tp = tpPoints;
+      tpSrc = "punti";
+   }
+   else if(InpUseTP_Line && !tpLineValid)
+   {
+      tp = tpPoints;
+      tpSrc = "punti (linea invalida)";
+   }
+   else if(InpUseTP_Points)
+   {
+      tp = tpPoints;
+      tpSrc = "punti";
+   }
+   else
+   {
+      Print("Nessun TP attivo (InpUseTP_Line e InpUseTP_Points entrambi false)");
+      return;
+   }
 
    if(slValid && realDist < minSLDist)
       Print(StringFormat("SL %s=%.5f troppo vicino (%.0f pip < %.0f) - rimosso dall'ordine",
@@ -176,10 +221,10 @@ void OpenTrade(ENUM_ORDER_TYPE type)
    lot = MathMax(minLot, MathMin(lot, maxLot));
    if(lot <= 0.0) return;
 
-   Print(StringFormat(">>> TENTATIVO %s lot=%.2f entry=%.5f sl=%s tp=%.5f "
+   Print(StringFormat(">>> TENTATIVO %s lot=%.2f entry=%.5f sl=%s tp=%.5f (%s) "
        "realDist=%.5f virtDist=%.5f risk=%.2f",
        (type==ORDER_TYPE_BUY ? "BUY" : "SELL"), lot, entry,
-       sl!=0 ? DoubleToString(sl,_Digits) : "nessuno", tp,
+       sl!=0 ? DoubleToString(sl,_Digits) : "nessuno", tp, tpSrc,
        realDist, virtDist, risk));
 
    if(g_trade.PositionOpen(_Symbol, type, lot, entry, sl, tp))
@@ -208,12 +253,15 @@ int OnInit()
    g_buf1  = MAPeriodToBuf(InpFiltro1);
    g_buf2  = MAPeriodToBuf(InpFiltro2);
    g_bufSL = MAPeriodToBuf(InpSL_MA);
+   g_bufTP = (InpTP_MA > 0) ? MAPeriodToBuf(InpTP_MA) : -1;
    Print(StringFormat("INIT OK sym=%s tf=%s ind=%s magic=%d risk=%.1f%% "
-       "filtro1=%s filtro2=%s SL=%s TP=%dpt",
+       "filtro1=%s filtro2=%s SL=%s TP_Line=%s TP_Points=%d",
        _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
        InpIndicatorName, InpMagic, InpRiskPct,
        MAPeriodStr(InpFiltro1), MAPeriodStr(InpFiltro2),
-       MAPeriodStr(InpSL_MA), InpTPpt));
+       MAPeriodStr(InpSL_MA),
+       (InpTP_MA>0 && InpUseTP_Line) ? MAPeriodStr(InpTP_MA) : "OFF",
+       InpUseTP_Points ? InpTPpt : 0));
    return INIT_SUCCEEDED;
 }
 
