@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.00"
+#property version   "2.01"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -85,7 +85,7 @@ bool ReadBufD1(int buf, int d1Shift, double &val)
    int chartShift = iBarShift(_Symbol, _Period, d1Time, false);
    if(chartShift < 0) return false;
    double tmp[1];
-   if(CopyBuffer(g_ind, buf, chartShift, 1, tmp) != 1) return false;
+   if(CopyBuffer(g_ind, buf, -(1+chartShift), 1, tmp) != 1) return false;
    val = tmp[0];
    return IsPriceOk(val);
 }
@@ -216,7 +216,7 @@ bool WaitIndicator()
 {
    if(g_ready) return true;
    double tmp[1];
-   if(CopyBuffer(g_ind, BUF_MEDIAN, 0, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
+   if(CopyBuffer(g_ind, BUF_MEDIAN, -1, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
       return false;
    g_ready = true;
    if(InpLog) Print("Indicatore pronto");
