@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "1.03"
+#property version   "1.04"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -23,7 +23,6 @@ input int     InpExitLine2     = 121;
 input group   "==========  RISK / TP  =========="
 input double  InpRiskPct       = 1.0;
 input int     InpTP_Points     = 50;
-input int     InpMaxLevel2     = 3;
 input int     InpMagic         = 365122;
 input bool    InpLog           = true;
 
@@ -49,7 +48,6 @@ CPositionInfo g_pos;
 CAccountInfo  g_acc;
 
 ENUM_POSITION_TYPE g_currentDirection;
-int                g_level2Count;
 
 //+------------------------------------------------------------------+
 int MAPeriodToBuf(int period)
@@ -179,9 +177,7 @@ void OpenLevel2(ENUM_ORDER_TYPE type)
    if(!g_trade.PositionOpen(_Symbol, type, lot, entry, 0.0, tp))
    {
       if(InpLog) Print(">>> ERR LEVEL2 retcode=", g_trade.ResultRetcode());
-      return;
    }
-   g_level2Count++;
 }
 
 //+------------------------------------------------------------------+
@@ -216,16 +212,15 @@ int OnInit()
    g_bufExit1  = MAPeriodToBuf(InpExitLine1);
    g_bufExit2  = MAPeriodToBuf(InpExitLine2);
    g_currentDirection = WRONG_VALUE;
-   g_level2Count = 0;
 
    if(InpLog)
       Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% "
-          "Entry=%s/%s Exit=%s/%s TP=%dpt MaxL2=%d",
+          "Entry=%s/%s Exit=%s/%s TP=%dpt",
           _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
           InpMagic, InpRiskPct,
           MAPeriodStr(InpEntryLine1), MAPeriodStr(InpEntryLine2),
           MAPeriodStr(InpExitLine1),  MAPeriodStr(InpExitLine2),
-          InpTP_Points, InpMaxLevel2));
+           InpTP_Points));
    return INIT_SUCCEEDED;
 }
 
@@ -307,7 +302,6 @@ void OnTick()
       }
       ENUM_ORDER_TYPE t = (entrySig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
       g_currentDirection = (entrySig == 0) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
-      g_level2Count = 0;
       OpenLevel1(t);
       if(InpLog) Print(">>> DIREZIONE INIZIALE: ", (entrySig == 0 ? "BUY" : "SELL"));
       return;
@@ -325,10 +319,9 @@ void OnTick()
          if(InpLog) Print(">>> EXIT CROSSOVER OPPOSTO - FLIP");
          CloseAll();
          g_currentDirection = (exitSig == 0) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
-         g_level2Count = 0;
          OpenLevel1(exitType);
+         curType = exitType;
          if(InpLog) Print(">>> FLIP -> ", (exitSig == 0 ? "BUY" : "SELL"), " (Level 1)");
-         return;
       }
    }
 
@@ -337,16 +330,9 @@ void OnTick()
    {
       ENUM_ORDER_TYPE entryType = (entrySig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
       if(entryType == curType)
-      {
-         if(g_level2Count < InpMaxLevel2)
          {
             OpenLevel2(entryType);
          }
-         else if(InpLog)
-         {
-            Print(">>> MAX LEVEL2 RAGGIUNTO (", InpMaxLevel2, ")");
-         }
-      }
    }
 }
 //+------------------------------------------------------------------+
