@@ -16,6 +16,7 @@ input bool  ShowMA    = true;
 input bool  ShowPanel = true;
 input color PanelBg   = C'20,20,25';
 
+input bool  InpSignals = false;  // true = output D1 raw (step) per crossover detection su ogni TF
 input int MAPeriod1 = 365;
 input int MAPeriod2 = 182;
 input int MAPeriod3 = 121;
@@ -367,28 +368,29 @@ int OnCalculate(const int rates_total,
 
       int prev = (d1cur>0) ? d1cur-1 : 0;
 
-      if(!Smooth)
-         Buff_Median[idx] = (sj<d1bars && IsVal(g_d1.med[sj])) ? g_d1.med[sj] : 0.0;
-      else
-        {
-         double vS  = (sj<d1bars && IsVal(g_d1.med[sj]))   ? g_d1.med[sj]   : 0.0;
-         double vE  = IsVal(g_d1.med[prev])                ? g_d1.med[prev]  : 0.0;
-         Buff_Median[idx] = Interp(vS,vE,frac);
-        }
+       bool useRaw = (InpSignals || !Smooth);
+       if(useRaw)
+          Buff_Median[idx] = (sj<d1bars && IsVal(g_d1.med[sj])) ? g_d1.med[sj] : 0.0;
+       else
+         {
+          double vS  = (sj<d1bars && IsVal(g_d1.med[sj]))   ? g_d1.med[sj]   : 0.0;
+          double vE  = IsVal(g_d1.med[prev])                ? g_d1.med[prev]  : 0.0;
+          Buff_Median[idx] = Interp(vS,vE,frac);
+         }
 
-      for(int m=0;m<7;m++)
-        {
-         double val;
-         if(!Smooth)
-            val = (sj<d1bars && IsVal(g_d1.cols[sj][m])) ? g_d1.cols[sj][m] : 0.0;
-         else
-           {
-            double vS2 = (sj<d1bars && IsVal(g_d1.cols[sj][m])) ? g_d1.cols[sj][m] : 0.0;
-            double vE2 = IsVal(g_d1.cols[prev][m])              ? g_d1.cols[prev][m] : 0.0;
-            val = Interp(vS2,vE2,frac);
-           }
-         gMA[m].v[idx] = val;
-        }
+       for(int m=0;m<7;m++)
+         {
+          double val;
+          if(useRaw)
+             val = (sj<d1bars && IsVal(g_d1.cols[sj][m])) ? g_d1.cols[sj][m] : 0.0;
+          else
+            {
+             double vS2 = (sj<d1bars && IsVal(g_d1.cols[sj][m])) ? g_d1.cols[sj][m] : 0.0;
+             double vE2 = IsVal(g_d1.cols[prev][m])              ? g_d1.cols[prev][m] : 0.0;
+             val = Interp(vS2,vE2,frac);
+            }
+          gMA[m].v[idx] = val;
+         }
       }
 
    if(g_cache.d1bars!=d1bars) { g_cache.d1bars=d1bars; RefreshMetricCache(); }

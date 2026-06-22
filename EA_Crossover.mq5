@@ -177,7 +177,13 @@ int DetectCrossover()
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   g_ind = iCustom(_Symbol, _Period, InpIndicatorName);
+   g_ind = iCustom(_Symbol, _Period, InpIndicatorName,
+      9,           // FontSize
+      false,       // Smooth (disabilitato per step netti)
+      true,        // ShowMA
+      true,        // ShowPanel
+      C'20,20,25', // PanelBg
+      true);       // InpSignals (D1 raw per crossover detection)
    if(g_ind == INVALID_HANDLE)
    {
       Print("FATAL: iCustom fallito per '", InpIndicatorName, "'");
