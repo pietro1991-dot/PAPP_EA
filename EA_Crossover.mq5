@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "1.06"
+#property version   "1.07"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -269,6 +269,24 @@ void OnTick()
    if(d1now[0] == 0)                                   return;
    if(d1now[0] == g_lastD1Bar)                         return;
    g_lastD1Bar = d1now[0];
+
+   // --- SINCRONIZZA DIREZIONE DALLE POSIZIONI REALI ---
+   ENUM_POSITION_TYPE realDir = WRONG_VALUE;
+   for(int i = 0; i < PositionsTotal(); i++)
+   {
+      if(g_pos.SelectByIndex(i) && g_pos.Magic() == InpMagic && g_pos.Symbol() == _Symbol)
+      {
+         realDir = g_pos.PositionType();
+         break;
+      }
+   }
+   if(realDir != g_currentDirection)
+   {
+      string oldS = (g_currentDirection==WRONG_VALUE)?"NONE":(g_currentDirection==POSITION_TYPE_BUY?"BUY":"SELL");
+      string newS = (realDir==WRONG_VALUE)?"NONE":(realDir==POSITION_TYPE_BUY?"BUY":"SELL");
+      if(InpLog) Print(StringFormat("   Sincronizzazione direzione: %s -> %s", oldS, newS));
+      g_currentDirection = realDir;
+   }
 
    // --- LOG COMPLETO STATO ---
    string dirStr;
