@@ -242,7 +242,6 @@ bool WaitIndicator()
    double tmp;
    if(!ReadBufD1(BUF_MEDIAN, 1, tmp))
    {
-      double ct;
       if(CopyBuffer(g_ind, BUF_MEDIAN, 1, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
          return false;
    }
