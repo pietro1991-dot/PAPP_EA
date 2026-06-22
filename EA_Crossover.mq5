@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.01"
+#property version   "2.03"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -35,7 +35,8 @@ input bool    InpLog           = true;
 #define BUF_MA7     6
 #define BUF_MA3     7
 
-int      g_ind;
+int      g_ind;      // chart timeframe handle
+int      g_indD1;    // D1 timeframe handle
 int      g_bufEntry1, g_bufEntry2;
 int      g_bufExit1,  g_bufExit2;
 datetime g_bar0;
@@ -82,12 +83,39 @@ bool ReadBufD1(int buf, int d1Shift, double &val)
 {
    datetime d1Time = iTime(_Symbol, PERIOD_D1, d1Shift);
    if(d1Time == 0) return false;
+
+   double tmp[1];
+
+   // Try D1 handle first (direct, no mapping needed)
+   if(g_indD1 != INVALID_HANDLE)
+   {
+      int copied = CopyBuffer(g_indD1, buf, -(1+d1Shift), 1, tmp);
+      if(copied == 1 && IsPriceOk(tmp[0]))
+      {
+         val = tmp[0];
+         if(InpLog)
+            Print(StringFormat("   DEBUG ReadBufD1(D1 handle) buf=%d shift=%d val=%.5f",
+                buf, d1Shift, val));
+         return true;
+      }
+   }
+
+   // Fallback: chart handle with iBarShift mapping
    int chartShift = iBarShift(_Symbol, _Period, d1Time, false);
    if(chartShift < 0) return false;
-   double tmp[1];
-   if(CopyBuffer(g_ind, buf, -(1+chartShift), 1, tmp) != 1) return false;
+   int copied = CopyBuffer(g_ind, buf, -(1+chartShift), 1, tmp);
+   if(copied != 1)
+   {
+      if(InpLog) Print(StringFormat("   DEBUG ReadBufD1(CHART fallback) buf=%d shift=%d d1Time=%s chartShift=%d copied=%d",
+          buf, d1Shift, TimeToString(d1Time), chartShift, copied));
+      return false;
+   }
    val = tmp[0];
-   return IsPriceOk(val);
+   bool ok = IsPriceOk(val);
+   if(InpLog)
+      Print(StringFormat("   DEBUG ReadBufD1(CHART fallback) buf=%d shift=%d d1Time=%s chartShift=%d val=%.5f ok=%d",
+          buf, d1Shift, TimeToString(d1Time), chartShift, val, ok));
+   return ok;
 }
 
 //+------------------------------------------------------------------+
@@ -179,6 +207,8 @@ int OnInit()
       Print("FATAL: iCustom fallito per '", InpIndicatorName, "'");
       return INIT_FAILED;
    }
+   g_indD1 = iCustom(_Symbol, PERIOD_D1, InpIndicatorName,
+      9, false, true, true, C'20,20,25', true);
 
    g_trade.SetExpertMagicNumber(InpMagic);
    g_trade.SetDeviationInPoints(50);
@@ -208,6 +238,7 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    if(g_ind != INVALID_HANDLE) IndicatorRelease(g_ind);
+   if(g_indD1 != INVALID_HANDLE) IndicatorRelease(g_indD1);
    if(InpLog) Print("DEINIT reason=" + IntegerToString(reason));
 }
 
@@ -216,7 +247,7 @@ bool WaitIndicator()
 {
    if(g_ready) return true;
    double tmp[1];
-   if(CopyBuffer(g_ind, BUF_MEDIAN, -1, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
+   if(CopyBuffer(g_ind, BUF_MEDIAN, 0, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
       return false;
    g_ready = true;
    if(InpLog) Print("Indicatore pronto");
