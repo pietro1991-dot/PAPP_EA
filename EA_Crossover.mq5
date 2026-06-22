@@ -241,8 +241,8 @@ void OnDeinit(const int reason)
 bool WaitIndicator()
 {
    if(g_ready) return true;
-   double tmp;
-   if(!ReadBufD1(BUF_MEDIAN, 1, tmp))
+   double tmp[1];
+   if(!ReadBufD1(BUF_MEDIAN, 1, tmp[0]))
    {
       if(CopyBuffer(g_ind, BUF_MEDIAN, 1, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
          return false;
