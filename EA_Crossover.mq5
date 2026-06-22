@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "1.07"
+#property version   "2.00"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -36,11 +36,10 @@ input bool    InpLog           = true;
 #define BUF_MA3     7
 
 int      g_ind;
-int      g_indD1;
 int      g_bufEntry1, g_bufEntry2;
 int      g_bufExit1,  g_bufExit2;
 datetime g_bar0;
-datetime g_lastD1Bar;
+datetime g_lastD1Today;
 bool     g_ready;
 
 CTrade        g_trade;
@@ -79,26 +78,16 @@ bool IsPriceOk(double v)
 }
 
 //+------------------------------------------------------------------+
-bool ReadBufD1(int buf, int shift, double &val)
+bool ReadBufD1(int buf, int d1Shift, double &val)
 {
+   datetime d1Time = iTime(_Symbol, PERIOD_D1, d1Shift);
+   if(d1Time == 0) return false;
+   int chartShift = iBarShift(_Symbol, _Period, d1Time, false);
+   if(chartShift < 0) return false;
    double tmp[1];
-   if(CopyBuffer(g_indD1, buf, shift, 1, tmp) != 1) return false;
+   if(CopyBuffer(g_ind, buf, chartShift, 1, tmp) != 1) return false;
    val = tmp[0];
    return IsPriceOk(val);
-}
-
-//+------------------------------------------------------------------+
-int CrossoverD1(int bufFast, int bufSlow)
-{
-   double f1, s1, f2, s2;
-   if(!ReadBufD1(bufFast, 1, f1)) return -1;
-   if(!ReadBufD1(bufSlow, 1, s1)) return -1;
-   if(!ReadBufD1(bufFast, 2, f2)) return -1;
-   if(!ReadBufD1(bufSlow, 2, s2)) return -1;
-
-   if(f1 > s1 && f2 <= s2) return 0;
-   if(f1 < s1 && f2 >= s2) return 1;
-   return -1;
 }
 
 //+------------------------------------------------------------------+
@@ -191,22 +180,13 @@ int OnInit()
       return INIT_FAILED;
    }
 
-   g_indD1 = iCustom(_Symbol, PERIOD_D1, InpIndicatorName,
-      9, false, true, true, C'20,20,25', true);
-   if(g_indD1 == INVALID_HANDLE)
-   {
-      Print("FATAL: iCustom D1 fallito");
-      IndicatorRelease(g_ind);
-      return INIT_FAILED;
-   }
-
    g_trade.SetExpertMagicNumber(InpMagic);
    g_trade.SetDeviationInPoints(50);
    g_trade.SetMarginMode();
    g_trade.SetAsyncMode(false);
    g_ready = false;
    g_bar0  = 0;
-   g_lastD1Bar = 0;
+   g_lastD1Today = 0;
    g_bufEntry1 = MAPeriodToBuf(InpEntryLine1);
    g_bufEntry2 = MAPeriodToBuf(InpEntryLine2);
    g_bufExit1  = MAPeriodToBuf(InpExitLine1);
@@ -228,7 +208,6 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    if(g_ind != INVALID_HANDLE) IndicatorRelease(g_ind);
-   if(g_indD1 != INVALID_HANDLE) IndicatorRelease(g_indD1);
    if(InpLog) Print("DEINIT reason=" + IntegerToString(reason));
 }
 
@@ -237,11 +216,8 @@ bool WaitIndicator()
 {
    if(g_ready) return true;
    double tmp[1];
-   if(!ReadBufD1(BUF_MEDIAN, 1, tmp[0]))
-   {
-      if(CopyBuffer(g_ind, BUF_MEDIAN, 1, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
-         return false;
-   }
+   if(CopyBuffer(g_ind, BUF_MEDIAN, 0, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
+      return false;
    g_ready = true;
    if(InpLog) Print("Indicatore pronto");
    return true;
@@ -264,11 +240,10 @@ void OnTick()
 
    if(!IsNewBar()) return;
 
-   datetime d1now[1];
-   if(CopyTime(_Symbol, PERIOD_D1, 1, 1, d1now) != 1) return;
-   if(d1now[0] == 0)                                   return;
-   if(d1now[0] == g_lastD1Bar)                         return;
-   g_lastD1Bar = d1now[0];
+   datetime d1today = iTime(_Symbol, PERIOD_D1, 0);
+   if(d1today == 0)              return;
+   if(d1today == g_lastD1Today)  return;
+   g_lastD1Today = d1today;
 
    // --- SINCRONIZZA DIREZIONE DALLE POSIZIONI REALI ---
    ENUM_POSITION_TYPE realDir = WRONG_VALUE;
@@ -294,8 +269,8 @@ void OnTick()
    else if(g_currentDirection == POSITION_TYPE_BUY) dirStr = "BUY";
    else dirStr = "SELL";
    if(InpLog)
-      Print(StringFormat("=== SEGNALE === barra=%s D1[1]=%s direzione=%s posizioni=%d",
-          TimeToString(g_bar0), TimeToString(d1now[0]), dirStr, PositionsTotal()));
+       Print(StringFormat("=== SEGNALE === barra=%s D1=%s direzione=%s posizioni=%d",
+           TimeToString(g_bar0), TimeToString(d1today), dirStr, PositionsTotal()));
 
    // --- CROSSOVER ENTRY ---
    double ef1, es1, ef2, es2;
