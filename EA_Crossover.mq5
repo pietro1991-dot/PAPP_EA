@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.03"
+#property version   "2.04"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -86,35 +86,48 @@ bool ReadBufD1(int buf, int d1Shift, double &val)
 
    double tmp[1];
 
-   // Try D1 handle first (direct, no mapping needed)
+   // Try D1 handle first (direct D1 bars)
    if(g_indD1 != INVALID_HANDLE)
    {
-      int copied = CopyBuffer(g_indD1, buf, -(1+d1Shift), 1, tmp);
-      if(copied == 1 && IsPriceOk(tmp[0]))
+      int d1Bars = Bars(_Symbol, PERIOD_D1);
+      if(d1Bars > d1Shift)
       {
-         val = tmp[0];
-         if(InpLog)
-            Print(StringFormat("   DEBUG ReadBufD1(D1 handle) buf=%d shift=%d val=%.5f",
-                buf, d1Shift, val));
-         return true;
+         int d1Abs = d1Bars - 1 - d1Shift;
+         int copied = CopyBuffer(g_indD1, buf, d1Abs, 1, tmp);
+         if(copied == 1 && IsPriceOk(tmp[0]))
+         {
+            val = tmp[0];
+            if(InpLog)
+               Print(StringFormat("   DEBUG ReadBufD1(D1) buf=%d shift=%d d1Bars=%d idx=%d val=%.5f",
+                   buf, d1Shift, d1Bars, d1Abs, val));
+            return true;
+         }
       }
    }
 
    // Fallback: chart handle with iBarShift mapping
    int chartShift = iBarShift(_Symbol, _Period, d1Time, false);
    if(chartShift < 0) return false;
-   int copied = CopyBuffer(g_ind, buf, -(1+chartShift), 1, tmp);
+   int chartBars = Bars(_Symbol, _Period);
+   if(chartBars <= chartShift)
+   {
+      if(InpLog) Print(StringFormat("   DEBUG ReadBufD1(CHART) buf=%d shift=%d chartShift=%d chartBars=%d - NON ABBASTANZA BARRE",
+          buf, d1Shift, chartShift, chartBars));
+      return false;
+   }
+   int absIdx = chartBars - 1 - chartShift;
+   int copied = CopyBuffer(g_ind, buf, absIdx, 1, tmp);
    if(copied != 1)
    {
-      if(InpLog) Print(StringFormat("   DEBUG ReadBufD1(CHART fallback) buf=%d shift=%d d1Time=%s chartShift=%d copied=%d",
-          buf, d1Shift, TimeToString(d1Time), chartShift, copied));
+      if(InpLog) Print(StringFormat("   DEBUG ReadBufD1(CHART) buf=%d shift=%d d1Time=%s chartShift=%d chartBars=%d idx=%d copied=%d",
+          buf, d1Shift, TimeToString(d1Time), chartShift, chartBars, absIdx, copied));
       return false;
    }
    val = tmp[0];
    bool ok = IsPriceOk(val);
    if(InpLog)
-      Print(StringFormat("   DEBUG ReadBufD1(CHART fallback) buf=%d shift=%d d1Time=%s chartShift=%d val=%.5f ok=%d",
-          buf, d1Shift, TimeToString(d1Time), chartShift, val, ok));
+      Print(StringFormat("   DEBUG ReadBufD1(CHART) buf=%d shift=%d d1Time=%s chartShift=%d chartBars=%d idx=%d val=%.5f ok=%d",
+          buf, d1Shift, TimeToString(d1Time), chartShift, chartBars, absIdx, val, ok));
    return ok;
 }
 
