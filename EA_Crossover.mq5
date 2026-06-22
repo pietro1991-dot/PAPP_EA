@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "1.04"
+#property version   "1.05"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -264,13 +264,15 @@ void OnTick()
 
    if(!IsNewBar()) return;
 
-   datetime d1now = iTime(_Symbol, PERIOD_D1, 1);
-   if(d1now == 0)        return;
-   if(d1now == g_lastD1Bar) return;
-   g_lastD1Bar = d1now;
+   datetime d1now[1];
+   if(CopyTime(_Symbol, PERIOD_D1, 1, 1, d1now) != 1) return;
+   if(d1now[0] == 0)                                   return;
+   if(d1now[0] == g_lastD1Bar)                         return;
+   g_lastD1Bar = d1now[0];
 
    if(InpLog)
-      Print(StringFormat("Nuova barra: %s", TimeToString(g_bar0)));
+      Print(StringFormat("Nuova barra D1: %s -> %s",
+          TimeToString(g_bar0), TimeToString(d1now[0])));
 
    int entrySig = CrossoverD1(g_bufEntry2, g_bufEntry1);
    int exitSig  = CrossoverD1(g_bufExit2,  g_bufExit1);
