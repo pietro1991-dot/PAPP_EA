@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.05"
+#property version   "2.06"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -210,6 +210,10 @@ int OnInit()
    }
    g_indD1 = iCustom(_Symbol, PERIOD_D1, InpIndicatorName,
       9, false, true, true, C'20,20,25', true);
+   if(g_indD1 == INVALID_HANDLE)
+      Print("WARNING: g_indD1 (D1 handle) fallito - usero' solo chart fallback");
+   else if(InpLog)
+      Print("D1 handle OK");
 
    g_trade.SetExpertMagicNumber(InpMagic);
    g_trade.SetDeviationInPoints(50);
