@@ -388,6 +388,6 @@ void OnTick()
              curType==ORDER_TYPE_BUY?"BUY":"SELL", entryType==ORDER_TYPE_BUY?"BUY":"SELL"));
    }
    else if(InpLog && g_currentDirection != WRONG_VALUE)
-      Print(StringFormat("   => NO ENTRY CROSS - fine elaborazione"));
+      Print("   => NO ENTRY CROSS - fine elaborazione");
 }
 //+------------------------------------------------------------------+
