@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "1.02"
+#property version   "1.03"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -41,6 +41,7 @@ int      g_indD1;
 int      g_bufEntry1, g_bufEntry2;
 int      g_bufExit1,  g_bufExit2;
 datetime g_bar0;
+datetime g_lastD1Bar;
 bool     g_ready;
 
 CTrade        g_trade;
@@ -209,6 +210,7 @@ int OnInit()
    g_trade.SetAsyncMode(false);
    g_ready = false;
    g_bar0  = 0;
+   g_lastD1Bar = 0;
    g_bufEntry1 = MAPeriodToBuf(InpEntryLine1);
    g_bufEntry2 = MAPeriodToBuf(InpEntryLine2);
    g_bufExit1  = MAPeriodToBuf(InpExitLine1);
@@ -266,6 +268,11 @@ void OnTick()
    if(!WaitIndicator()) return;
 
    if(!IsNewBar()) return;
+
+   datetime d1now = iTime(_Symbol, PERIOD_D1, 1);
+   if(d1now == 0)        return;
+   if(d1now == g_lastD1Bar) return;
+   g_lastD1Bar = d1now;
 
    if(InpLog)
       Print(StringFormat("Nuova barra: %s", TimeToString(g_bar0)));
