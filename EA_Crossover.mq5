@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "1.05"
+#property version   "1.06"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -270,42 +270,63 @@ void OnTick()
    if(d1now[0] == g_lastD1Bar)                         return;
    g_lastD1Bar = d1now[0];
 
+   // --- LOG COMPLETO STATO ---
+   string dirStr;
+   if(g_currentDirection == WRONG_VALUE) dirStr = "NONE";
+   else if(g_currentDirection == POSITION_TYPE_BUY) dirStr = "BUY";
+   else dirStr = "SELL";
    if(InpLog)
-      Print(StringFormat("Nuova barra D1: %s -> %s",
-          TimeToString(g_bar0), TimeToString(d1now[0])));
+      Print(StringFormat("=== SEGNALE === barra=%s D1[1]=%s direzione=%s posizioni=%d",
+          TimeToString(g_bar0), TimeToString(d1now[0]), dirStr, PositionsTotal()));
 
-   int entrySig = CrossoverD1(g_bufEntry2, g_bufEntry1);
-   int exitSig  = CrossoverD1(g_bufExit2,  g_bufExit1);
+   // --- CROSSOVER ENTRY ---
+   double ef1, es1, ef2, es2;
+   int entrySig = -1;
+   if(ReadBufD1(g_bufEntry2, 1, ef1) && ReadBufD1(g_bufEntry1, 1, es1) &&
+      ReadBufD1(g_bufEntry2, 2, ef2) && ReadBufD1(g_bufEntry1, 2, es2))
+   {
+      if(ef1 > es1 && ef2 <= es2) entrySig = 0;
+      else if(ef1 < es1 && ef2 >= es2) entrySig = 1;
+      if(InpLog)
+         Print(StringFormat("   ENTRY %s[1]=%.5f %s[1]=%.5f | %s[2]=%.5f %s[2]=%.5f -> %s",
+             MAPeriodStr(InpEntryLine2), ef1, MAPeriodStr(InpEntryLine1), es1,
+             MAPeriodStr(InpEntryLine2), ef2, MAPeriodStr(InpEntryLine1), es2,
+             entrySig<0 ? "NESSUN CROSS" : (entrySig==0 ? "CROSS BUY" : "CROSS SELL")));
+   }
+   else if(InpLog)
+      Print(StringFormat("   ENTRY %s/%s: LETTURA FALLITA",
+          MAPeriodStr(InpEntryLine2), MAPeriodStr(InpEntryLine1)));
 
-   if(InpLog && entrySig >= 0)
-      Print(StringFormat("   Entry crossover %s/%s -> %s",
-          MAPeriodStr(InpEntryLine2), MAPeriodStr(InpEntryLine1),
-          (entrySig == 0 ? "BUY" : "SELL")));
-   if(InpLog && exitSig >= 0)
-      Print(StringFormat("   Exit crossover %s/%s -> %s",
-          MAPeriodStr(InpExitLine2), MAPeriodStr(InpExitLine1),
-          (exitSig == 0 ? "BUY" : "SELL")));
+   // --- CROSSOVER EXIT ---
+   double xf1, xs1, xf2, xs2;
+   int exitSig = -1;
+   if(ReadBufD1(g_bufExit2, 1, xf1) && ReadBufD1(g_bufExit1, 1, xs1) &&
+      ReadBufD1(g_bufExit2, 2, xf2) && ReadBufD1(g_bufExit1, 2, xs2))
+   {
+      if(xf1 > xs1 && xf2 <= xs2) exitSig = 0;
+      else if(xf1 < xs1 && xf2 >= xs2) exitSig = 1;
+      if(InpLog)
+         Print(StringFormat("   EXIT  %s[1]=%.5f %s[1]=%.5f | %s[2]=%.5f %s[2]=%.5f -> %s",
+             MAPeriodStr(InpExitLine2), xf1, MAPeriodStr(InpExitLine1), xs1,
+             MAPeriodStr(InpExitLine2), xf2, MAPeriodStr(InpExitLine1), xs2,
+             exitSig<0 ? "NESSUN CROSS" : (exitSig==0 ? "CROSS BUY" : "CROSS SELL")));
+   }
+   else if(InpLog)
+      Print(StringFormat("   EXIT  %s/%s: LETTURA FALLITA",
+          MAPeriodStr(InpExitLine2), MAPeriodStr(InpExitLine1)));
 
    // --- NONE: entry crossover apre Level 1 ---
    if(g_currentDirection == WRONG_VALUE)
    {
       if(entrySig < 0)
       {
-         if(InpLog)
-         {
-            double e2, e1;
-            ReadBufD1(g_bufEntry2, 1, e2);
-            ReadBufD1(g_bufEntry1, 1, e1);
-            Print(StringFormat("   In attesa entry %s=%.5f %s=%.5f",
-                MAPeriodStr(InpEntryLine2), e2,
-                MAPeriodStr(InpEntryLine1), e1));
-         }
+         if(InpLog) Print("   => NESSUN ENTRY CROSS - attesa...");
          return;
       }
       ENUM_ORDER_TYPE t = (entrySig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
       g_currentDirection = (entrySig == 0) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
+      if(InpLog) Print(StringFormat("   => ENTRY NONE -> %s (Level 1)", entrySig==0?"BUY":"SELL"));
       OpenLevel1(t);
-      if(InpLog) Print(">>> DIREZIONE INIZIALE: ", (entrySig == 0 ? "BUY" : "SELL"));
       return;
    }
 
@@ -318,23 +339,37 @@ void OnTick()
       ENUM_ORDER_TYPE exitType = (exitSig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
       if(exitType != curType)
       {
-         if(InpLog) Print(">>> EXIT CROSSOVER OPPOSTO - FLIP");
+         if(InpLog) Print(StringFormat("   => EXIT CROSS OPPOSTO (cur=%s exit=%s) - FLIP",
+             curType==ORDER_TYPE_BUY?"BUY":"SELL", exitType==ORDER_TYPE_BUY?"BUY":"SELL"));
          CloseAll();
          g_currentDirection = (exitSig == 0) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
          OpenLevel1(exitType);
          curType = exitType;
-         if(InpLog) Print(">>> FLIP -> ", (exitSig == 0 ? "BUY" : "SELL"), " (Level 1)");
+         if(InpLog) Print(StringFormat("   => FLIP -> %s (Level 1)", exitSig==0?"BUY":"SELL"));
       }
+      else if(InpLog)
+         Print(StringFormat("   => EXIT CROSS STESSA DIREZIONE (cur=%s) - ignorato",
+             curType==ORDER_TYPE_BUY?"BUY":"SELL"));
    }
+   else if(InpLog && g_currentDirection != WRONG_VALUE)
+      Print(StringFormat("   => NO EXIT CROSS (cur=%s) - si cerca entry Level 2",
+          curType==ORDER_TYPE_BUY?"BUY":"SELL"));
 
    // --- Entry crossover stessa direzione: Level 2 ---
    if(entrySig >= 0)
    {
       ENUM_ORDER_TYPE entryType = (entrySig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
       if(entryType == curType)
-         {
-            OpenLevel2(entryType);
-         }
+      {
+         if(InpLog) Print(StringFormat("   => ENTRY CROSS STESSA DIR -> Level 2 %s",
+             entryType==ORDER_TYPE_BUY?"BUY":"SELL"));
+         OpenLevel2(entryType);
+      }
+      else if(InpLog)
+         Print(StringFormat("   => ENTRY CROSS OPPOSTO (cur=%s entry=%s) - ignorato (exit gestisce flip)",
+             curType==ORDER_TYPE_BUY?"BUY":"SELL", entryType==ORDER_TYPE_BUY?"BUY":"SELL"));
    }
+   else if(InpLog && g_currentDirection != WRONG_VALUE)
+      Print(StringFormat("   => NO ENTRY CROSS - fine elaborazione"));
 }
 //+------------------------------------------------------------------+
