@@ -3,16 +3,24 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "1.01"
-#property description "EA Crossover - Level 1/2 su crossover D1 indicatori PaPP"
+#property version   "1.02"
+#property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include <Trade\AccountInfo.mqh>
 
 input string  InpIndicatorName = "PaPP_Median.ex5";
-input int     InpLine1Period   = 365;
-input int     InpLine2Period   = 121;
+
+input group   "==========  ENTRY CROSSOVER  =========="
+input int     InpEntryLine1    = 365;
+input int     InpEntryLine2    = 121;
+
+input group   "==========  EXIT CROSSOVER  =========="
+input int     InpExitLine1     = 365;
+input int     InpExitLine2     = 121;
+
+input group   "==========  RISK / TP  =========="
 input double  InpRiskPct       = 1.0;
 input int     InpTP_Points     = 50;
 input int     InpMaxLevel2     = 3;
@@ -30,8 +38,8 @@ input bool    InpLog           = true;
 
 int      g_ind;
 int      g_indD1;
-int      g_bufLine1;
-int      g_bufLine2;
+int      g_bufEntry1, g_bufEntry2;
+int      g_bufExit1,  g_bufExit2;
 datetime g_bar0;
 bool     g_ready;
 
@@ -72,20 +80,26 @@ bool IsPriceOk(double v)
 }
 
 //+------------------------------------------------------------------+
-bool ReadBuf(int buf, int shift, double &val)
-{
-   double tmp[1];
-   if(CopyBuffer(g_ind, buf, shift, 1, tmp) != 1) return false;
-   val = tmp[0];
-   return IsPriceOk(val);
-}
-
 bool ReadBufD1(int buf, int shift, double &val)
 {
    double tmp[1];
    if(CopyBuffer(g_indD1, buf, shift, 1, tmp) != 1) return false;
    val = tmp[0];
    return IsPriceOk(val);
+}
+
+//+------------------------------------------------------------------+
+int CrossoverD1(int bufFast, int bufSlow)
+{
+   double f1, s1, f2, s2;
+   if(!ReadBufD1(bufFast, 1, f1)) return -1;
+   if(!ReadBufD1(bufSlow, 1, s1)) return -1;
+   if(!ReadBufD1(bufFast, 2, f2)) return -1;
+   if(!ReadBufD1(bufSlow, 2, s2)) return -1;
+
+   if(f1 > s1 && f2 <= s2) return 0;
+   if(f1 < s1 && f2 >= s2) return 1;
+   return -1;
 }
 
 //+------------------------------------------------------------------+
@@ -170,31 +184,10 @@ void OpenLevel2(ENUM_ORDER_TYPE type)
 }
 
 //+------------------------------------------------------------------+
-// Legge i buffer D1 per rilevare crossover tra barre D1 chiuse.
-// shift=1 = ieri (D1 chiuso), shift=2 = avantieri (D1 chiuso)
-int DetectCrossover()
-{
-   double l2_1, l1_1, l2_2, l1_2;
-   if(!ReadBufD1(g_bufLine2, 1, l2_1)) return -1;
-   if(!ReadBufD1(g_bufLine1, 1, l1_1)) return -1;
-   if(!ReadBufD1(g_bufLine2, 2, l2_2)) return -1;
-   if(!ReadBufD1(g_bufLine1, 2, l1_2)) return -1;
-
-   if(l2_1 > l1_1 && l2_2 <= l1_2) return 0;
-   if(l2_1 < l1_1 && l2_2 >= l1_2) return 1;
-   return -1;
-}
-
-//+------------------------------------------------------------------+
 int OnInit()
 {
    g_ind = iCustom(_Symbol, _Period, InpIndicatorName,
-      9,           // FontSize
-      false,       // Smooth
-      true,        // ShowMA
-      true,        // ShowPanel
-      C'20,20,25', // PanelBg
-      true);       // InpSignals
+      9, false, true, true, C'20,20,25', true);
    if(g_ind == INVALID_HANDLE)
    {
       Print("FATAL: iCustom fallito per '", InpIndicatorName, "'");
@@ -216,17 +209,20 @@ int OnInit()
    g_trade.SetAsyncMode(false);
    g_ready = false;
    g_bar0  = 0;
-   g_bufLine1 = MAPeriodToBuf(InpLine1Period);
-   g_bufLine2 = MAPeriodToBuf(InpLine2Period);
+   g_bufEntry1 = MAPeriodToBuf(InpEntryLine1);
+   g_bufEntry2 = MAPeriodToBuf(InpEntryLine2);
+   g_bufExit1  = MAPeriodToBuf(InpExitLine1);
+   g_bufExit2  = MAPeriodToBuf(InpExitLine2);
    g_currentDirection = WRONG_VALUE;
    g_level2Count = 0;
 
    if(InpLog)
-      Print(StringFormat("INIT OK sym=%s tf=%s ind=%s magic=%d risk=%.1f%% "
-          "Line1=%s Line2=%s TP=%dpt MaxLevel2=%d",
+      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% "
+          "Entry=%s/%s Exit=%s/%s TP=%dpt MaxL2=%d",
           _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
-          InpIndicatorName, InpMagic, InpRiskPct,
-          MAPeriodStr(InpLine1Period), MAPeriodStr(InpLine2Period),
+          InpMagic, InpRiskPct,
+          MAPeriodStr(InpEntryLine1), MAPeriodStr(InpEntryLine2),
+          MAPeriodStr(InpExitLine1),  MAPeriodStr(InpExitLine2),
           InpTP_Points, InpMaxLevel2));
    return INIT_SUCCEEDED;
 }
@@ -246,7 +242,9 @@ bool WaitIndicator()
    double tmp;
    if(!ReadBufD1(BUF_MEDIAN, 1, tmp))
    {
-      if(!ReadBuf(BUF_MEDIAN, 1, tmp)) return false;
+      double ct;
+      if(CopyBuffer(g_ind, BUF_MEDIAN, 1, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
+         return false;
    }
    g_ready = true;
    if(InpLog) Print("Indicatore pronto");
@@ -273,60 +271,76 @@ void OnTick()
    if(InpLog)
       Print(StringFormat("Nuova barra: %s", TimeToString(g_bar0)));
 
-   int sig = DetectCrossover();
-   if(sig < 0)
-   {
-      if(InpLog)
-      {
-         double l2_1, l1_1;
-         if(ReadBufD1(g_bufLine2, 1, l2_1) && ReadBufD1(g_bufLine1, 1, l1_1))
-            Print(StringFormat("Nessun crossover D1 %s=%.5f %s=%.5f",
-                MAPeriodStr(InpLine2Period), l2_1,
-                MAPeriodStr(InpLine1Period), l1_1));
-      }
-      return;
-   }
+   int entrySig = CrossoverD1(g_bufEntry2, g_bufEntry1);
+   int exitSig  = CrossoverD1(g_bufExit2,  g_bufExit1);
 
-   ENUM_ORDER_TYPE sigType = (sig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
-   string sigStr = (sig == 0) ? "BUY" : "SELL";
+   if(InpLog && entrySig >= 0)
+      Print(StringFormat("   Entry crossover %s/%s -> %s",
+          MAPeriodStr(InpEntryLine2), MAPeriodStr(InpEntryLine1),
+          (entrySig == 0 ? "BUY" : "SELL")));
+   if(InpLog && exitSig >= 0)
+      Print(StringFormat("   Exit crossover %s/%s -> %s",
+          MAPeriodStr(InpExitLine2), MAPeriodStr(InpExitLine1),
+          (exitSig == 0 ? "BUY" : "SELL")));
 
-   if(InpLog)
-      Print(StringFormat(">>> CROSSOVER D1 %s RILEVATO (dir: %s, level2: %d/%d)",
-          sigStr,
-          (g_currentDirection == WRONG_VALUE ? "NONE" :
-           (g_currentDirection == POSITION_TYPE_BUY ? "BUY" : "SELL")),
-          g_level2Count, InpMaxLevel2));
-
+   // --- NONE: entry crossover apre Level 1 ---
    if(g_currentDirection == WRONG_VALUE)
    {
-      g_currentDirection = (sig == 0) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
+      if(entrySig < 0)
+      {
+         if(InpLog)
+         {
+            double e2, e1;
+            ReadBufD1(g_bufEntry2, 1, e2);
+            ReadBufD1(g_bufEntry1, 1, e1);
+            Print(StringFormat("   In attesa entry %s=%.5f %s=%.5f",
+                MAPeriodStr(InpEntryLine2), e2,
+                MAPeriodStr(InpEntryLine1), e1));
+         }
+         return;
+      }
+      ENUM_ORDER_TYPE t = (entrySig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+      g_currentDirection = (entrySig == 0) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
       g_level2Count = 0;
-      OpenLevel1(sigType);
-      if(InpLog) Print(">>> DIREZIONE IMPOSTATA: ", sigStr);
+      OpenLevel1(t);
+      if(InpLog) Print(">>> DIREZIONE INIZIALE: ", (entrySig == 0 ? "BUY" : "SELL"));
       return;
    }
 
-   ENUM_ORDER_TYPE currentOrdType = (g_currentDirection == POSITION_TYPE_BUY)
-                                    ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   ENUM_ORDER_TYPE curType = (g_currentDirection == POSITION_TYPE_BUY)
+                             ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
 
-   if(sigType != currentOrdType)
+   // --- Exit crossover opposto: flip direzionale ---
+   if(exitSig >= 0)
    {
-      if(InpLog) Print(">>> CROSSOVER OPPOSTO D1 - CHIUDO TUTTO");
-      CloseAll();
-      g_currentDirection = (sig == 0) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
-      g_level2Count = 0;
-      OpenLevel1(sigType);
-      if(InpLog) Print(">>> NUOVA DIREZIONE: ", sigStr);
-      return;
+      ENUM_ORDER_TYPE exitType = (exitSig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+      if(exitType != curType)
+      {
+         if(InpLog) Print(">>> EXIT CROSSOVER OPPOSTO - FLIP");
+         CloseAll();
+         g_currentDirection = (exitSig == 0) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
+         g_level2Count = 0;
+         OpenLevel1(exitType);
+         if(InpLog) Print(">>> FLIP -> ", (exitSig == 0 ? "BUY" : "SELL"), " (Level 1)");
+         return;
+      }
    }
 
-   if(g_level2Count < InpMaxLevel2)
+   // --- Entry crossover stessa direzione: Level 2 ---
+   if(entrySig >= 0)
    {
-      OpenLevel2(sigType);
-   }
-   else if(InpLog)
-   {
-      Print(">>> MAX LEVEL2 RAGGIUNTO (", InpMaxLevel2, ")");
+      ENUM_ORDER_TYPE entryType = (entrySig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+      if(entryType == curType)
+      {
+         if(g_level2Count < InpMaxLevel2)
+         {
+            OpenLevel2(entryType);
+         }
+         else if(InpLog)
+         {
+            Print(">>> MAX LEVEL2 RAGGIUNTO (", InpMaxLevel2, ")");
+         }
+      }
    }
 }
 //+------------------------------------------------------------------+
