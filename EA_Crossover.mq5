@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.12"
+#property version   "2.13"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover + TP opzionale"
 
 #include <Trade\Trade.mqh>
@@ -20,8 +20,10 @@ input group   "==========  EXIT CROSSOVER  =========="
 input int     InpExitLine1     = 365;
 input int     InpExitLine2     = 121;
 
-input group   "==========  RISK / TP  =========="
+input group   "==========  RISK / SL / TP  =========="
 input double  InpRiskPct       = 1.0;
+input bool    InpUseSL         = false;         // true = aggiunge SL a ogni ordine
+input int     InpSL_Points     = 30;
 input bool    InpUseTP         = false;         // true = aggiunge TP a ogni ordine
 input int     InpTP_Points     = 50;
 input int     InpMagic         = 365122;
@@ -153,6 +155,15 @@ double CalcTP(ENUM_ORDER_TYPE type, double entry)
 }
 
 //+------------------------------------------------------------------+
+double CalcSL(ENUM_ORDER_TYPE type, double entry)
+{
+   if(!InpUseSL || InpSL_Points <= 0) return 0.0;
+   double pt = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   return (type == ORDER_TYPE_BUY) ? (entry - InpSL_Points * pt)
+                                   : (entry + InpSL_Points * pt);
+}
+
+//+------------------------------------------------------------------+
 void OpenLevel1(ENUM_ORDER_TYPE type)
 {
    MqlTick tk;
@@ -166,12 +177,13 @@ void OpenLevel1(ENUM_ORDER_TYPE type)
    if(lot <= 0.0) return;
 
    double tp = CalcTP(type, entry);
+   double sl = CalcSL(type, entry);
 
    if(InpLog)
-      Print(StringFormat(">>> APERTURA LEVEL1 %s lot=%.2f entry=%.5f tp=%.5f",
-          (type == ORDER_TYPE_BUY ? "BUY" : "SELL"), lot, entry, tp));
+      Print(StringFormat(">>> APERTURA LEVEL1 %s lot=%.2f entry=%.5f sl=%.5f tp=%.5f",
+          (type == ORDER_TYPE_BUY ? "BUY" : "SELL"), lot, entry, sl, tp));
 
-   if(!g_trade.PositionOpen(_Symbol, type, lot, entry, 0.0, tp))
+   if(!g_trade.PositionOpen(_Symbol, type, lot, entry, sl, tp))
    {
       if(InpLog) Print(">>> ERR LEVEL1 retcode=", g_trade.ResultRetcode());
    }
@@ -204,12 +216,13 @@ void OpenLevel2(ENUM_ORDER_TYPE type)
    }
 
    double tp = CalcTP(type, entry);
+   double sl = CalcSL(type, entry);
 
    if(InpLog)
-      Print(StringFormat(">>> APERTURA LEVEL2 %s lot=%.2f entry=%.5f tp=%.5f",
-          (type == ORDER_TYPE_BUY ? "BUY" : "SELL"), lot, entry, tp));
+      Print(StringFormat(">>> APERTURA LEVEL2 %s lot=%.2f entry=%.5f sl=%.5f tp=%.5f",
+          (type == ORDER_TYPE_BUY ? "BUY" : "SELL"), lot, entry, sl, tp));
 
-   if(!g_trade.PositionOpen(_Symbol, type, lot, entry, 0.0, tp))
+   if(!g_trade.PositionOpen(_Symbol, type, lot, entry, sl, tp))
    {
       if(InpLog) Print(">>> ERR LEVEL2 retcode=", g_trade.ResultRetcode());
    }
@@ -247,12 +260,13 @@ int OnInit()
 
    if(InpLog)
        Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% "
-           "Entry=%s/%s Exit=%s/%s TP=%s %dpt",
+           "Entry=%s/%s Exit=%s/%s SL=%s%dp TP=%s%dp",
           _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
           InpMagic, InpRiskPct,
            MAPeriodStr(InpEntryLine1), MAPeriodStr(InpEntryLine2),
            MAPeriodStr(InpExitLine1),  MAPeriodStr(InpExitLine2),
-           (InpUseTP ? "ON" : "OFF"), InpTP_Points));
+           (InpUseSL ? "ON " : "OFF"), InpSL_Points,
+           (InpUseTP ? "ON " : "OFF"), InpTP_Points));
    return INIT_SUCCEEDED;
 }
 
