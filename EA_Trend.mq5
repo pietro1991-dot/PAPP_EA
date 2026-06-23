@@ -49,8 +49,6 @@ CTrade        g_trade;
 CPositionInfo g_pos;
 CAccountInfo  g_acc;
 
-ENUM_POSITION_TYPE g_currentDirection;
-
 int MAPeriodToBuf(int period)
 {
    switch(period)
@@ -201,9 +199,8 @@ int OnInit()
    g_bar0  = 0;
    g_bufTrend1 = MAPeriodToBuf(InpTrendLine1);
    g_bufTrend2 = MAPeriodToBuf(InpTrendLine2);
-   g_bufExit1  = MAPeriodToBuf(InpExitLine1);
-   g_bufExit2  = MAPeriodToBuf(InpExitLine2);
-   g_currentDirection = WRONG_VALUE;
+    g_bufExit1  = MAPeriodToBuf(InpExitLine1);
+    g_bufExit2  = MAPeriodToBuf(InpExitLine2);
 
    if(InpLog)
        Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% "
@@ -293,10 +290,9 @@ void OnTick()
          realDir = g_pos.PositionType();
          break;
       }
-   }
-   g_currentDirection = realDir;
-
-   // --- Exit crossover opposto: chiude e inverte ---
+    }
+ 
+    // --- Exit crossover opposto: chiude e inverte ---
    if(exitSig >= 0 && realDir != WRONG_VALUE)
    {
       ENUM_ORDER_TYPE exitType = (exitSig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
