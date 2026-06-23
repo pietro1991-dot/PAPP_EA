@@ -50,6 +50,7 @@ int      g_bufSL, g_bufTP;
 datetime g_bar0;
 datetime g_lastD1Today;
 bool     g_ready;
+bool     g_blockEntryToday;
 
 CTrade        g_trade;
 CPositionInfo g_pos;
@@ -305,61 +306,16 @@ void TryEnter()
 }
 
 //+------------------------------------------------------------------+
-void CheckExits()
+ENUM_POSITION_TYPE GetMyPosition()
 {
-   int cross = CheckCrossD1(g_bufExit);
-   if(cross == 0) return;
-
-   ENUM_POSITION_TYPE exitType = (cross == +1) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
-
    for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
       if(!g_pos.SelectByIndex(i))          continue;
       if(g_pos.Magic()  != InpMagic)       continue;
       if(g_pos.Symbol() != _Symbol)        continue;
-
-      // Exit se la direzione del crossover e' opposta alla posizione
-      ENUM_POSITION_TYPE posType = g_pos.PositionType();
-      if(posType == POSITION_TYPE_BUY && exitType == POSITION_TYPE_SELL)
-      {
-         if(InpLog) Print(">>> USCITA BUY (bearish cross) #" + IntegerToString(g_pos.Ticket()));
-         g_trade.PositionClose(g_pos.Ticket());
-      }
-      else if(posType == POSITION_TYPE_SELL && exitType == POSITION_TYPE_BUY)
-      {
-         if(InpLog) Print(">>> USCITA SELL (bullish cross) #" + IntegerToString(g_pos.Ticket()));
-         g_trade.PositionClose(g_pos.Ticket());
-      }
+      return g_pos.PositionType();
    }
-}
-
-//+------------------------------------------------------------------+
-void CheckSLCross()
-{
-   if(InpSLLine <= 0) return;
-
-   int cross = CheckCrossD1(g_bufSL);
-   if(cross == 0) return;
-
-   ENUM_POSITION_TYPE slType = (cross == +1) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
-
-   for(int i = PositionsTotal() - 1; i >= 0; i--)
-   {
-      if(!g_pos.SelectByIndex(i))          continue;
-      if(g_pos.Magic()  != InpMagic)       continue;
-      if(g_pos.Symbol() != _Symbol)        continue;
-
-      ENUM_POSITION_TYPE posType = g_pos.PositionType();
-      bool hitSL = false;
-      if(posType == POSITION_TYPE_BUY && slType == POSITION_TYPE_SELL) hitSL = true;
-      if(posType == POSITION_TYPE_SELL && slType == POSITION_TYPE_BUY) hitSL = true;
-
-      if(hitSL)
-      {
-         if(InpLog) Print(">>> SL LINEA #" + IntegerToString(g_pos.Ticket()));
-         g_trade.PositionClose(g_pos.Ticket());
-      }
-   }
+   return WRONG_VALUE;
 }
 
 //+------------------------------------------------------------------+
@@ -390,6 +346,7 @@ int OnInit()
    g_ready  = false;
    g_bar0   = 0;
    g_lastD1Today = 0;
+   g_blockEntryToday = false;
 
    if(InpLog)
       Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% "
@@ -445,65 +402,70 @@ void OnTick()
    if(d1today == g_lastD1Today) return;
    g_lastD1Today = d1today;
 
-   int posCount = CountPositions();
-
-   if(InpLog)
-      Print(StringFormat("=== SEGNALE === barra=%s D1=%s posizioni=%d Entry=%s Exit=%s",
-          TimeToString(g_bar0), TimeToString(d1today), posCount,
-          MAPeriodStr(InpEntryLine), MAPeriodStr(InpExitLine)));
+   g_blockEntryToday = false;
 
    int entryCross = CheckCrossD1(g_bufEntry);
    int exitCross  = CheckCrossD1(g_bufExit);
+   ENUM_POSITION_TYPE posType = GetMyPosition();
 
    if(InpLog)
    {
+      int posCount = (posType == WRONG_VALUE) ? 0 : 1;
       string entryStr = (entryCross==0?"NESSUNO":(entryCross>0?"BUY":"SELL"));
       string exitStr  = (exitCross ==0?"NESSUNO":(exitCross >0?"BUY":"SELL"));
-      Print(StringFormat("   entry=%s exit=%s", entryStr, exitStr));
+      string posStr   = (posType==WRONG_VALUE?"NESSUNO":(posType==POSITION_TYPE_BUY?"BUY":"SELL"));
+      Print(StringFormat("=== SEGNALE === barra=%s D1=%s pos=%s entry=%s exit=%s",
+          TimeToString(g_bar0), TimeToString(d1today), posStr, entryStr, exitStr));
    }
 
-   CheckSLCross();
-
-   if(posCount > 0)
+   // --- Se abbiamo una posizione aperta ---
+   if(posType != WRONG_VALUE)
    {
-      ENUM_POSITION_TYPE posType = WRONG_VALUE;
-      for(int i = 0; i < PositionsTotal(); i++)
+      int exitDir = (posType == POSITION_TYPE_BUY) ? -1 : +1;
+      if(exitCross == exitDir)
       {
-         if(g_pos.SelectByIndex(i) && g_pos.Magic() == InpMagic && g_pos.Symbol() == _Symbol)
-         {
-            posType = g_pos.PositionType();
-            break;
-         }
-      }
-
-      if(posType != WRONG_VALUE)
-      {
-         int exitDir = (posType == POSITION_TYPE_BUY) ? -1 : +1;
-         if(exitCross == exitDir)
-         {
-            if(InpLog) Print(StringFormat("   => EXIT %s cross opposto",
-                (posType == POSITION_TYPE_BUY) ? "BUY" : "SELL"));
-            CloseAll();
-            return;
-         }
-
-         // Gia' in posizione, nessuna nuova entrata nella stessa direzione
-         if(entryCross != 0)
-         {
-            ENUM_POSITION_TYPE entryDir = (entryCross == +1) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
-            if(entryDir == posType)
-            {
-               if(InpLog) Print("   => ENTRY STESSA DIR - gia' in posizione");
-               return;
-            }
-         }
+         if(InpLog) Print(StringFormat("   => EXIT %s (cross opposto su %s)",
+             (posType == POSITION_TYPE_BUY ? "BUY" : "SELL"), MAPeriodStr(InpExitLine)));
+         CloseAll();
          return;
       }
+
+      if(InpSLLine > 0)
+      {
+         int slCross = CheckCrossD1(g_bufSL);
+         int slDir = (posType == POSITION_TYPE_BUY) ? -1 : +1;
+         if(slCross == slDir)
+         {
+            if(InpLog) Print(StringFormat("   => SL %s (crossover su %s)",
+                (posType == POSITION_TYPE_BUY ? "BUY" : "SELL"), MAPeriodStr(InpSLLine)));
+            CloseAll();
+            g_blockEntryToday = true;
+            return;
+         }
+      }
+
+      if(InpLog) Print("   => IN POSIZIONE - attesa exit o SL");
+      return;
    }
 
-   if(entryCross != 0)
-      TryEnter();
-   else if(InpLog && posCount == 0)
-      Print("   => NESSUN ENTRY CROSS - attesa...");
+   // --- Nessuna posizione: possiamo entrare ---
+   if(g_blockEntryToday)
+   {
+      if(InpLog) Print("   => ENTRY BLOCCATA (SL subito prima)");
+      return;
+   }
+
+   if(entryCross == 0)
+   {
+      if(InpLog) Print("   => NESSUN ENTRY CROSS - attesa...");
+      return;
+   }
+
+   bool allowBuy  = (InpDirection == 0 || InpDirection == 1);
+   bool allowSell = (InpDirection == 0 || InpDirection == 2);
+   if(entryCross == +1 && !allowBuy)  { if(InpLog) Print("   => BUY non permesso"); return; }
+   if(entryCross == -1 && !allowSell) { if(InpLog) Print("   => SELL non permesso"); return; }
+
+   TryEnter();
 }
 //+------------------------------------------------------------------+
