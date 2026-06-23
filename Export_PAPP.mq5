@@ -3,8 +3,9 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.00"
+#property version   "2.01"
 #property description "Esporta D1-anchor MA + tutte le metriche PaPP in CSV"
+#property description "Crossover calcolati su D1 reali, non su valori interpolati"
 #property script_show_inputs
 
 input string InpIndicatorName = "PaPP_Median.ex5";
@@ -55,13 +56,20 @@ double MedArr(double &src[],int c)
 }
 
 //+------------------------------------------------------------------+
+double Med7Arr(double &v[7])
+{
+   double a[7];
+   for(int i=0;i<7;i++) a[i]=v[i];
+   ArraySort(a);
+   return a[3];
+}
+
+//+------------------------------------------------------------------+
 void OnStart()
 {
-   // --- Inizializza indicatori ---
    int g_ind = iCustom(_Symbol,_Period,InpIndicatorName);
    if(g_ind==INVALID_HANDLE) { Print("ERRORE: iCustom fallito"); return; }
 
-   // Attendi che l'indicatore sia pronto
    for(int att=0; att<100; att++)
    {
       if(BarsCalculated(g_ind)>10) break;
@@ -79,11 +87,10 @@ void OnStart()
    datetime g_startTime = StringToTime(InpStartDate);
    datetime g_endTime   = StringToTime(InpEndDate)+86399;
 
-   Print(StringFormat("Export PAPP | %s -> %s | file=%s | chart bars=%d | D1 bars=%d",
+   Print(StringFormat("Export PAPP v2.01 | %s -> %s | file=%s | chart bars=%d | D1 bars=%d",
        TimeToString(g_startTime),TimeToString(g_endTime),InpFileName,
        Bars(_Symbol,_Period),Bars(_Symbol,ANCHOR_TF)));
 
-   // --- Carica OHLC + indicator buffers ---
    int totalBars = Bars(_Symbol,_Period);
    if(totalBars<10) { Print("Poche barre"); IndicatorRelease(g_ind); for(int i=0;i<7;i++) IndicatorRelease(g_hMA[i]); return; }
 
@@ -125,19 +132,33 @@ void OnStart()
    ArrayResize(b30,maxBar); ArrayResize(b14,maxBar);
    ArrayResize(b7,maxBar); ArrayResize(b3,maxBar);
 
-   // --- Precarica D1 MA values ---
+   // --- Precarica D1: MA values, close, e median ---
    int d1Bars = Bars(_Symbol,ANCHOR_TF);
    double d1MA[][7];
+   double d1Close[];
+   double d1Median[];
    bool d1ok=false;
    if(d1Bars>=10)
    {
       ArrayResize(d1MA,d1Bars);
+      ArrayResize(d1Median,d1Bars);
       for(int m=0;m<7;m++)
       {
          double tmp[]; ArraySetAsSeries(tmp,true);
          int got = CopyBuffer(g_hMA[m],0,0,d1Bars,tmp);
          for(int s=0;s<got && s<d1Bars;s++) d1MA[s][m] = IsPriceOk(tmp[s])?tmp[s]:0.0;
       }
+      // Calcola mediana per ogni barra D1
+      for(int s=0;s<d1Bars;s++)
+      {
+         double v[7];
+         for(int m=0;m<7;m++) v[m]=d1MA[s][m];
+         d1Median[s] = Med7Arr(v);
+      }
+      // Carica D1 close
+      ArraySetAsSeries(d1Close,true);
+      int nD1C = CopyClose(_Symbol,ANCHOR_TF,0,d1Bars,d1Close);
+      if(nD1C>0) d1Bars = MathMin(d1Bars,nD1C);
       d1ok=true;
    }
    else Print("Poche barre D1 (",d1Bars,") — metriche D1 saltate");
@@ -150,7 +171,6 @@ void OnStart()
 
    Print(StringFormat("Barre: %d (shift %d->%d) su %d",sStart-sEnd+1,sStart,sEnd,ArraySize(c)));
 
-   // --- Apri CSV ---
    int fh = FileOpen(InpFileName,FILE_WRITE|FILE_CSV|FILE_ANSI,",");
    if(fh==INVALID_HANDLE) { Print("ERRORE file: ",GetLastError()); IndicatorRelease(g_ind); for(int i=0;i<7;i++) IndicatorRelease(g_hMA[i]); return; }
 
@@ -167,18 +187,20 @@ void OnStart()
        "MA3_7","MA7_14","MA14_30","MA30_121","MA121_182","MA182_365");
 
    int written=0, total = sStart-sEnd+1;
-   Comment(StringFormat("Export PAPP: 0/%d barre...",total));
+   Comment(StringFormat("Export PAPP v2.01: 0/%d barre...",total));
+
+   // --- Loop principale ---
+   int prevD1Cur = -1;
 
    for(int s=sStart;s>=sEnd;s--)
    {
        if(!IsPriceOk(bM[s]) || !IsPriceOk(c[s])) continue;
-       if((written%5000)==0) Comment(StringFormat("Export PAPP: %d/%d barre...",written,total));
+       if((written%5000)==0) Comment(StringFormat("Export PAPP v2.01: %d/%d barre...",written,total));
 
       double med=bM[s], v365=b365[s], v182=b182[s], v121=b121[s];
       double v30=b30[s], v14=b14[s], v7=b7[s], v3=b3[s];
       double cls=c[s];
 
-      // Distanze %
       double dMed = med>0?(cls-med)/med*100.0:0;
       double d365 = v365>0?(cls-v365)/v365*100.0:0;
       double d182 = v182>0?(cls-v182)/v182*100.0:0;
@@ -188,11 +210,9 @@ void OnStart()
       double d7   = v7>0?(cls-v7)/v7*100.0:0;
       double d3   = v3>0?(cls-v3)/v3*100.0:0;
 
-      // Flag sopra=1 sotto=0
       int aMed=cls>med?1:0, a365=cls>v365?1:0, a182=cls>v182?1:0, a121=cls>v121?1:0;
       int a30=cls>v30?1:0, a14=cls>v14?1:0, a7=cls>v7?1:0, a3=cls>v3?1:0;
 
-      // Frattale
       double fastAvg=(v3+v7+v14)/3.0, slowAvg=(v121+v182+v365)/3.0;
       double spreadF=fastAvg-slowAvg;
       double spreadVel=0;
@@ -204,7 +224,6 @@ void OnStart()
          spreadVel=spreadF-(f2-s2);
       }
 
-      // Order score
       int os=0;
       if(IsPriceOk(v3)&&IsPriceOk(v7)) os+=(v3>v7)?1:-1;
       if(IsPriceOk(v7)&&IsPriceOk(v14)) os+=(v7>v14)?1:-1;
@@ -217,49 +236,62 @@ void OnStart()
       int longBelow=(v365<med&&v182<med&&v121<med)?1:0;
       int longAbove=(v365>med&&v182>med&&v121>med)?1:0;
 
-      // --- CROSSOVER DIREZIONALI per TUTTE le 8 linee ---
-      // +1 = bullish (prezzo incrocia dal sotto al sopra)
-      // -1 = bearish (prezzo incrocia dal sopra al sotto)
-      //  0 = nessun incrocio
+      // --- CROSSOVER su D1 REALI (solo su prima barra di ogni nuova D1) ---
+      // Confronta D1 close vs D1 MA/Median a barre D1 consecutive
       int crossMA365=0, crossMA182=0, crossMA121=0, crossMA30=0;
       int crossMA14=0, crossMA7=0, crossMA3=0, crossMed=0;
 
-      if(s+1<ArraySize(c) && IsPriceOk(c[s+1]))
-      {
-         double cp=c[s+1];
+      int d1Cur = iBarShift(_Symbol,ANCHOR_TF,t[s],false);
 
-         if(IsPriceOk(v365)&&IsPriceOk(b365[s+1])) {
-            if(cls>v365&&cp<=b365[s+1]) crossMA365=1;
-            else if(cls<v365&&cp>=b365[s+1]) crossMA365=-1; }
-         if(IsPriceOk(v182)&&IsPriceOk(b182[s+1])) {
-            if(cls>v182&&cp<=b182[s+1]) crossMA182=1;
-            else if(cls<v182&&cp>=b182[s+1]) crossMA182=-1; }
-         if(IsPriceOk(v121)&&IsPriceOk(b121[s+1])) {
-            if(cls>v121&&cp<=b121[s+1]) crossMA121=1;
-            else if(cls<v121&&cp>=b121[s+1]) crossMA121=-1; }
-         if(IsPriceOk(v30)&&IsPriceOk(b30[s+1])) {
-            if(cls>v30&&cp<=b30[s+1]) crossMA30=1;
-            else if(cls<v30&&cp>=b30[s+1]) crossMA30=-1; }
-         if(IsPriceOk(v14)&&IsPriceOk(b14[s+1])) {
-            if(cls>v14&&cp<=b14[s+1]) crossMA14=1;
-            else if(cls<v14&&cp>=b14[s+1]) crossMA14=-1; }
-         if(IsPriceOk(v7)&&IsPriceOk(b7[s+1])) {
-            if(cls>v7&&cp<=b7[s+1]) crossMA7=1;
-            else if(cls<v7&&cp>=b7[s+1]) crossMA7=-1; }
-         if(IsPriceOk(v3)&&IsPriceOk(b3[s+1])) {
-            if(cls>v3&&cp<=b3[s+1]) crossMA3=1;
-            else if(cls<v3&&cp>=b3[s+1]) crossMA3=-1; }
-         if(IsPriceOk(med)&&IsPriceOk(bM[s+1])) {
-            if(cls>med&&cp<=bM[s+1]) crossMed=1;
-            else if(cls<med&&cp>=bM[s+1]) crossMed=-1; }
+      if(d1ok && d1Cur>=0 && d1Cur != prevD1Cur && prevD1Cur>=0)
+      {
+         // d1Cur + 1 = barra D1 precedente (indice piu' alto = piu' vecchia)
+         // d1Cur = barra D1 corrente (indice piu' basso = piu' recente)
+         // Bullish: close[prec] <= MA[prec], close[cur] > MA[cur]
+         // Bearish: close[prec] >= MA[prec], close[cur] < MA[cur]
+         int prevIdx = d1Cur + 1;
+         if(prevIdx < d1Bars)
+         {
+            double d1cCur = d1Close[d1Cur];
+            double d1cPrev = d1Close[prevIdx];
+
+            for(int m=0; m<7; m++)
+            {
+               double maCur = d1MA[d1Cur][m];
+               double maPrev = d1MA[prevIdx][m];
+               if(!IsPriceOk(maCur) || !IsPriceOk(maPrev)) continue;
+               int cross = 0;
+               if(d1cCur > maCur && d1cPrev <= maPrev) cross = 1;
+               else if(d1cCur < maCur && d1cPrev >= maPrev) cross = -1;
+               // Assegna al cross corrispondente
+               switch(m)
+               {
+                  case 0: crossMA365 = cross; break;
+                  case 1: crossMA182 = cross; break;
+                  case 2: crossMA121 = cross; break;
+                  case 3: crossMA30  = cross; break;
+                  case 4: crossMA14  = cross; break;
+                  case 5: crossMA7   = cross; break;
+                  case 6: crossMA3   = cross; break;
+               }
+            }
+            // Median
+            double medCur = d1Median[d1Cur];
+            double medPrev = d1Median[prevIdx];
+            if(IsPriceOk(medCur) && IsPriceOk(medPrev))
+            {
+               if(d1cCur > medCur && d1cPrev <= medPrev) crossMed = 1;
+               else if(d1cCur < medCur && d1cPrev >= medPrev) crossMed = -1;
+            }
+         }
       }
+      prevD1Cur = d1Cur;
 
       // Metriche D1: cluster, vel, acc, vol
       double clu=0,vel=0,acc=0,vol=0;
       int d1Idx = iBarShift(_Symbol,ANCHOR_TF,t[s],false);
       if(d1ok && d1Idx>=0 && d1Idx+CLWIN+KSLOPE+NVOL<d1Bars)
       {
-         // Cluster
          double ca[252]; int cc=0;
          for(int j=d1Idx;j<d1Idx+CLWIN && j<d1Bars;j++)
          {
@@ -273,7 +305,6 @@ void OnStart()
          }
          if(cc>0) clu=ca[0];
 
-         // Velocita'
          double v7b[7]; int v7c=0;
          for(int m=0;m<7;m++)
          {
@@ -282,7 +313,6 @@ void OnStart()
          }
          if(v7c>0) vel=MathAbs(MedArr(v7b,v7c));
 
-         // Accelerazione
          v7c=0;
          for(int m=0;m<7;m++)
          {
@@ -291,7 +321,6 @@ void OnStart()
          }
          if(v7c>0) acc=MathAbs(MedArr(v7b,v7c));
 
-         // Volatilita'
          v7c=0;
          for(int m=0;m<7;m++)
          {
@@ -339,9 +368,8 @@ void OnStart()
 
    FileClose(fh);
    Comment(StringFormat("EXPORT COMPLETATO: %s | %d righe",InpFileName,written));
-   Print(StringFormat(">>> EXPORT COMPLETATO: %s | %d righe",InpFileName,written));
+   Print(StringFormat(">>> EXPORT COMPLETATO v2.01: %s | %d righe",InpFileName,written));
 
-   // Cleanup
    IndicatorRelease(g_ind);
    for(int i=0;i<7;i++) IndicatorRelease(g_hMA[i]);
 }
