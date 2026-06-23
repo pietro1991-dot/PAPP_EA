@@ -256,7 +256,9 @@ void OnTick()
       return;
    }
 
-   int trendDir = (t1 > t2) ? POSITION_TYPE_BUY : ((t1 < t2) ? POSITION_TYPE_SELL : WRONG_VALUE);
+   // TrendLine1 = lenta (es. 365), TrendLine2 = veloce (es. 121)
+   // veloce > lenta = rialzista → BUY
+   int trendDir = (t2 > t1) ? POSITION_TYPE_BUY : ((t2 < t1) ? POSITION_TYPE_SELL : WRONG_VALUE);
 
    if(InpLog)
       Print(StringFormat("=== TREND === barra=%s %s[1]=%.5f %s[1]=%.5f -> %s",
