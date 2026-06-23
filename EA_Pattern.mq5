@@ -221,16 +221,17 @@ void TryEnter()
    int cross = CheckCrossD1(g_bufEntry);
    if(cross == 0) return;
 
-   ENUM_POSITION_TYPE wantType = (cross == +1) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
+   ENUM_ORDER_TYPE wantType = (cross == +1) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   ENUM_POSITION_TYPE wantPosType = (cross == +1) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
 
    bool allowBuy  = (InpDirection == 0 || InpDirection == 1);
    bool allowSell = (InpDirection == 0 || InpDirection == 2);
-   if(wantType == POSITION_TYPE_BUY && !allowBuy)  return;
-   if(wantType == POSITION_TYPE_SELL && !allowSell) return;
+   if(wantType == ORDER_TYPE_BUY && !allowBuy)  return;
+   if(wantType == ORDER_TYPE_SELL && !allowSell) return;
 
-   if(HasPositionOfType(wantType)) return;
+   if(HasPositionOfType(wantPosType)) return;
 
-   CloseType((wantType == POSITION_TYPE_BUY) ? POSITION_TYPE_SELL : POSITION_TYPE_BUY);
+   CloseType((wantType == ORDER_TYPE_BUY) ? POSITION_TYPE_SELL : POSITION_TYPE_BUY);
    Sleep(50);
 
    MqlTick tk;
@@ -238,7 +239,7 @@ void TryEnter()
 
    double pt     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double pipSize = pt * 10.0;
-   double entry  = (wantType == POSITION_TYPE_BUY) ? tk.ask : tk.bid;
+   double entry  = (wantType == ORDER_TYPE_BUY) ? tk.ask : tk.bid;
 
    double sl = 0.0, tp = 0.0;
    double riskDist = pipSize * 1000.0;
@@ -249,14 +250,14 @@ void TryEnter()
       if(ReadBufD1(g_bufSL, 1, slMA) && IsPriceOk(slMA))
       {
          bool slOk = false;
-         if(wantType == POSITION_TYPE_BUY && slMA < entry) { sl = slMA; slOk = true; }
-         if(wantType == POSITION_TYPE_SELL && slMA > entry) { sl = slMA; slOk = true; }
+         if(wantType == ORDER_TYPE_BUY && slMA < entry) { sl = slMA; slOk = true; }
+         if(wantType == ORDER_TYPE_SELL && slMA > entry) { sl = slMA; slOk = true; }
          if(slOk) riskDist = MathAbs(entry - sl);
       }
    }
    if(InpSLPoints > 0)
    {
-      double slFix = (wantType == POSITION_TYPE_BUY)
+      double slFix = (wantType == ORDER_TYPE_BUY)
          ? entry - InpSLPoints * pt
          : entry + InpSLPoints * pt;
       if(sl == 0.0)
@@ -282,12 +283,12 @@ void TryEnter()
       if(ReadBufD1(g_bufTP, 1, tpMA) && IsPriceOk(tpMA))
       {
          bool tpOk = false;
-         if(wantType == POSITION_TYPE_BUY && tpMA > entry) { tp = tpMA; tpOk = true; }
-         if(wantType == POSITION_TYPE_SELL && tpMA < entry) { tp = tpMA; tpOk = true; }
+         if(wantType == ORDER_TYPE_BUY && tpMA > entry) { tp = tpMA; tpOk = true; }
+         if(wantType == ORDER_TYPE_SELL && tpMA < entry) { tp = tpMA; tpOk = true; }
       }
    }
    if(InpTPPoints > 0 && tp == 0.0)
-      tp = (wantType == POSITION_TYPE_BUY)
+      tp = (wantType == ORDER_TYPE_BUY)
          ? entry + InpTPPoints * pt
          : entry - InpTPPoints * pt;
 
@@ -296,7 +297,7 @@ void TryEnter()
 
    if(InpLog)
       Print(StringFormat(">>> APERTURA %s lot=%.2f entry=%.5f sl=%.5f tp=%.5f risk=%.0fpt",
-          (wantType == POSITION_TYPE_BUY ? "BUY" : "SELL"),
+          (wantType == ORDER_TYPE_BUY ? "BUY" : "SELL"),
           lot, entry, sl, tp, riskDist / pt));
 
    if(!g_trade.PositionOpen(_Symbol, wantType, lot, entry, sl, tp))
