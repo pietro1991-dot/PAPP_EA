@@ -234,7 +234,7 @@ void OnStart()
 
       int d1Cur = iBarShift(_Symbol,ANCHOR_TF,t[s],false);
 
-      if(d1ok && d1Cur>=0 && d1Cur != prevD1Cur && prevD1Cur>=0)
+      if(d1ok && d1Cur>0 && d1Cur != prevD1Cur && prevD1Cur>=0)
       {
          // d1Cur + 1 = barra D1 precedente (indice piu' alto = piu' vecchia)
          // d1Cur = barra D1 corrente (indice piu' basso = piu' recente)

@@ -385,6 +385,7 @@ def main():
     train_pct = 1.0
     split_date = None
     min_trades = 10
+    debug_n = 0
     ctx_filters = {}
 
     for arg in sys.argv[2:]:
@@ -396,6 +397,8 @@ def main():
             split_date = arg.split('=', 1)[1]
         elif arg.startswith('--min-trades='):
             min_trades = int(arg.split('=', 1)[1])
+        elif arg.startswith('--debug='):
+            debug_n = int(arg.split('=', 1)[1])
         elif '=' in arg:
             k, v = arg.split('=', 1)
             ctx_filters[k] = float(v) if ('.' in v or 'e' in v.lower()) else int(v)
@@ -455,6 +458,49 @@ def main():
         return
 
     print(f"\nSpread applicato: {spread_pt}pt ({spread_pt/10:.1f} pip)")
+
+    # ============================================================
+    # DEBUG: stampa i primi N trade per verifica manuale
+    # ============================================================
+    if debug_n > 0:
+        print(f"\n{'='*140}")
+        print(f"  DEBUG: primi {debug_n} trade Analisi 3 (verifica manuale)")
+        print(f"{'='*140}")
+        count = 0
+        for ent in entries[:debug_n]:
+            if count >= debug_n:
+                break
+            buy = (ent['dir'] == 1)
+            for sl_name in ['MA365', 'MA30']:
+                sl_col = LINE_COLS[LINE_NAMES.index(sl_name)]
+                sl_val = float(rows[ent['idx']][sl_col])
+                if not (sl_val > 0 and sl_val < 1e12):
+                    continue
+                if buy and sl_val >= ent['price']:
+                    continue
+                if not buy and sl_val <= ent['price']:
+                    continue
+                for tp_pt in [60, 120]:
+                    out = simulate_trade(rows, ent['idx'], buy, ent['price'],
+                                         sl_col, tp_pt, spread_pt)
+                    if out is None:
+                        continue
+                    pnl, etype, eidx, eline = out
+                    exit_row = rows[eidx]
+                    exit_close = float(exit_row['close'])
+                    print(f"  [{count+1}] {ent['datetime']} | {ent['line']} "
+                          f"{'BUY' if buy else 'SELL'} "
+                          f"@ {ent['price']:.5f} | "
+                          f"SL={sl_name}({sl_val:.5f}) TP={tp_pt} | "
+                          f"-> {etype} @ {exit_row['datetime']} "
+                          f"({exit_close:.5f}) | "
+                          f"PnL={pnl:+.0f}pt | {eidx-ent['idx']} barre")
+                    count += 1
+                    if count >= debug_n:
+                        break
+                if count >= debug_n:
+                    break
+        print()
 
     # ============================================================
     # ANALISI 1
