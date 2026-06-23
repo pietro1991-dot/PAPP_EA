@@ -1,12 +1,11 @@
 //+------------------------------------------------------------------+
 //|                                                   Export_PAPP.mq5 |
-//|                                                        PaPP v2 |
+//|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
 #property version   "2.00"
 #property description "Esporta D1-anchor MA + tutte le metriche PaPP in CSV"
-
-#include <Trade\Trade.mqh>
+#property script_show_inputs
 
 input string InpIndicatorName = "PaPP_Median.ex5";
 input string InpStartDate     = "2024.01.01";
@@ -27,11 +26,7 @@ input string InpFileName      = "PAPP_Export.csv";
 #define NVOL   14
 #define CLWIN  252
 
-int      g_ind;
-int      g_hMA[7];          // handle MA su D1
-int      g_per[7] = {365,182,121,30,14,7,3};
-datetime g_startTime, g_endTime;
-bool     g_done = false;
+int g_per[7] = {365,182,121,30,14,7,3};
 
 //+------------------------------------------------------------------+
 int TimeToBars(int d)
@@ -49,15 +44,6 @@ int TimeToBars(int d)
 bool IsPriceOk(double v) { return (v>0.0 && v<1.0e12); }
 
 //+------------------------------------------------------------------+
-bool ReadBuf(int buf, int shift, double &val)
-{
-   double tmp[1];
-   if(CopyBuffer(g_ind,buf,shift,1,tmp)!=1) return false;
-   val=tmp[0];
-   return IsPriceOk(val);
-}
-
-//+------------------------------------------------------------------+
 double MedArr(double &src[],int c)
 {
    if(c<=0) return 0;
@@ -69,12 +55,40 @@ double MedArr(double &src[],int c)
 }
 
 //+------------------------------------------------------------------+
-bool LoadBuffers(
-   double &o[], double &h[], double &l[], double &c[], datetime &t[],
-   double &bM[], double &b365[], double &b182[], double &b121[],
-   double &b30[], double &b14[], double &b7[], double &b3[],
-   int totalBars)
+void OnStart()
 {
+   // --- Inizializza indicatori ---
+   int g_ind = iCustom(_Symbol,_Period,InpIndicatorName);
+   if(g_ind==INVALID_HANDLE) { Print("ERRORE: iCustom fallito"); return; }
+
+   // Attendi che l'indicatore sia pronto
+   for(int att=0; att<100; att++)
+   {
+      if(BarsCalculated(g_ind)>10) break;
+      Sleep(100);
+   }
+   if(BarsCalculated(g_ind)<=10) { Print("ERRORE: indicatore non pronto"); IndicatorRelease(g_ind); return; }
+
+   int g_hMA[7];
+   for(int i=0;i<7;i++)
+   {
+      g_hMA[i] = iMA(_Symbol,ANCHOR_TF,TimeToBars(g_per[i]),0,MODE_SMA,PRICE_CLOSE);
+      if(g_hMA[i]==INVALID_HANDLE) { Print("ERRORE: MA",g_per[i]," fallito"); IndicatorRelease(g_ind); return; }
+   }
+
+   datetime g_startTime = StringToTime(InpStartDate);
+   datetime g_endTime   = StringToTime(InpEndDate)+86399;
+
+   Print(StringFormat("Export PAPP | %s -> %s | file=%s | chart bars=%d | D1 bars=%d",
+       TimeToString(g_startTime),TimeToString(g_endTime),InpFileName,
+       Bars(_Symbol,_Period),Bars(_Symbol,ANCHOR_TF)));
+
+   // --- Carica OHLC + indicator buffers ---
+   int totalBars = Bars(_Symbol,_Period);
+   if(totalBars<10) { Print("Poche barre"); IndicatorRelease(g_ind); for(int i=0;i<7;i++) IndicatorRelease(g_hMA[i]); return; }
+
+   double o[],h[],l[],c[]; datetime t[];
+   double bM[],b365[],b182[],b121[],b30[],b14[],b7[],b3[];
    ArraySetAsSeries(o,true);ArraySetAsSeries(h,true);ArraySetAsSeries(l,true);
    ArraySetAsSeries(c,true);ArraySetAsSeries(t,true);
    int nO=CopyOpen(_Symbol,_Period,0,totalBars,o);
@@ -102,68 +116,16 @@ bool LoadBuffers(
    if(n30<maxBar) maxBar=n30; if(n14<maxBar) maxBar=n14;
    if(n7<maxBar) maxBar=n7; if(n3<maxBar) maxBar=n3;
 
-   if(maxBar<10) return false;
+   if(maxBar<10) { Print("ERRORE: pochi dati caricati"); IndicatorRelease(g_ind); for(int i=0;i<7;i++) IndicatorRelease(g_hMA[i]); return; }
 
-   // Ridimensiona tutti gli array a maxBar
    ArrayResize(o,maxBar); ArrayResize(h,maxBar); ArrayResize(l,maxBar);
    ArrayResize(c,maxBar); ArrayResize(t,maxBar);
    ArrayResize(bM,maxBar); ArrayResize(b365,maxBar);
    ArrayResize(b182,maxBar); ArrayResize(b121,maxBar);
    ArrayResize(b30,maxBar); ArrayResize(b14,maxBar);
    ArrayResize(b7,maxBar); ArrayResize(b3,maxBar);
-   return true;
-}
 
-//+------------------------------------------------------------------+
-int OnInit()
-{
-   g_ind = iCustom(_Symbol,_Period,InpIndicatorName);
-   if(g_ind==INVALID_HANDLE) { Print("iCustom fallito"); return INIT_FAILED; }
-
-   for(int i=0;i<7;i++)
-   {
-      g_hMA[i] = iMA(_Symbol,ANCHOR_TF,TimeToBars(g_per[i]),0,MODE_SMA,PRICE_CLOSE);
-      if(g_hMA[i]==INVALID_HANDLE) { Print("MA",g_per[i]," fallito"); return INIT_FAILED; }
-   }
-
-   g_startTime = StringToTime(InpStartDate);
-   g_endTime   = StringToTime(InpEndDate)+86399;
-   Print(StringFormat("Export PAPP | %s -> %s | file=%s | chart bars=%d | D1 bars=%d",
-       TimeToString(g_startTime),TimeToString(g_endTime),InpFileName,
-       Bars(_Symbol,_Period),Bars(_Symbol,ANCHOR_TF)));
-   return INIT_SUCCEEDED;
-}
-
-//+------------------------------------------------------------------+
-void OnDeinit(const int)
-{
-   if(g_ind!=INVALID_HANDLE) IndicatorRelease(g_ind);
-   for(int i=0;i<7;i++) if(g_hMA[i]!=INVALID_HANDLE) IndicatorRelease(g_hMA[i]);
-}
-
-//+------------------------------------------------------------------+
-void OnTick()
-{
-   if(g_done) return;
-   g_done = true;
-
-   double dummy;
-   if(!ReadBuf(BUF_MEDIAN,1,dummy))
-   {
-      Comment("Export_PAPP: attendo l'indicatore...");
-      g_done=false; return;
-   }
-
-   int totalBars = Bars(_Symbol,_Period);
-   if(totalBars<10) { Print("Poche barre"); return; }
-
-   // Precarica OHLC + indicator buffers (serve maxBar prima di sStart/sEnd clamp)
-   double o[],h[],l[],c[]; datetime t[];
-   double bM[],b365[],b182[],b121[],b30[],b14[],b7[],b3[];
-   if(!LoadBuffers(o,h,l,c,t,bM,b365,b182,b121,b30,b14,b7,b3,totalBars))
-      { Print("ERRORE caricamento buffer"); return; }
-
-   // Precarica D1: MA values su tutte le barre D1 disponibili
+   // --- Precarica D1 MA values ---
    int d1Bars = Bars(_Symbol,ANCHOR_TF);
    double d1MA[][7];
    bool d1ok=false;
@@ -184,13 +146,13 @@ void OnTick()
    int sEnd   = iBarShift(_Symbol,_Period,g_endTime,false);
    if(sStart<0 || sStart>=ArraySize(c)) sStart=ArraySize(c)-1;
    if(sEnd<0) sEnd=0;
-   if(sStart<=sEnd) { Print("Range date vuoto"); return; }
+   if(sStart<=sEnd) { Print("Range date vuoto"); IndicatorRelease(g_ind); for(int i=0;i<7;i++) IndicatorRelease(g_hMA[i]); return; }
 
    Print(StringFormat("Barre: %d (shift %d->%d) su %d",sStart-sEnd+1,sStart,sEnd,ArraySize(c)));
 
-   // Apri CSV
+   // --- Apri CSV ---
    int fh = FileOpen(InpFileName,FILE_WRITE|FILE_CSV|FILE_ANSI,",");
-   if(fh==INVALID_HANDLE) { Print("ERRORE file: ",GetLastError()); return; }
+   if(fh==INVALID_HANDLE) { Print("ERRORE file: ",GetLastError()); IndicatorRelease(g_ind); for(int i=0;i<7;i++) IndicatorRelease(g_hMA[i]); return; }
 
    FileWrite(fh,
        "datetime","open","high","low","close",
@@ -201,11 +163,12 @@ void OnTick()
        "orderScore","s14_30","s7_30",
        "longBelow","longAbove",
        "cluster%","vel%","acc%","vol%",
-       "crossMed","crossMA3",
+       "crossMA365","crossMA182","crossMA121","crossMA30","crossMA14","crossMA7","crossMA3","crossMed",
        "MA3_7","MA7_14","MA14_30","MA30_121","MA121_182","MA182_365");
 
    int written=0, total = sStart-sEnd+1;
    Comment(StringFormat("Export PAPP: 0/%d barre...",total));
+
    for(int s=sStart;s>=sEnd;s--)
    {
        if(!IsPriceOk(bM[s]) || !IsPriceOk(c[s])) continue;
@@ -254,13 +217,41 @@ void OnTick()
       int longBelow=(v365<med&&v182<med&&v121<med)?1:0;
       int longAbove=(v365>med&&v182>med&&v121>med)?1:0;
 
-      // Incroci close
-      int crossMed=0, crossMA3=0;
-      if(s+1<ArraySize(c) && IsPriceOk(bM[s+1]) && IsPriceOk(c[s+1]))
+      // --- CROSSOVER DIREZIONALI per TUTTE le 8 linee ---
+      // +1 = bullish (prezzo incrocia dal sotto al sopra)
+      // -1 = bearish (prezzo incrocia dal sopra al sotto)
+      //  0 = nessun incrocio
+      int crossMA365=0, crossMA182=0, crossMA121=0, crossMA30=0;
+      int crossMA14=0, crossMA7=0, crossMA3=0, crossMed=0;
+
+      if(s+1<ArraySize(c) && IsPriceOk(c[s+1]))
       {
          double cp=c[s+1];
-         if((cls>med&&cp<=med)||(cls<med&&cp>=med)) crossMed=1;
-         if((cls>v3&&cp<=v3)||(cls<v3&&cp>=v3)) crossMA3=1;
+
+         if(IsPriceOk(v365)&&IsPriceOk(b365[s+1])) {
+            if(cls>v365&&cp<=b365[s+1]) crossMA365=1;
+            else if(cls<v365&&cp>=b365[s+1]) crossMA365=-1; }
+         if(IsPriceOk(v182)&&IsPriceOk(b182[s+1])) {
+            if(cls>v182&&cp<=b182[s+1]) crossMA182=1;
+            else if(cls<v182&&cp>=b182[s+1]) crossMA182=-1; }
+         if(IsPriceOk(v121)&&IsPriceOk(b121[s+1])) {
+            if(cls>v121&&cp<=b121[s+1]) crossMA121=1;
+            else if(cls<v121&&cp>=b121[s+1]) crossMA121=-1; }
+         if(IsPriceOk(v30)&&IsPriceOk(b30[s+1])) {
+            if(cls>v30&&cp<=b30[s+1]) crossMA30=1;
+            else if(cls<v30&&cp>=b30[s+1]) crossMA30=-1; }
+         if(IsPriceOk(v14)&&IsPriceOk(b14[s+1])) {
+            if(cls>v14&&cp<=b14[s+1]) crossMA14=1;
+            else if(cls<v14&&cp>=b14[s+1]) crossMA14=-1; }
+         if(IsPriceOk(v7)&&IsPriceOk(b7[s+1])) {
+            if(cls>v7&&cp<=b7[s+1]) crossMA7=1;
+            else if(cls<v7&&cp>=b7[s+1]) crossMA7=-1; }
+         if(IsPriceOk(v3)&&IsPriceOk(b3[s+1])) {
+            if(cls>v3&&cp<=b3[s+1]) crossMA3=1;
+            else if(cls<v3&&cp>=b3[s+1]) crossMA3=-1; }
+         if(IsPriceOk(med)&&IsPriceOk(bM[s+1])) {
+            if(cls>med&&cp<=bM[s+1]) crossMed=1;
+            else if(cls<med&&cp>=bM[s+1]) crossMed=-1; }
       }
 
       // Metriche D1: cluster, vel, acc, vol
@@ -338,7 +329,8 @@ void OnTick()
           longBelow,longAbove,
           DoubleToString(clu,4),DoubleToString(vel,4),
           DoubleToString(acc,4),DoubleToString(vol,4),
-          crossMed,crossMA3,
+          crossMA365,crossMA182,crossMA121,crossMA30,
+          crossMA14,crossMA7,crossMA3,crossMed,
           v3>v7?1:0, v7>v14?1:0, v14>v30?1:0,
           v30>v121?1:0, v121>v182?1:0, v182>v365?1:0);
 
@@ -348,5 +340,9 @@ void OnTick()
    FileClose(fh);
    Comment(StringFormat("EXPORT COMPLETATO: %s | %d righe",InpFileName,written));
    Print(StringFormat(">>> EXPORT COMPLETATO: %s | %d righe",InpFileName,written));
+
+   // Cleanup
+   IndicatorRelease(g_ind);
+   for(int i=0;i<7;i++) IndicatorRelease(g_hMA[i]);
 }
 //+------------------------------------------------------------------+
