@@ -199,17 +199,11 @@ void TryEnter()
    if(cross == 0) return;
 
    ENUM_ORDER_TYPE wantType = (cross == +1) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
-   ENUM_POSITION_TYPE wantPosType = (cross == +1) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
 
    bool allowBuy  = (InpDirection == 0 || InpDirection == 1);
    bool allowSell = (InpDirection == 0 || InpDirection == 2);
    if(wantType == ORDER_TYPE_BUY && !allowBuy)  return;
    if(wantType == ORDER_TYPE_SELL && !allowSell) return;
-
-   if(HasPositionOfType(wantPosType)) return;
-
-   CloseType((wantType == ORDER_TYPE_BUY) ? POSITION_TYPE_SELL : POSITION_TYPE_BUY);
-   Sleep(50);
 
    MqlTick tk;
    if(!SymbolInfoTick(_Symbol, tk)) return;
@@ -352,51 +346,48 @@ void OnTick()
 
    int entryCross = CheckCrossD1(g_bufEntry);
    int exitCross  = CheckCrossD1(g_bufExit);
-   ENUM_POSITION_TYPE posType = GetMyPosition();
 
    if(InpLog)
    {
       string entryStr = (entryCross==0?"NESSUNO":(entryCross>0?"BUY":"SELL"));
       string exitStr  = (InpExitLine==0?"OFF":(exitCross==0?"NESSUNO":(exitCross>0?"BUY":"SELL")));
-      string posStr   = (posType==WRONG_VALUE?"NESSUNO":(posType==POSITION_TYPE_BUY?"BUY":"SELL"));
-      Print(StringFormat("=== SEGNALE === barra=%s D1=%s pos=%s entry=%s exit=%s",
-          TimeToString(g_bar0), TimeToString(d1today), posStr, entryStr, exitStr));
+      Print(StringFormat("=== SEGNALE === barra=%s D1=%s entry=%s exit=%s pos=%d",
+          TimeToString(g_bar0), TimeToString(d1today), entryStr, exitStr, PositionsTotal()));
    }
 
-   // --- Se abbiamo una posizione aperta ---
-   if(posType != WRONG_VALUE)
+   // --- EXIT: chiudi per tipo (bullish exit chiude SELL, bearish exit chiude BUY) ---
+   if(InpExitLine > 0 && exitCross != 0)
    {
-      if(InpExitLine > 0)
+      if(exitCross == +1 && HasPositionOfType(POSITION_TYPE_SELL))
       {
-         int exitDir = (posType == POSITION_TYPE_BUY) ? -1 : +1;
-         if(exitCross == exitDir)
-         {
-            if(InpLog) Print(StringFormat("   => EXIT %s (cross opposto su %s)",
-                (posType == POSITION_TYPE_BUY ? "BUY" : "SELL"), MAPeriodStr(InpExitLine)));
-            CloseAll();
-            return;
-         }
+         if(InpLog) Print("   => EXIT SELL (bullish cross su " + MAPeriodStr(InpExitLine) + ")");
+         CloseType(POSITION_TYPE_SELL);
       }
-
-      if(InpSLLine > 0)
+      if(exitCross == -1 && HasPositionOfType(POSITION_TYPE_BUY))
       {
-         int slCross = CheckCrossD1(g_bufSL);
-         int slDir = (posType == POSITION_TYPE_BUY) ? -1 : +1;
-         if(slCross == slDir)
-         {
-            if(InpLog) Print(StringFormat("   => SL %s (crossover su %s)",
-                (posType == POSITION_TYPE_BUY ? "BUY" : "SELL"), MAPeriodStr(InpSLLine)));
-            CloseAll();
-            g_blockEntryToday = true;
-            return;
-         }
+         if(InpLog) Print("   => EXIT BUY (bearish cross su " + MAPeriodStr(InpExitLine) + ")");
+         CloseType(POSITION_TYPE_BUY);
       }
-
-      if(InpLog) Print("   => IN POSIZIONE - attesa exit o SL");
-      return;
    }
 
-   // --- Nessuna posizione: possiamo entrare ---
+   if(InpSLLine > 0)
+   {
+      int slCross = CheckCrossD1(g_bufSL);
+      if(slCross == +1 && HasPositionOfType(POSITION_TYPE_SELL))
+      {
+         if(InpLog) Print("   => SL SELL (bullish cross su " + MAPeriodStr(InpSLLine) + ")");
+         CloseType(POSITION_TYPE_SELL);
+         g_blockEntryToday = true;
+      }
+      if(slCross == -1 && HasPositionOfType(POSITION_TYPE_BUY))
+      {
+         if(InpLog) Print("   => SL BUY (bearish cross su " + MAPeriodStr(InpSLLine) + ")");
+         CloseType(POSITION_TYPE_BUY);
+         g_blockEntryToday = true;
+      }
+   }
+
+   // --- ENTRY: apre in qualsiasi direzione, senza limiti ---
    if(g_blockEntryToday)
    {
       if(InpLog) Print("   => ENTRY BLOCCATA (SL subito prima)");
