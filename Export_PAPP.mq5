@@ -56,15 +56,6 @@ double MedArr(double &src[],int c)
 }
 
 //+------------------------------------------------------------------+
-double Med7Arr(double &v[7])
-{
-   double a[7];
-   for(int i=0;i<7;i++) a[i]=v[i];
-   ArraySort(a);
-   return a[3];
-}
-
-//+------------------------------------------------------------------+
 void OnStart()
 {
    int g_ind = iCustom(_Symbol,_Period,InpIndicatorName);
@@ -153,7 +144,7 @@ void OnStart()
       {
          double v[7];
          for(int m=0;m<7;m++) v[m]=d1MA[s][m];
-         d1Median[s] = Med7Arr(v);
+          d1Median[s] = MedArr(v,7);
       }
       // Carica D1 close
       ArraySetAsSeries(d1Close,true);
