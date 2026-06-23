@@ -380,8 +380,7 @@ int OnCalculate(const int rates_total,
    if(g_cache.d1bars!=d1bars) { g_cache.d1bars=d1bars; RefreshMetricCache(); }
    Buff_Cluster[0]=g_cache.cluCur; Buff_Vel[0]=g_cache.velCur;
    Buff_Acc[0]=g_cache.accCur;     Buff_Vol[0]=g_cache.volCur;
-   DrawInfo();
-   DrawTags(time[0]);
+   if(_Period == ChartPeriod(0)) { DrawInfo(); DrawTags(time[0]); }
    return rates_total;
   }
 

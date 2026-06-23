@@ -174,10 +174,24 @@ void OpenLevel2(ENUM_ORDER_TYPE type)
    double pt    = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double entry = (type == ORDER_TYPE_BUY) ? tk.ask : tk.bid;
    double tp    = (type == ORDER_TYPE_BUY) ? (entry + InpTP_Points * pt)
-                                           : (entry - InpTP_Points * pt);
+                                            : (entry - InpTP_Points * pt);
    double riskDist = InpTP_Points * pt;
    double lot   = CalcLotByDist(riskDist);
    if(lot <= 0.0) return;
+
+   // Cap lot to avoid margin blowout
+   double marginPerLot = 0;
+   if(SymbolInfoDouble(_Symbol, SYMBOL_MARGIN_INITIAL, marginPerLot) && marginPerLot > 0)
+   {
+       double maxLot = g_acc.FreeMargin() / marginPerLot * 0.3;
+       if(lot > maxLot)
+       {
+           if(InpLog)
+               Print(StringFormat(">>> LEVEL2 lot capped: %.2f -> %.2f (margin=%.2f perLot=%.2f)",
+                   lot, maxLot, g_acc.FreeMargin(), marginPerLot));
+           lot = MathMax(maxLot, SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN));
+       }
+   }
 
    if(InpLog)
       Print(StringFormat(">>> APERTURA LEVEL2 %s lot=%.2f entry=%.5f tp=%.5f",
