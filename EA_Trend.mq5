@@ -45,6 +45,8 @@ int      g_trendFast, g_trendSlow;  // fast/slow per trend state
 int      g_exitFast,  g_exitSlow;   // fast/slow per exit crossover
 datetime g_bar0;
 bool     g_ready;
+bool     g_waitFlip;
+int      g_posDir;     // multi-order: ultima direzione aperta
 
 CTrade        g_trade;
 CPositionInfo g_pos;
@@ -170,10 +172,10 @@ void OpenLevel1(ENUM_ORDER_TYPE type)
       Print(StringFormat(">>> APERTURA TREND %s lot=%.2f entry=%.5f sl=%.5f tp=%.5f",
           (type == ORDER_TYPE_BUY ? "BUY" : "SELL"), lot, entry, sl, tp));
 
-   if(!g_trade.PositionOpen(_Symbol, type, lot, entry, sl, tp))
-   {
-      if(InpLog) Print(">>> ERR TREND retcode=", g_trade.ResultRetcode());
-   }
+   if(g_trade.PositionOpen(_Symbol, type, lot, entry, sl, tp))
+      g_posDir = type;
+   else if(InpLog)
+      Print(">>> ERR TREND retcode=", g_trade.ResultRetcode());
 }
 
 int OnInit()
@@ -196,8 +198,10 @@ int OnInit()
    g_trade.SetDeviationInPoints(50);
    g_trade.SetMarginMode();
    g_trade.SetAsyncMode(false);
-    g_ready = false;
-    g_bar0  = 0;
+    g_ready    = false;
+    g_bar0     = 0;
+    g_waitFlip = false;
+    g_posDir   = WRONG_VALUE;
     {
        int b1 = MAPeriodToBuf(InpTrendLine1);
        int b2 = MAPeriodToBuf(InpTrendLine2);
@@ -299,17 +303,37 @@ void OnTick()
           MAPeriodStr(MathMin(InpExitLine1,InpExitLine2)),
           MAPeriodStr(MathMax(InpExitLine1,InpExitLine2))));
 
-   // === MULTI ORDER: accumula ordini, nessuna verifica posizione ===
+   // === MULTI ORDER ===
    if(InpMultiOrder)
    {
-      // Exit crossover chiude TUTTE le posizioni
       if(exitSig >= 0)
       {
-         if(InpLog) Print("   => EXIT CROSS - CHIUDO TUTTO");
-         CloseAll();
+         ENUM_ORDER_TYPE crossDir = (exitSig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+         if(g_posDir == WRONG_VALUE || crossDir != g_posDir)
+         {
+            if(InpLog) Print("   => EXIT CROSS OPPOSTO - CHIUDO TUTTO, ATTENDO");
+            CloseAll();
+            g_waitFlip = true;
+            g_posDir   = WRONG_VALUE;
+         }
+         else if(InpLog)
+            Print("   => EXIT CROSS STESSA DIR - CONTINUO");
       }
 
-      // Entra in trend su ogni barra (accumula)
+      if(g_waitFlip)
+      {
+         if(exitSig < 0)
+         {
+            g_waitFlip = false;
+            if(InpLog) Print("   => CROSS RIPULITO - RIPRENDO ENTRY");
+         }
+         else
+         {
+            if(InpLog) Print("   => ATTESA RIPULITURA CROSS...");
+            return;
+         }
+      }
+
       if(trendDir != WRONG_VALUE)
       {
          ENUM_ORDER_TYPE t = (trendDir == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
@@ -317,7 +341,7 @@ void OnTick()
          OpenLevel1(t);
       }
       else if(InpLog)
-         Print("   => TREND PIATTO - nessun entry");
+         Print("   => TREND NON CONFERMATO - nessun entry");
       return;
    }
 
@@ -340,15 +364,29 @@ void OnTick()
          ENUM_ORDER_TYPE curType = (realDir == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
          if(exitType != curType)
          {
-            if(InpLog) Print(StringFormat("   => EXIT CROSS OPPOSTO - FLIP %s",
+            if(InpLog) Print(StringFormat("   => EXIT CROSS OPPOSTO - CHIUDO, ATTENDO %s",
                 exitType==ORDER_TYPE_BUY?"BUY":"SELL"));
             CloseAll();
-            OpenLevel1(exitType);
+            g_waitFlip = true;
             return;
          }
       }
       if(InpLog) Print("   => POSIZIONE APERTA - attesa flip o TP/SL");
       return;
+   }
+
+   if(g_waitFlip)
+   {
+      if(exitSig < 0)
+      {
+         g_waitFlip = false;
+         if(InpLog) Print("   => CROSS RIPULITO - RIPRENDO ENTRY");
+      }
+      else
+      {
+         if(InpLog) Print("   => ATTESA RIPULITURA CROSS...");
+         return;
+      }
    }
 
    if(trendDir == WRONG_VALUE)
