@@ -256,7 +256,8 @@ void OnTick()
 
    if(!IsNewBar()) return;
 
-   // --- Legge stato attuale del trend (fast vs slow a shift=1) ---
+   // --- Legge prezzo e stato trend ---
+   double price = iClose(_Symbol, _Period, 1);
    double tFast, tSlow;
    if(!ReadBufD1(g_trendFast, 1, tFast) || !ReadBufD1(g_trendSlow, 1, tSlow))
    {
@@ -264,15 +265,18 @@ void OnTick()
       return;
    }
 
-   // fast > slow = rialzista → BUY
-   int trendDir = (tFast > tSlow) ? POSITION_TYPE_BUY : ((tFast < tSlow) ? POSITION_TYPE_SELL : WRONG_VALUE);
+   int trendDir = WRONG_VALUE;
+   if(price > tFast && price > tSlow && tFast > tSlow)
+      trendDir = POSITION_TYPE_BUY;
+   else if(price < tFast && price < tSlow && tFast < tSlow)
+      trendDir = POSITION_TYPE_SELL;
 
    if(InpLog)
-      Print(StringFormat("=== TREND === barra=%s %s[1]=%.5f %s[1]=%.5f -> %s",
-          TimeToString(g_bar0),
+      Print(StringFormat("=== TREND === barra=%s prezzo=%.5f %s[1]=%.5f %s[1]=%.5f -> %s",
+          TimeToString(g_bar0), price,
           MAPeriodStr(MathMin(InpTrendLine1,InpTrendLine2)), tFast,
           MAPeriodStr(MathMax(InpTrendLine1,InpTrendLine2)), tSlow,
-          trendDir==WRONG_VALUE ? "PIATTO" : (trendDir==POSITION_TYPE_BUY ? "BUY" : "SELL")));
+          trendDir==WRONG_VALUE ? "PIATTO/NON CONFERMATO" : (trendDir==POSITION_TYPE_BUY ? "BUY" : "SELL")));
 
    // --- Legge exit crossover (veloce incrocia lenta) ---
    double xf1, xs1, xf2, xs2;
