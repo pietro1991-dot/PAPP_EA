@@ -3,7 +3,7 @@
 //|                                                        PaPP v2   |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.07"
+#property version   "2.10"
 #property description "EA Crossover - Entry/Exit lines separati, flip su exit crossover"
 
 #include <Trade\Trade.mqh>
@@ -86,32 +86,25 @@ bool ReadBufD1(int buf, int d1Shift, double &val)
 
    double tmp[1];
 
-   // D1 handle with Bars() absolute index
+   // D1 handle: CopyBuffer(handle, buf, d1Shift, 1, tmp) con AS_SERIES
+   // start_pos = shift dal presente (0=oggi, 1=ieri, 2=2gg fa)
    if(g_indD1 != INVALID_HANDLE)
    {
-      int d1Bars = Bars(_Symbol, PERIOD_D1);
-      if(d1Bars > d1Shift)
+      int copied = CopyBuffer(g_indD1, buf, d1Shift, 1, tmp);
+      if(copied == 1 && IsPriceOk(tmp[0]))
       {
-         int d1Idx = d1Bars - 1 - d1Shift;
-         int copied = CopyBuffer(g_indD1, buf, d1Idx, 1, tmp);
-         if(copied == 1 && IsPriceOk(tmp[0]))
-         {
-            val = tmp[0];
-            if(InpLog)
-               Print(StringFormat("   DEBUG ReadBufD1(D1) buf=%d shift=%d d1Bars=%d idx=%d val=%.5f",
-                   buf, d1Shift, d1Bars, d1Idx, val));
-            return true;
-         }
+         val = tmp[0];
+         if(InpLog)
+            Print(StringFormat("   DEBUG ReadBufD1(D1) buf=%d shift=%d val=%.5f",
+                buf, d1Shift, val));
+         return true;
       }
    }
 
    // Fallback chart handle
    int chartShift = iBarShift(_Symbol, _Period, d1Time, false);
    if(chartShift < 0) return false;
-   int chartBars = Bars(_Symbol, _Period);
-   if(chartBars <= chartShift) return false;
-   int chartIdx = chartBars - 1 - chartShift;
-   int copied = CopyBuffer(g_ind, buf, chartIdx, 1, tmp);
+   int copied = CopyBuffer(g_ind, buf, chartShift, 1, tmp);
    if(copied != 1) return false;
    val = tmp[0];
    return IsPriceOk(val);
