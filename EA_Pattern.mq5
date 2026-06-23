@@ -4,10 +4,10 @@
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
 #property version   "1.00"
-#property description "Pattern EA - Entra su crossover MA D1, esce su crossover MA opposto"
-#property description "Basato su pattern_mining.py: MA3/7/14/30/121/182/365/Median"
-#property description "Entry: close D1 incrocia linea, Exit: close D1 incrocia linea opposta"
-#property description "SL/TP opzionali su linea MA o punti fissi"
+#property description "Pattern EA - Tutti i pattern da pattern_mining.py"
+#property description "Entry: close D1 crossover su MA (3/7/14/30/121/182/365/Med)"
+#property description "Exit: close D1 crossover opposto su altra MA (oppure SL/TP)"
+#property description "SL su linea MA (dynamic check) o SL/TP fissi in punti"
 
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
@@ -31,7 +31,6 @@ input int     InpSLLine        = 0;             // SL su linea MA (365=MA365)
 input int     InpSLPoints      = 0;             // SL fissa in punti
 
 input group   "==========  TAKE PROFIT (0=nessuno)  =========="
-input int     InpTPLine        = 0;             // TP su linea MA
 input int     InpTPPoints      = 0;             // TP fisso in punti
 
 #define BUF_MEDIAN  0
@@ -46,7 +45,7 @@ input int     InpTPPoints      = 0;             // TP fisso in punti
 int      g_ind;
 int      g_indD1;
 int      g_bufEntry, g_bufExit;
-int      g_bufSL, g_bufTP;
+int      g_bufSL;
 datetime g_bar0;
 datetime g_lastD1Today;
 bool     g_ready;
@@ -112,15 +111,6 @@ bool ReadBufD1(int buf, int d1Shift, double &val)
 }
 
 //+------------------------------------------------------------------+
-bool ReadBuf(int buf, int shift, double &val)
-{
-   double tmp[1];
-   if(CopyBuffer(g_ind, buf, shift, 1, tmp) != 1) return false;
-   val = tmp[0];
-   return IsPriceOk(val);
-}
-
-//+------------------------------------------------------------------+
 void CloseAll()
 {
    for(int i = PositionsTotal() - 1; i >= 0; i--)
@@ -174,6 +164,7 @@ double CalcLotByDist(double riskDist)
 // Ritorna: +1 bullish cross, -1 bearish cross, 0 nessuno
 int CheckCrossD1(int buf)
 {
+   if(buf < 0) return 0;
    double d1Close2 = iClose(_Symbol, PERIOD_D1, 2);
    double d1Close1 = iClose(_Symbol, PERIOD_D1, 1);
    if(d1Close2 <= 0.0 || d1Close1 <= 0.0) return 0;
@@ -186,20 +177,6 @@ int CheckCrossD1(int buf)
    if(d1Close1 < ma1 && d1Close2 >= ma2) return -1;
 
    return 0;
-}
-
-//+------------------------------------------------------------------+
-int CountPositions()
-{
-   int c = 0;
-   for(int i = PositionsTotal() - 1; i >= 0; i--)
-   {
-      if(!g_pos.SelectByIndex(i))          continue;
-      if(g_pos.Magic()  != InpMagic)       continue;
-      if(g_pos.Symbol() != _Symbol)        continue;
-      c++;
-   }
-   return c;
 }
 
 //+------------------------------------------------------------------+
@@ -244,50 +221,18 @@ void TryEnter()
    double sl = 0.0, tp = 0.0;
    double riskDist = pipSize * 1000.0;
 
-   if(InpSLLine > 0)
-   {
-      double slMA = 0.0;
-      if(ReadBufD1(g_bufSL, 1, slMA) && IsPriceOk(slMA))
-      {
-         bool slOk = false;
-         if(wantType == ORDER_TYPE_BUY && slMA < entry) { sl = slMA; slOk = true; }
-         if(wantType == ORDER_TYPE_SELL && slMA > entry) { sl = slMA; slOk = true; }
-         if(slOk) riskDist = MathAbs(entry - sl);
-      }
-   }
+   // SL su linea: NON settare SL fixed (la linea si muove, il fixed sarebbe stale)
+   // La chiusura avviene via dynamic check in OnTick (CheckSLCross)
    if(InpSLPoints > 0)
    {
       double slFix = (wantType == ORDER_TYPE_BUY)
          ? entry - InpSLPoints * pt
          : entry + InpSLPoints * pt;
-      if(sl == 0.0)
-      {
-         sl = slFix;
-         riskDist = InpSLPoints * pt;
-      }
-      else
-      {
-         double fixDist = MathAbs(entry - slFix);
-         double curDist = MathAbs(entry - sl);
-         if(fixDist < curDist)
-         {
-            sl = slFix;
-            riskDist = fixDist;
-         }
-      }
+      sl = slFix;
+      riskDist = InpSLPoints * pt;
    }
 
-   if(InpTPLine > 0)
-   {
-      double tpMA = 0.0;
-      if(ReadBufD1(g_bufTP, 1, tpMA) && IsPriceOk(tpMA))
-      {
-         bool tpOk = false;
-         if(wantType == ORDER_TYPE_BUY && tpMA > entry) { tp = tpMA; tpOk = true; }
-         if(wantType == ORDER_TYPE_SELL && tpMA < entry) { tp = tpMA; tpOk = true; }
-      }
-   }
-   if(InpTPPoints > 0 && tp == 0.0)
+   if(InpTPPoints > 0)
       tp = (wantType == ORDER_TYPE_BUY)
          ? entry + InpTPPoints * pt
          : entry - InpTPPoints * pt;
@@ -340,9 +285,8 @@ int OnInit()
    g_trade.SetAsyncMode(false);
 
    g_bufEntry = MAPeriodToBuf(InpEntryLine);
-   g_bufExit  = MAPeriodToBuf(InpExitLine);
+   g_bufExit  = (InpExitLine > 0) ? MAPeriodToBuf(InpExitLine) : -1;
    g_bufSL    = (InpSLLine > 0)  ? MAPeriodToBuf(InpSLLine)  : -1;
-   g_bufTP    = (InpTPLine > 0)  ? MAPeriodToBuf(InpTPLine)  : -1;
 
    g_ready  = false;
    g_bar0   = 0;
@@ -351,13 +295,14 @@ int OnInit()
 
    if(InpLog)
       Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% "
-          "Entry=%s Exit=%s Dir=%s SL=%s%d TP=%s%d",
+          "Entry=%s Exit=%s Dir=%s SL=%s%d TP=%dpt",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
          InpMagic, InpRiskPct,
-         MAPeriodStr(InpEntryLine), MAPeriodStr(InpExitLine),
+         MAPeriodStr(InpEntryLine),
+         (InpExitLine>0?MAPeriodStr(InpExitLine):"OFF"),
          (InpDirection==0?"BOTH":(InpDirection==1?"BUY":"SELL")),
          (InpSLLine>0?MAPeriodStr(InpSLLine)+" ":"OFF "), InpSLPoints,
-         (InpTPLine>0?MAPeriodStr(InpTPLine)+" ":"OFF "), InpTPPoints));
+         InpTPPoints));
 
    return INIT_SUCCEEDED;
 }
@@ -411,9 +356,8 @@ void OnTick()
 
    if(InpLog)
    {
-      int posCount = (posType == WRONG_VALUE) ? 0 : 1;
       string entryStr = (entryCross==0?"NESSUNO":(entryCross>0?"BUY":"SELL"));
-      string exitStr  = (exitCross ==0?"NESSUNO":(exitCross >0?"BUY":"SELL"));
+      string exitStr  = (InpExitLine==0?"OFF":(exitCross==0?"NESSUNO":(exitCross>0?"BUY":"SELL")));
       string posStr   = (posType==WRONG_VALUE?"NESSUNO":(posType==POSITION_TYPE_BUY?"BUY":"SELL"));
       Print(StringFormat("=== SEGNALE === barra=%s D1=%s pos=%s entry=%s exit=%s",
           TimeToString(g_bar0), TimeToString(d1today), posStr, entryStr, exitStr));
@@ -422,13 +366,16 @@ void OnTick()
    // --- Se abbiamo una posizione aperta ---
    if(posType != WRONG_VALUE)
    {
-      int exitDir = (posType == POSITION_TYPE_BUY) ? -1 : +1;
-      if(exitCross == exitDir)
+      if(InpExitLine > 0)
       {
-         if(InpLog) Print(StringFormat("   => EXIT %s (cross opposto su %s)",
-             (posType == POSITION_TYPE_BUY ? "BUY" : "SELL"), MAPeriodStr(InpExitLine)));
-         CloseAll();
-         return;
+         int exitDir = (posType == POSITION_TYPE_BUY) ? -1 : +1;
+         if(exitCross == exitDir)
+         {
+            if(InpLog) Print(StringFormat("   => EXIT %s (cross opposto su %s)",
+                (posType == POSITION_TYPE_BUY ? "BUY" : "SELL"), MAPeriodStr(InpExitLine)));
+            CloseAll();
+            return;
+         }
       }
 
       if(InpSLLine > 0)
