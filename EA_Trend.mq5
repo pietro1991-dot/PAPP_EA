@@ -41,8 +41,8 @@ input bool    InpLog           = true;
 
 int      g_ind;
 int      g_indD1;
-int      g_bufTrend1, g_bufTrend2;
-int      g_bufExit1,  g_bufExit2;
+int      g_trendFast, g_trendSlow;  // fast/slow per trend state
+int      g_exitFast,  g_exitSlow;   // fast/slow per exit crossover
 datetime g_bar0;
 bool     g_ready;
 
@@ -196,12 +196,20 @@ int OnInit()
    g_trade.SetDeviationInPoints(50);
    g_trade.SetMarginMode();
    g_trade.SetAsyncMode(false);
-   g_ready = false;
-   g_bar0  = 0;
-   g_bufTrend1 = MAPeriodToBuf(InpTrendLine1);
-   g_bufTrend2 = MAPeriodToBuf(InpTrendLine2);
-    g_bufExit1  = MAPeriodToBuf(InpExitLine1);
-    g_bufExit2  = MAPeriodToBuf(InpExitLine2);
+    g_ready = false;
+    g_bar0  = 0;
+    {
+       int b1 = MAPeriodToBuf(InpTrendLine1);
+       int b2 = MAPeriodToBuf(InpTrendLine2);
+       if(InpTrendLine1 < InpTrendLine2) { g_trendFast = b1; g_trendSlow = b2; }
+       else                               { g_trendFast = b2; g_trendSlow = b1; }
+    }
+    {
+       int b1 = MAPeriodToBuf(InpExitLine1);
+       int b2 = MAPeriodToBuf(InpExitLine2);
+       if(InpExitLine1 < InpExitLine2) { g_exitFast = b1; g_exitSlow = b2; }
+       else                             { g_exitFast = b2; g_exitSlow = b1; }
+    }
 
    if(InpLog)
        Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% "
@@ -248,41 +256,44 @@ void OnTick()
 
    if(!IsNewBar()) return;
 
-   // --- Legge stato attuale del trend (shift=1) ---
-   double t1, t2;
-   if(!ReadBufD1(g_bufTrend1, 1, t1) || !ReadBufD1(g_bufTrend2, 1, t2))
+   // --- Legge stato attuale del trend (fast vs slow a shift=1) ---
+   double tFast, tSlow;
+   if(!ReadBufD1(g_trendFast, 1, tFast) || !ReadBufD1(g_trendSlow, 1, tSlow))
    {
       if(InpLog) Print("   TREND: LETTURA FALLITA");
       return;
    }
 
-   // TrendLine1 = lenta (es. 365), TrendLine2 = veloce (es. 121)
-   // veloce > lenta = rialzista → BUY
-   int trendDir = (t2 > t1) ? POSITION_TYPE_BUY : ((t2 < t1) ? POSITION_TYPE_SELL : WRONG_VALUE);
+   // fast > slow = rialzista → BUY
+   int trendDir = (tFast > tSlow) ? POSITION_TYPE_BUY : ((tFast < tSlow) ? POSITION_TYPE_SELL : WRONG_VALUE);
 
    if(InpLog)
       Print(StringFormat("=== TREND === barra=%s %s[1]=%.5f %s[1]=%.5f -> %s",
           TimeToString(g_bar0),
-          MAPeriodStr(InpTrendLine1), t1, MAPeriodStr(InpTrendLine2), t2,
+          MAPeriodStr(MathMin(InpTrendLine1,InpTrendLine2)), tFast,
+          MAPeriodStr(MathMax(InpTrendLine1,InpTrendLine2)), tSlow,
           trendDir==WRONG_VALUE ? "PIATTO" : (trendDir==POSITION_TYPE_BUY ? "BUY" : "SELL")));
 
-   // --- Legge exit crossover ---
+   // --- Legge exit crossover (veloce incrocia lenta) ---
    double xf1, xs1, xf2, xs2;
    int exitSig = -1;
-   if(ReadBufD1(g_bufExit2, 1, xf1) && ReadBufD1(g_bufExit1, 1, xs1) &&
-      ReadBufD1(g_bufExit2, 2, xf2) && ReadBufD1(g_bufExit1, 2, xs2))
+   if(ReadBufD1(g_exitFast, 1, xf1) && ReadBufD1(g_exitSlow, 1, xs1) &&
+      ReadBufD1(g_exitFast, 2, xf2) && ReadBufD1(g_exitSlow, 2, xs2))
    {
       if(xf1 > xs1 && xf2 <= xs2) exitSig = 0;
       else if(xf1 < xs1 && xf2 >= xs2) exitSig = 1;
       if(InpLog)
          Print(StringFormat("   EXIT  %s[1]=%.5f %s[1]=%.5f | %s[2]=%.5f %s[2]=%.5f -> %s",
-             MAPeriodStr(InpExitLine2), xf1, MAPeriodStr(InpExitLine1), xs1,
-             MAPeriodStr(InpExitLine2), xf2, MAPeriodStr(InpExitLine1), xs2,
+             MAPeriodStr(MathMin(InpExitLine1,InpExitLine2)), xf1,
+             MAPeriodStr(MathMax(InpExitLine1,InpExitLine2)), xs1,
+             MAPeriodStr(MathMin(InpExitLine1,InpExitLine2)), xf2,
+             MAPeriodStr(MathMax(InpExitLine1,InpExitLine2)), xs2,
              exitSig<0 ? "NESSUN CROSS" : (exitSig==0 ? "CROSS BUY" : "CROSS SELL")));
    }
    else if(InpLog)
       Print(StringFormat("   EXIT  %s/%s: LETTURA FALLITA",
-          MAPeriodStr(InpExitLine2), MAPeriodStr(InpExitLine1)));
+          MAPeriodStr(MathMin(InpExitLine1,InpExitLine2)),
+          MAPeriodStr(MathMax(InpExitLine1,InpExitLine2))));
 
    // === MULTI ORDER: accumula ordini, nessuna verifica posizione ===
    if(InpMultiOrder)

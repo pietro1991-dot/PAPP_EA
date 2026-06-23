@@ -42,6 +42,8 @@ int      g_ind;      // chart timeframe handle
 int      g_indD1;    // D1 timeframe handle
 int      g_bufEntry1, g_bufEntry2;
 int      g_bufExit1,  g_bufExit2;
+int      g_entryFast, g_entrySlow;  // fast/slow per entry crossover
+int      g_exitFast,  g_exitSlow;   // fast/slow per exit crossover
 datetime g_bar0;
 datetime g_lastD1Today;
 bool     g_ready;
@@ -252,11 +254,16 @@ int OnInit()
    g_ready = false;
    g_bar0  = 0;
    g_lastD1Today = 0;
-   g_bufEntry1 = MAPeriodToBuf(InpEntryLine1);
-   g_bufEntry2 = MAPeriodToBuf(InpEntryLine2);
-   g_bufExit1  = MAPeriodToBuf(InpExitLine1);
-   g_bufExit2  = MAPeriodToBuf(InpExitLine2);
-   g_currentDirection = WRONG_VALUE;
+    g_bufEntry1 = MAPeriodToBuf(InpEntryLine1);
+    g_bufEntry2 = MAPeriodToBuf(InpEntryLine2);
+    g_bufExit1  = MAPeriodToBuf(InpExitLine1);
+    g_bufExit2  = MAPeriodToBuf(InpExitLine2);
+    // Determina qual e' veloce/lenta per periodo (non per nome input)
+    if(InpEntryLine1 < InpEntryLine2) { g_entryFast = g_bufEntry1; g_entrySlow = g_bufEntry2; }
+    else                               { g_entryFast = g_bufEntry2; g_entrySlow = g_bufEntry1; }
+    if(InpExitLine1 < InpExitLine2)   { g_exitFast  = g_bufExit1;  g_exitSlow  = g_bufExit2; }
+    else                               { g_exitFast  = g_bufExit2;  g_exitSlow  = g_bufExit1; }
+    g_currentDirection = WRONG_VALUE;
 
    if(InpLog)
        Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% "
@@ -339,41 +346,47 @@ void OnTick()
        Print(StringFormat("=== SEGNALE === barra=%s D1=%s direzione=%s posizioni=%d",
            TimeToString(g_bar0), TimeToString(d1today), dirStr, PositionsTotal()));
 
-   // --- CROSSOVER ENTRY ---
+   // --- CROSSOVER ENTRY (veloce incrocia lenta) ---
    double ef1, es1, ef2, es2;
    int entrySig = -1;
-   if(ReadBufD1(g_bufEntry2, 1, ef1) && ReadBufD1(g_bufEntry1, 1, es1) &&
-      ReadBufD1(g_bufEntry2, 2, ef2) && ReadBufD1(g_bufEntry1, 2, es2))
+   if(ReadBufD1(g_entryFast, 1, ef1) && ReadBufD1(g_entrySlow, 1, es1) &&
+      ReadBufD1(g_entryFast, 2, ef2) && ReadBufD1(g_entrySlow, 2, es2))
    {
       if(ef1 > es1 && ef2 <= es2) entrySig = 0;
       else if(ef1 < es1 && ef2 >= es2) entrySig = 1;
       if(InpLog)
          Print(StringFormat("   ENTRY %s[1]=%.5f %s[1]=%.5f | %s[2]=%.5f %s[2]=%.5f -> %s",
-             MAPeriodStr(InpEntryLine2), ef1, MAPeriodStr(InpEntryLine1), es1,
-             MAPeriodStr(InpEntryLine2), ef2, MAPeriodStr(InpEntryLine1), es2,
+             MAPeriodStr(MathMin(InpEntryLine1,InpEntryLine2)), ef1,
+             MAPeriodStr(MathMax(InpEntryLine1,InpEntryLine2)), es1,
+             MAPeriodStr(MathMin(InpEntryLine1,InpEntryLine2)), ef2,
+             MAPeriodStr(MathMax(InpEntryLine1,InpEntryLine2)), es2,
              entrySig<0 ? "NESSUN CROSS" : (entrySig==0 ? "CROSS BUY" : "CROSS SELL")));
    }
    else if(InpLog)
       Print(StringFormat("   ENTRY %s/%s: LETTURA FALLITA",
-          MAPeriodStr(InpEntryLine2), MAPeriodStr(InpEntryLine1)));
+          MAPeriodStr(MathMin(InpEntryLine1,InpEntryLine2)),
+          MAPeriodStr(MathMax(InpEntryLine1,InpEntryLine2))));
 
-   // --- CROSSOVER EXIT ---
+   // --- CROSSOVER EXIT (veloce incrocia lenta) ---
    double xf1, xs1, xf2, xs2;
    int exitSig = -1;
-   if(ReadBufD1(g_bufExit2, 1, xf1) && ReadBufD1(g_bufExit1, 1, xs1) &&
-      ReadBufD1(g_bufExit2, 2, xf2) && ReadBufD1(g_bufExit1, 2, xs2))
+   if(ReadBufD1(g_exitFast, 1, xf1) && ReadBufD1(g_exitSlow, 1, xs1) &&
+      ReadBufD1(g_exitFast, 2, xf2) && ReadBufD1(g_exitSlow, 2, xs2))
    {
       if(xf1 > xs1 && xf2 <= xs2) exitSig = 0;
       else if(xf1 < xs1 && xf2 >= xs2) exitSig = 1;
       if(InpLog)
          Print(StringFormat("   EXIT  %s[1]=%.5f %s[1]=%.5f | %s[2]=%.5f %s[2]=%.5f -> %s",
-             MAPeriodStr(InpExitLine2), xf1, MAPeriodStr(InpExitLine1), xs1,
-             MAPeriodStr(InpExitLine2), xf2, MAPeriodStr(InpExitLine1), xs2,
+             MAPeriodStr(MathMin(InpExitLine1,InpExitLine2)), xf1,
+             MAPeriodStr(MathMax(InpExitLine1,InpExitLine2)), xs1,
+             MAPeriodStr(MathMin(InpExitLine1,InpExitLine2)), xf2,
+             MAPeriodStr(MathMax(InpExitLine1,InpExitLine2)), xs2,
              exitSig<0 ? "NESSUN CROSS" : (exitSig==0 ? "CROSS BUY" : "CROSS SELL")));
    }
    else if(InpLog)
       Print(StringFormat("   EXIT  %s/%s: LETTURA FALLITA",
-          MAPeriodStr(InpExitLine2), MAPeriodStr(InpExitLine1)));
+          MAPeriodStr(MathMin(InpExitLine1,InpExitLine2)),
+          MAPeriodStr(MathMax(InpExitLine1,InpExitLine2))));
 
    // --- NONE: entry crossover apre Level 1 ---
    if(g_currentDirection == WRONG_VALUE)
