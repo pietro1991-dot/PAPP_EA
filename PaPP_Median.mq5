@@ -292,34 +292,18 @@ int OnCalculate(const int rates_total,
    if(newFirst || newBar)
      {
       g_d1.bars = d1bars;
-      if(newFirst || d1bars<g_d1.bars)
+      // Full reload su ogni nuova barra D1 (Claude fix)
+      if(ArrayResize(g_d1.med,d1bars)<0) return 0;
+      ArraySetAsSeries(g_d1.med,true);
+      if(ArrayResize(g_d1.cols,d1bars)<0) return 0;
+      for(int m=0;m<7;m++)
         {
-         // Full load: copia tutta la storia D1
-         if(ArrayResize(g_d1.med,d1bars)<0) return 0;
-         ArraySetAsSeries(g_d1.med,true);
-         if(ArrayResize(g_d1.cols,d1bars)<0) return 0;
-         for(int m=0;m<7;m++)
-           {
-            double tmp[]; ArraySetAsSeries(tmp,true);
-            int got = CopyBuffer(hMA[m],0,0,d1bars,tmp);
-            if(got<=0) return 0;
-             for(int s=0;s<d1bars;s++) g_d1.cols[s][m] = (s<got && IsVal(tmp[s])) ? tmp[s] : 0.0;
-           }
-         for(int s=0;s<d1bars;s++) g_d1.med[s] = MedOf7(s);
+         double tmp[]; ArraySetAsSeries(tmp,true);
+         int got = CopyBuffer(hMA[m],0,0,d1bars,tmp);
+         if(got<=0) return 0;
+          for(int s=0;s<d1bars;s++) g_d1.cols[s][m] = (s<got && IsVal(tmp[s])) ? tmp[s] : 0.0;
         }
-      else
-        {
-         // Nuova barra D1: ArrayResize auto-shift, copia solo barra 0
-         if(ArrayResize(g_d1.med,d1bars)<0) return 0;
-         if(ArrayResize(g_d1.cols,d1bars)<0) return 0;
-         for(int m=0;m<7;m++)
-           {
-            double tmp[1];
-             double _v0 = (CopyBuffer(hMA[m],0,0,1,tmp)==1) ? tmp[0] : 0.0;
-             g_d1.cols[0][m] = IsVal(_v0) ? _v0 : 0.0;
-           }
-         g_d1.med[0] = MedOf7(0);
-        }
+      for(int s=0;s<d1bars;s++) g_d1.med[s] = MedOf7(s);
      }
    else
      {
