@@ -22,6 +22,7 @@ input int     InpExitLine2     = 121;
 
 input group   "==========  RISK / SL / TP  =========="
 input double  InpRiskPct       = 1.0;
+input bool    InpMultiOrder    = false;         // true = accumula ordini su ogni barra (entrambe le direzioni)
 input bool    InpUseSL         = false;
 input int     InpSL_Points     = 30;
 input bool    InpUseTP         = false;
@@ -281,7 +282,29 @@ void OnTick()
       Print(StringFormat("   EXIT  %s/%s: LETTURA FALLITA",
           MAPeriodStr(InpExitLine2), MAPeriodStr(InpExitLine1)));
 
-   // --- Sincronizza direzione dalle posizioni reali ---
+   // === MULTI ORDER: accumula ordini, nessuna verifica posizione ===
+   if(InpMultiOrder)
+   {
+      // Exit crossover chiude TUTTE le posizioni
+      if(exitSig >= 0)
+      {
+         if(InpLog) Print("   => EXIT CROSS - CHIUDO TUTTO");
+         CloseAll();
+      }
+
+      // Entra in trend su ogni barra (accumula)
+      if(trendDir != WRONG_VALUE)
+      {
+         ENUM_ORDER_TYPE t = (trendDir == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+         if(InpLog) Print(StringFormat("   => MULTI ENTRY %s", t==ORDER_TYPE_BUY?"BUY":"SELL"));
+         OpenLevel1(t);
+      }
+      else if(InpLog)
+         Print("   => TREND PIATTO - nessun entry");
+      return;
+   }
+
+   // === SINGOLO ORDINE: logica originale (solo una posizione) ===
    ENUM_POSITION_TYPE realDir = WRONG_VALUE;
    for(int i = 0; i < PositionsTotal(); i++)
    {
@@ -290,37 +313,34 @@ void OnTick()
          realDir = g_pos.PositionType();
          break;
       }
-    }
- 
-    // --- Exit crossover opposto: chiude e inverte ---
-   if(exitSig >= 0 && realDir != WRONG_VALUE)
+   }
+
+   if(realDir != WRONG_VALUE)
    {
-      ENUM_ORDER_TYPE exitType = (exitSig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
-      ENUM_ORDER_TYPE curType = (realDir == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
-      if(exitType != curType)
+      if(exitSig >= 0)
+      {
+         ENUM_ORDER_TYPE exitType = (exitSig == 0) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+         ENUM_ORDER_TYPE curType = (realDir == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+         if(exitType != curType)
          {
-            if(InpLog) Print(StringFormat("   => EXIT CROSS OPPOSTO (cur=%s exit=%s) - FLIP",
-                curType==ORDER_TYPE_BUY?"BUY":"SELL", exitType==ORDER_TYPE_BUY?"BUY":"SELL"));
+            if(InpLog) Print(StringFormat("   => EXIT CROSS OPPOSTO - FLIP %s",
+                exitType==ORDER_TYPE_BUY?"BUY":"SELL"));
             CloseAll();
             OpenLevel1(exitType);
             return;
          }
-   }
-
-   // --- Nessuna posizione: entra nella direzione del trend ---
-   if(realDir == WRONG_VALUE)
-   {
-      if(trendDir == WRONG_VALUE)
-      {
-         if(InpLog) Print("   => TREND PIATTO - attesa...");
-         return;
       }
-      ENUM_ORDER_TYPE t = (trendDir == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
-      if(InpLog) Print(StringFormat("   => ENTRY TREND -> %s (Level 1)", t==ORDER_TYPE_BUY?"BUY":"SELL"));
-      OpenLevel1(t);
+      if(InpLog) Print("   => POSIZIONE APERTA - attesa flip o TP/SL");
       return;
    }
 
-   if(InpLog) Print("   => POSIZIONE APERTA - attesa flip o TP/SL");
+   if(trendDir == WRONG_VALUE)
+   {
+      if(InpLog) Print("   => TREND PIATTO - attesa...");
+      return;
+   }
+   ENUM_ORDER_TYPE t = (trendDir == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+   if(InpLog) Print(StringFormat("   => ENTRY TREND -> %s", t==ORDER_TYPE_BUY?"BUY":"SELL"));
+   OpenLevel1(t);
 }
 //+------------------------------------------------------------------+
