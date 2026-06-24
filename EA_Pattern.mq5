@@ -17,6 +17,7 @@ input string  InpIndicatorName = "PaPP_Median.ex5";
 input group   "==========  RISK GLOBALE  =========="
 input double  InpRiskPct       = 1.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
+input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
 input int     InpMagic         = 20260623;
 input bool    InpLog           = true;
 
@@ -136,7 +137,7 @@ int MAPeriodToBuf(int period)
       case 7:   return BUF_MA7;
       case 3:   return BUF_MA3;
    }
-   return BUF_MA365;
+   return -1;
 }
 
 string MAPeriodStr(int period)
@@ -172,6 +173,12 @@ void InitPatterns()
    for(int i=0; i<10; i++)
    {
       if(d[i] == 0) continue;
+
+      // Validazione linee
+      if(MAPeriodToBuf(e[i]) < 0) { Print("WARNING: Pattern ", i+1, " entry line ", e[i], " invalida"); continue; }
+      if(x[i] > 0 && MAPeriodToBuf(x[i]) < 0) { Print("WARNING: Pattern ", i+1, " exit line ", x[i], " invalida"); continue; }
+      if(s[i] > 0 && MAPeriodToBuf(s[i]) < 0) { Print("WARNING: Pattern ", i+1, " SL line ", s[i], " invalida"); continue; }
+
       g_patterns[g_numPatterns].entry  = e[i];
       g_patterns[g_numPatterns].exit   = x[i];
       g_patterns[g_numPatterns].slLine = s[i];
@@ -180,13 +187,19 @@ void InitPatterns()
       g_numPatterns++;
    }
 
+   if(g_numPatterns == 0)
+      Print("ATTENZIONE: Nessun pattern attivo! Imposta Dir>0 per almeno un pattern.");
+
    if(InpLog)
+   {
+      Print("NOTA: Exit/SL verificati solo a chiusura D1. Senza hard SL, gap intraday non coperti.");
       for(int i=0; i<g_numPatterns; i++)
          Print(StringFormat("  Pattern[%d]: %s %s -> %s%s%s",
             i, MAPeriodStr(g_patterns[i].entry), DirStr(g_patterns[i].dir),
             (g_patterns[i].exit>0?(MAPeriodStr(g_patterns[i].exit)+" cross"):""),
             (g_patterns[i].slLine>0?(" SL="+MAPeriodStr(g_patterns[i].slLine)):""),
             (g_patterns[i].tpPt>0?(" TP="+IntegerToString(g_patterns[i].tpPt)+"pt"):"")));
+   }
 }
 
 //+------------------------------------------------------------------+
@@ -252,7 +265,6 @@ double CalcLotByDist(double riskDist)
    double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
    if(tickVal <= 0.0 || tickSize <= 0.0) return 0.0;
    double ticks  = riskDist / tickSize;
-   if(ticks <= 0.0) ticks = 1000.0;
    double lotRaw = risk / (ticks * tickVal);
    double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
    double minLot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
@@ -282,8 +294,11 @@ void OpenPatternTrade(int pi)
    else if(p.dir == 2 && cross == -1) wantDir = -1;
    else return;
 
+   // Spread check
    MqlTick tk;
    if(!SymbolInfoTick(_Symbol, tk)) return;
+   double spreadPts = (tk.ask - tk.bid) / _Point;
+   if(spreadPts > 50) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt) - salto"); return; }
 
    double pt     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double pipSize = pt * 10.0;
@@ -296,6 +311,22 @@ void OpenPatternTrade(int pi)
    {
       tp = (wantDir == 1) ? entry + p.tpPt * pt : entry - p.tpPt * pt;
       riskDist = p.tpPt * pt;
+   }
+
+   // Hard SL broker-side (protezione gap/disconnessione) basato sulla SL line al momento entry
+   if(p.slLine > 0)
+   {
+      double slVal = 0.0;
+      if(ReadBufD1(MAPeriodToBuf(p.slLine), 1, slVal) && IsPriceOk(slVal))
+      {
+         if(wantDir == 1 && slVal < entry) sl = slVal;
+         else if(wantDir == 2 && slVal > entry) sl = slVal;
+         if(sl > 0.0)
+         {
+            double hardDist = MathAbs(entry - sl);
+            if(hardDist > riskDist) riskDist = hardDist;
+         }
+      }
    }
 
    double lot = CalcLotByDist(riskDist);
@@ -376,9 +407,9 @@ int OnInit()
    InitPatterns();
 
    if(InpLog)
-      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% patterns=%d",
+      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxPos=%d patterns=%d",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
-         InpMagic, InpRiskPct, g_numPatterns));
+         InpMagic, InpRiskPct, InpMaxPos, g_numPatterns));
    return INIT_SUCCEEDED;
 }
 
@@ -429,6 +460,12 @@ void OnTick()
           TimeToString(g_bar0), TimeToString(d1today), PositionsTotal(), g_numPatterns));
 
    CheckPatternExits();
+
+   if(InpMaxPos > 0 && PositionsTotal() >= InpMaxPos)
+   {
+      if(InpLog) Print("   Max posizioni raggiunto (", InpMaxPos, ") - nessuna nuova entrata");
+      return;
+   }
 
    for(int pi = 0; pi < g_numPatterns; pi++)
       OpenPatternTrade(pi);
