@@ -314,30 +314,41 @@ void OpenPatternTrade(int pi)
    if(p.tpPt > 0)
       tp = (wantDir == 1) ? entry + p.tpPt * pt : entry - p.tpPt * pt;
 
-   // Hard SL broker-side + sizing sul rischio reale
+   // Hard SL broker-side
+   bool slValid = false;
    if(p.slLine > 0)
    {
       double slVal = 0.0;
       if(ReadBufD1(MAPeriodToBuf(p.slLine), 1, slVal) && IsPriceOk(slVal))
       {
-         if(wantDir == 1 && slVal < entry) sl = slVal;
-         else if(wantDir == -1 && slVal > entry) sl = slVal;
+         if(wantDir == 1 && slVal < entry) { sl = slVal; slValid = true; }
+         else if(wantDir == -1 && slVal > entry) { sl = slVal; slValid = true; }
       }
-      else
+      if(!slValid)
       {
-         if(InpLog) Print("   WARN [", pi, "] slLine=", p.slLine, " lettura fallita o price non ok");
+         if(InpLog) Print("   Pattern ", pi, " SKIPPED: SL line ", MAPeriodStr(p.slLine),
+            " non piazzabile (lato sbagliato o lettura fallita)");
+         return;
       }
-      if(sl > 0.0)
-         riskDist = MathAbs(entry - sl);
+      riskDist = MathAbs(entry - sl);
    }
 
-   // Fallback: sizing su TP se non c'e' SL, altrimenti virtuale
+   // Fallback sizing quando non c'e' SL configurato
    if(riskDist <= 0.0)
    {
       if(p.tpPt > 0)
          riskDist = p.tpPt * pt;
       else
          riskDist = pipSize * 1000.0;
+   }
+
+   // Protezione: distanza minima 50pt per evitare lotti enormi
+   double minDist = 50.0 * pt;
+   if(riskDist < minDist)
+   {
+      if(InpLog) Print("   Pattern ", pi, " SKIPPED: riskDist troppo piccolo (",
+         DoubleToString(riskDist/pt, 1), "pt < 50pt)");
+      return;
    }
 
    double lot = CalcLotByDist(riskDist);
