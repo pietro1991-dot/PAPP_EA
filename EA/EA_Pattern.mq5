@@ -3,7 +3,7 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.02"
+#property version   "2.03"
 #property description "Multi-Pattern EA - Fino a 10 pattern configurabili da input"
 #property description "Ogni pattern: Entry, Exit, SL, TP, Direction. Tutti in simultanea."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL"
@@ -23,6 +23,7 @@ input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
 input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
 input int     InpMaxPerPattern = 1;             // Max posizioni per pattern (0=illimitato)
 input int     InpMagic         = 20260623;
+input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuoto=disabilita)
 input bool    InpLog           = true;
 
 input group   "==========  PATTERN 1 (default: MA3 SELL -> MA121 cross)  =========="
@@ -122,6 +123,7 @@ int      g_indD1;
 datetime g_bar0;
 datetime g_lastD1Today;
 bool     g_ready;
+int      g_logHandle = -1;
 
 CTrade        g_trade;
 CPositionInfo g_pos;
@@ -289,6 +291,28 @@ int GetPatternIndex(ulong ticket)
 }
 
 //+------------------------------------------------------------------+
+void LogDecision(string action, int pi, string dir, string reason,
+                 double entry=0.0, double sl=0.0, double tp=0.0,
+                 double lot=0.0, double exitPrice=0.0, double pnl=0.0)
+{
+   if(g_logHandle < 0) return;
+   string json = StringFormat(
+      "{\"t\":%d,\"action\":\"%s\",\"pattern\":%d,\"dir\":\"%s\"",
+      (int)TimeCurrent(), action, pi, dir);
+   if(StringLen(reason) > 0) json += ",\"reason\":\"" + reason + "\"";
+   if(entry > 0.0)    json += StringFormat(",\"entry\":%.5f", entry);
+   if(sl > 0.0)       json += StringFormat(",\"sl\":%.5f", sl);
+   if(tp > 0.0)       json += StringFormat(",\"tp\":%.5f", tp);
+   if(lot > 0.0)      json += StringFormat(",\"lot\":%.2f", lot);
+   if(exitPrice > 0.0) json += StringFormat(",\"exit\":%.5f", exitPrice);
+   if(pnl != 0.0)     json += StringFormat(",\"pnl_pt\":%.1f", pnl);
+   json += "}\n";
+   FileSeek(g_logHandle, 0, SEEK_END);
+   FileWriteString(g_logHandle, json);
+   FileFlush(g_logHandle);
+}
+
+//+------------------------------------------------------------------+
 void OpenPatternTrade(int pi)
 {
    Pattern p = g_patterns[pi];
@@ -314,6 +338,7 @@ void OpenPatternTrade(int pi)
       if(cnt >= InpMaxPerPattern)
       {
          if(InpLog) Print("   Pattern ", pi, " ha gia' ", cnt, " posizioni (max ", InpMaxPerPattern, ") - salto");
+         LogDecision("skip", pi, DirStr(p.dir), "Limite per-pattern raggiunto");
          return;
       }
    }
@@ -322,7 +347,7 @@ void OpenPatternTrade(int pi)
    MqlTick tk;
    if(!SymbolInfoTick(_Symbol, tk)) return;
    double spreadPts = (tk.ask - tk.bid) / _Point;
-   if(InpMaxSpread > 0 && spreadPts > InpMaxSpread) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt > ", InpMaxSpread, ") - salto"); return; }
+   if(InpMaxSpread > 0 && spreadPts > InpMaxSpread) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt > ", InpMaxSpread, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "Spread troppo alto"); return; }
 
    double pt     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double pipSize = pt * 10.0;
@@ -349,6 +374,7 @@ void OpenPatternTrade(int pi)
       {
          if(InpLog) Print("   Pattern ", pi, " SKIPPED: SL line ", MAPeriodStr(p.slLine),
             " non piazzabile (lato sbagliato o lettura fallita)");
+         LogDecision("skip", pi, DirStr(p.dir), "SL non piazzabile: " + MAPeriodStr(p.slLine) + " lato sbagliato");
          return;
       }
       riskDist = MathAbs(entry - sl);
@@ -369,6 +395,7 @@ void OpenPatternTrade(int pi)
    {
       if(InpLog) Print("   Pattern ", pi, " SKIPPED: riskDist troppo piccolo (",
          DoubleToString(riskDist/pt, 1), "pt < ", InpMinSLDistPts, "pt)");
+      LogDecision("skip", pi, DirStr(p.dir), "riskDist troppo piccolo");
       return;
    }
 
@@ -380,6 +407,7 @@ void OpenPatternTrade(int pi)
    if(InpLog)
       Print(StringFormat(">>> APERTURA [%d] %s lot=%.2f entry=%.5f sl=%.5f tp=%.5f %s",
           pi, (wantDir==1?"BUY":"SELL"), lot, entry, sl, tp, cmt));
+   LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), "", entry, sl, tp, lot);
 
    if(!g_trade.PositionOpen(_Symbol, (wantDir==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
                             lot, entry, sl, tp, cmt))
@@ -389,6 +417,9 @@ void OpenPatternTrade(int pi)
 //+------------------------------------------------------------------+
 void CheckPatternExits()
 {
+   MqlTick tk;
+   SymbolInfoTick(_Symbol, tk);
+
    for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
       if(!g_pos.SelectByIndex(i)) continue;
@@ -420,7 +451,15 @@ void CheckPatternExits()
 
       if(shouldClose)
       {
-         if(InpLog) Print(">>> CHIUSO [", pi, "] ", reason, " #", ticket);
+         double entryPr = g_pos.PriceOpen();
+         ENUM_POSITION_TYPE ptype = g_pos.PositionType();
+         double exitPr = (ptype == POSITION_TYPE_BUY) ? tk.bid : tk.ask;
+         double pnlPt = (ptype == POSITION_TYPE_BUY) ?
+            (exitPr - entryPr) / _Point : (entryPr - exitPr) / _Point;
+         string dirStr = (ptype == POSITION_TYPE_BUY) ? "BUY" : "SELL";
+         LogDecision("close", pi, dirStr, reason, entryPr, 0, 0, 0, exitPr, pnlPt);
+
+         if(InpLog) Print(">>> CHIUSO [", pi, "] ", reason, " pnl=", DoubleToString(pnlPt,1), "pt #", ticket);
          g_trade.PositionClose(ticket);
       }
    }
@@ -449,6 +488,19 @@ int OnInit()
 
    InitPatterns();
 
+   // Log decisioni su file
+   g_logHandle = -1;
+   if(StringLen(InpLogFile) > 0)
+   {
+      g_logHandle = FileOpen(InpLogFile,
+         FILE_WRITE|FILE_READ|FILE_TXT|FILE_COMMON|
+         FILE_SHARE_READ|FILE_SHARE_WRITE);
+      if(g_logHandle == INVALID_HANDLE)
+         Print("WARNING: log file non aperto: ", InpLogFile);
+      else
+         Print("Log decisioni: ", TerminalInfoString(TERMINAL_COMMONDATA_PATH), "\\Files\\", InpLogFile);
+   }
+
    if(InpMaxLot > 0.0)
    {
       double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
@@ -470,6 +522,7 @@ void OnDeinit(const int reason)
 {
    if(g_ind != INVALID_HANDLE) IndicatorRelease(g_ind);
    if(g_indD1 != INVALID_HANDLE) IndicatorRelease(g_indD1);
+   if(g_logHandle >= 0) FileClose(g_logHandle);
    if(InpLog) Print("DEINIT reason=" + IntegerToString(reason));
 }
 
