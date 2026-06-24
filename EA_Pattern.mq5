@@ -299,6 +299,19 @@ void OpenPatternTrade(int pi)
    else if(p.dir == 2 && cross == -1) wantDir = -1;
    else return;
 
+   // Una posizione per pattern alla volta
+   for(int i = 0; i < PositionsTotal(); i++)
+   {
+      if(!g_pos.SelectByIndex(i)) continue;
+      if(g_pos.Symbol() != _Symbol) continue;
+      if(g_pos.Magic() != InpMagic) continue;
+      if(GetPatternIndex(g_pos.Ticket()) == pi)
+      {
+         if(InpLog) Print("   Pattern ", pi, " ha gia' una posizione aperta #", g_pos.Ticket(), " - salto");
+         return;
+      }
+   }
+
    // Spread check
    MqlTick tk;
    if(!SymbolInfoTick(_Symbol, tk)) return;
