@@ -21,6 +21,7 @@ input double  InpMaxLot        = 0.0;           // Lotto massimo assoluto (0=usa
 input int     InpMaxSpread     = 50;            // Spread massimo in punti (0=disabilita)
 input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
 input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
+input int     InpMaxPerPattern = 1;             // Max posizioni per pattern (0=illimitato)
 input int     InpMagic         = 20260623;
 input bool    InpLog           = true;
 
@@ -299,15 +300,20 @@ void OpenPatternTrade(int pi)
    else if(p.dir == 2 && cross == -1) wantDir = -1;
    else return;
 
-   // Una posizione per pattern alla volta
-   for(int i = 0; i < PositionsTotal(); i++)
+   // Limite posizioni per pattern
+   if(InpMaxPerPattern > 0)
    {
-      if(!g_pos.SelectByIndex(i)) continue;
-      if(g_pos.Symbol() != _Symbol) continue;
-      if(g_pos.Magic() != InpMagic) continue;
-      if(GetPatternIndex(g_pos.Ticket()) == pi)
+      int cnt = 0;
+      for(int i = 0; i < PositionsTotal(); i++)
       {
-         if(InpLog) Print("   Pattern ", pi, " ha gia' una posizione aperta #", g_pos.Ticket(), " - salto");
+         if(!g_pos.SelectByIndex(i)) continue;
+         if(g_pos.Symbol() != _Symbol) continue;
+         if(g_pos.Magic() != InpMagic) continue;
+         if(GetPatternIndex(g_pos.Ticket()) == pi) cnt++;
+      }
+      if(cnt >= InpMaxPerPattern)
+      {
+         if(InpLog) Print("   Pattern ", pi, " ha gia' ", cnt, " posizioni (max ", InpMaxPerPattern, ") - salto");
          return;
       }
    }
@@ -453,9 +459,9 @@ int OnInit()
    }
 
    if(InpLog)
-      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%d minSL=%dpt maxPos=%d patterns=%d",
+      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%d minSL=%dpt maxPos=%d maxPerPatt=%d patterns=%d",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
-         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpread, InpMinSLDistPts, InpMaxPos, g_numPatterns));
+         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpread, InpMinSLDistPts, InpMaxPos, InpMaxPerPattern, g_numPatterns));
    return INIT_SUCCEEDED;
 }
 
