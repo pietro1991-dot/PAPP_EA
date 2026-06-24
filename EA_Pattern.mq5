@@ -305,15 +305,13 @@ void OpenPatternTrade(int pi)
    double entry  = (wantDir == 1) ? tk.ask : tk.bid;
 
    double sl = 0.0, tp = 0.0;
-   double riskDist = pipSize * 1000.0;
+   double riskDist = 0.0;
 
+   // TP fisso
    if(p.tpPt > 0)
-   {
       tp = (wantDir == 1) ? entry + p.tpPt * pt : entry - p.tpPt * pt;
-      riskDist = p.tpPt * pt;
-   }
 
-   // Hard SL broker-side (protezione gap/disconnessione) basato sulla SL line al momento entry
+   // Hard SL broker-side + sizing sul rischio reale
    if(p.slLine > 0)
    {
       double slVal = 0.0;
@@ -321,12 +319,18 @@ void OpenPatternTrade(int pi)
       {
          if(wantDir == 1 && slVal < entry) sl = slVal;
          else if(wantDir == -1 && slVal > entry) sl = slVal;
-         if(sl > 0.0)
-         {
-            double hardDist = MathAbs(entry - sl);
-            if(hardDist > riskDist) riskDist = hardDist;
-         }
       }
+      if(sl > 0.0)
+         riskDist = MathAbs(entry - sl);
+   }
+
+   // Fallback: sizing su TP se non c'e' SL, altrimenti virtuale
+   if(riskDist <= 0.0)
+   {
+      if(p.tpPt > 0)
+         riskDist = p.tpPt * pt;
+      else
+         riskDist = pipSize * 1000.0;
    }
 
    double lot = CalcLotByDist(riskDist);
