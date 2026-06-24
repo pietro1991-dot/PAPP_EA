@@ -320,7 +320,7 @@ void OpenPatternTrade(int pi)
       if(ReadBufD1(MAPeriodToBuf(p.slLine), 1, slVal) && IsPriceOk(slVal))
       {
          if(wantDir == 1 && slVal < entry) sl = slVal;
-         else if(wantDir == 2 && slVal > entry) sl = slVal;
+         else if(wantDir == -1 && slVal > entry) sl = slVal;
          if(sl > 0.0)
          {
             double hardDist = MathAbs(entry - sl);
