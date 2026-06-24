@@ -313,6 +313,21 @@ void LogDecision(string action, int pi, string dir, string reason,
 }
 
 //+------------------------------------------------------------------+
+void LogMarketSnapshot()
+{
+   if(g_logHandle < 0) return;
+   MqlTick tk;
+   if(!SymbolInfoTick(_Symbol, tk)) return;
+   double spreadPts = (tk.ask - tk.bid) / _Point;
+   string json = StringFormat(
+      "{\"t\":%d,\"action\":\"market\",\"bid\":%.5f,\"ask\":%.5f,\"spread_pts\":%.1f}\n",
+      (int)TimeCurrent(), tk.bid, tk.ask, spreadPts);
+   FileSeek(g_logHandle, 0, SEEK_END);
+   FileWriteString(g_logHandle, json);
+   FileFlush(g_logHandle);
+}
+
+//+------------------------------------------------------------------+
 void OpenPatternTrade(int pi)
 {
    Pattern p = g_patterns[pi];
@@ -559,6 +574,7 @@ void OnTick()
    g_lastD1Today = d1today;
 
    BuildCrossCache();
+   LogMarketSnapshot();
 
    if(InpLog)
       Print(StringFormat("=== SEGNALE === barra=%s D1=%s pos=%d patterns=%d",

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAPP EA - Chat &amp; Segnali</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#111;color:#e0e0e0;height:100vh;display:flex;flex-direction:column}
+header{background:#1a1a2e;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333}
+header h1{font-size:18px;color:#4fc3f7}
+.stats{display:flex;gap:16px;font-size:13px;color:#aaa}
+.stats span strong{color:#4fc3f7}
+.container{display:flex;flex:1;overflow:hidden}
+.chat-panel{flex:1;display:flex;flex-direction:column;border-right:1px solid #333}
+.signals-panel{width:380px;display:flex;flex-direction:column;background:#16161e}
+.panel-header{padding:10px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:1px solid #333;text-transform:uppercase;letter-spacing:.5px}
+.messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:85%;padding:8px 12px;border-radius:8px;font-size:14px;line-height:1.5}
+.msg.user{background:#1e3a5f;align-self:flex-end}
+.msg.bot{background:#222;align-self:flex-start;color:#ccc}
+.msg.bot strong{color:#4fc3f7}
+.input-bar{display:flex;padding:10px;gap:8px;border-top:1px solid #333;background:#1a1a2e}
+.input-bar input{flex:1;padding:10px;border-radius:6px;border:1px solid #333;background:#222;color:#e0e0e0;font-size:14px}
+.input-bar button{padding:10px 20px;border-radius:6px;border:none;background:#4fc3f7;color:#111;font-weight:600;cursor:pointer}
+.input-bar button:disabled{opacity:.4;cursor:not-allowed}
+.signal-list{flex:1;overflow-y:auto;padding:6px}
+.sig{padding:8px 10px;border-bottom:1px solid #222;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.sig .action{font-weight:600;padding:2px 6px;border-radius:4px;font-size:11px}
+.sig .action.open{background:#1b5e20;color:#81c784}
+.sig .action.close{background:#b71c1c;color:#ef9a9a}
+.sig .action.skip{background:#555;color:#ccc}
+.sig .info{color:#999}
+.sig .pnl{font-weight:600}
+.sig .pnl.pos{color:#81c784}
+.sig .pnl.neg{color:#ef9a9a}
+.meta{text-align:center;padding:20px;color:#555;font-size:13px}
+.loading{color:#888;font-style:italic}
+</style>
+</head>
+<body>
+<header>
+  <h1>PAPP EA Monitor</h1>
+  <div class="stats">
+    <span>Aperte: <strong id="stat-open">0</strong></span>
+    <span>Chiuse: <strong id="stat-close">0</strong></span>
+    <span>Skip: <strong id="stat-skip">0</strong></span>
+    <span>PnL: <strong id="stat-pnl">0 pt</strong></span>
+  </div>
+</header>
+<div class="container">
+  <div class="chat-panel">
+    <div class="messages" id="chat-messages"></div>
+    <div class="input-bar">
+      <input type="text" id="chat-input" placeholder="Chiedi qualcosa sul trading..." />
+      <button id="chat-btn">Invia</button>
+    </div>
+  </div>
+  <div class="signals-panel">
+    <div class="panel-header">Segnali in tempo reale</div>
+    <div class="signal-list" id="signal-list"></div>
+  </div>
+</div>
+<script>
+const chatMsg = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const chatBtn = document.getElementById('chat-btn');
+const signalList = document.getElementById('signal-list');
+
+let ws = null;
+
+function connectWS(){
+  ws = new WebSocket((location.protocol==='https'?'wss':'ws')+'://'+location.host+'/ws');
+  ws.onclose = ()=>{setTimeout(connectWS,3000)};
+  ws.onmessage = (e)=>{
+    try{
+      const d = JSON.parse(e.data);
+      addSignal(d);
+      refreshStats();
+    }catch(_){}
+  };
+}
+
+function addSignal(d){
+  const div = document.createElement('div');
+  div.className = 'sig';
+  const action = document.createElement('span');
+  action.className = 'action '+d.action;
+  action.textContent = d.action.toUpperCase();
+  div.appendChild(action);
+
+  const info = document.createElement('span');
+  info.className = 'info';
+  let txt = 'P'+(d.pattern??'?')+' '+(d.dir||'');
+  if(d.reason) txt += ' '+d.reason;
+  if(d.entry) txt += ' @'+d.entry.toFixed(5);
+  info.textContent = txt;
+  div.appendChild(info);
+
+  if(d.pnl_pt != null){
+    const pnl = document.createElement('span');
+    pnl.className = 'pnl '+(d.pnl_pt>=0?'pos':'neg');
+    pnl.textContent = (d.pnl_pt>=0?'+':'')+d.pnl_pt.toFixed(1)+'pt';
+    div.appendChild(pnl);
+  }
+  signalList.prepend(div);
+  if(signalList.children.length > 200) signalList.lastChild.remove();
+}
+
+async function refreshStats(){
+  const r = await fetch('/api/stats');
+  const s = await r.json();
+  document.getElementById('stat-open').textContent = s.open||0;
+  document.getElementById('stat-close').textContent = s.close||0;
+  document.getElementById('stat-skip').textContent = s.skip||0;
+  document.getElementById('stat-pnl').textContent = (s.pnl_pt>=0?'+':'')+s.pnl_pt+' pt';
+}
+
+async function loadRecent(){
+  const r = await fetch('/api/signals?limit=50');
+  const list = await r.json();
+  signalList.innerHTML = '';
+  list.forEach(d=>addSignal(d));
+}
+
+chatBtn.onclick = async ()=>{
+  const q = chatInput.value.trim();
+  if(!q) return;
+  chatBtn.disabled = true;
+  chatInput.value = '';
+  addChatMsg(q, 'user');
+  const botMsg = addChatMsg('', 'bot');
+  try{
+    const r = await fetch('/api/chat', {method:'POST', body:JSON.stringify({question:q}), headers:{'Content-Type':'application/json'}});
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let text = '';
+    while(true){
+      const {done, value} = await reader.read();
+      if(done) break;
+      const chunk = decoder.decode(value, {stream:true});
+      for(const line of chunk.split('\n')){
+        if(line.startsWith('data: ')){
+          const data = line.slice(6);
+          if(data === '__DONE__') { break; }
+          text += data;
+          botMsg.textContent = text;
+          chatMsg.scrollTop = chatMsg.scrollHeight;
+        }
+      }
+    }
+  }catch(e){
+    botMsg.textContent = 'Errore: '+e.message;
+  }
+  chatBtn.disabled = false;
+};
+
+chatInput.addEventListener('keydown', e=>{if(e.key==='Enter') chatBtn.click()});
+
+function addChatMsg(text, cls){
+  const div = document.createElement('div');
+  div.className = 'msg '+cls;
+  div.textContent = text;
+  chatMsg.appendChild(div);
+  chatMsg.scrollTop = chatMsg.scrollHeight;
+  return div;
+}
+
+chatMsg.innerHTML = '<div class="msg bot"><strong>PAPP Assistant</strong><br>Chiedimi qualunque cosa sui pattern, segnali e performance dell\'EA.</div>';
+
+connectWS();
+loadRecent();
+refreshStats();
+setInterval(refreshStats, 10000);
+</script>
+</body>
+</html>
