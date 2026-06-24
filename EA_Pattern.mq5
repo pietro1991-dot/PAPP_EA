@@ -273,7 +273,7 @@ int GetPatternIndex(ulong ticket)
 //+------------------------------------------------------------------+
 void OpenPatternTrade(int pi)
 {
-   Pattern &p = g_patterns[pi];
+   Pattern p = g_patterns[pi];
    int cross = CachedCross(MAPeriodToBuf(p.entry));
    if(cross == 0) return;
 
@@ -325,7 +325,7 @@ void CheckPatternExits()
       int pi = GetPatternIndex(ticket);
       if(pi < 0 || pi >= g_numPatterns) continue;
 
-      Pattern &p = g_patterns[pi];
+      Pattern p = g_patterns[pi];
       ENUM_POSITION_TYPE posType = g_pos.PositionType();
       bool shouldClose = false;
       string reason = "";
