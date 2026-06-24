@@ -37,10 +37,10 @@ PAPP_EA è un sistema di trading algoritmico per MetaTrader 5 basato su **crosso
 Il sistema opera in due fasi distinte ma collegate:
 
 **Fase 1 — Pattern Mining (offline, Python)**:
-Lo script `pattern_mining.py` carica 4278 barre D1 di EURUSD (2009–2026), rileva automaticamente tutti i crossover e applica tre metodologie di analisi per identificare configurazioni profittevoli di entrata/uscita/SL/TP. Genera tabelle con Sharpe ratio, Win Rate, Profit Factor, numero di trade e durata media.
+Lo script `Analisi/pattern_mining.py` carica 4278 barre D1 di EURUSD (2009–2026), rileva automaticamente tutti i crossover e applica tre metodologie di analisi per identificare configurazioni profittevoli di entrata/uscita/SL/TP. Genera tabelle con Sharpe ratio, Win Rate, Profit Factor, numero di trade e durata media.
 
 **Fase 2 — Esecuzione (online, MQL5)**:
-L'EA `EA_Pattern.mq5` carica fino a 10 pattern configurabili via input e li esegue simultaneamente sul mercato reale. Ogni pattern può avere una linea di entrata, una linea d'uscita (crossover), una linea SL (hard + dinamico) e un TP fisso. Il risk management è completamente configurabile.
+L'EA `EA/EA_Pattern.mq5` carica fino a 10 pattern configurabili via input e li esegue simultaneamente sul mercato reale. Ogni pattern può avere una linea di entrata, una linea d'uscita (crossover), una linea SL (hard + dinamico) e un TP fisso. Il risk management è completamente configurabile.
 
 ---
 
@@ -1242,8 +1242,8 @@ L'EA ha 6 controlli sequenziali prima di aprire una posizione:
 
 ### 12.1 Installazione
 
-1. Copiare `EA_Pattern.mq5` in `MetaTrader 5/MQL5/Experts/`
-2. Copiare `PaPP_Median.ex5` in `MetaTrader 5/MQL5/Indicators/`
+1. Copiare `EA/EA_Pattern.mq5` in `MetaTrader 5/MQL5/Experts/` (oppure il file direttamente dalla root `EA_Pattern.mq5`)
+2. Copiare `Indicatori/PaPP_Median.ex5` in `MetaTrader 5/MQL5/Indicators/`
 3. Aprire MetaEditor (F4), compilare l'EA (F7)
 4. Trascinare `EA_Pattern` su un chart EURUSD (qualsiasi TF, raccomandato M30+)
 5. Abilitare Algo Trading
@@ -1462,12 +1462,12 @@ Profittevole nel lungo termine, ma la distribuzione non è uniforme — le perdi
 
 | File | Path | Descrizione |
 |------|------|-------------|
-| `EA_Pattern.mq5` | `/MQL5/Experts/` | EA multi-pattern v2.02 |
-| `Export_PAPP.mq5` | `/MQL5/Scripts/` | Script esportazione CSV (legacy) |
-| `PaPP_Median.ex5` | `/MQL5/Indicators/` | Indicatore personalizzato (compilato) |
-| `pattern_mining.py` | `/PAPP_EA/` | Script Python analisi pattern v3 |
-| `PAPP_Export.csv` | `/PAPP_EA/` | Dataset D1 EURUSD 4278 barre |
-| `DOCUMENTAZIONE.md` | `/PAPP_EA/` | Questo documento |
+| `EA/EA_Pattern.mq5` | `/MQL5/Experts/` | EA multi-pattern v2.02 |
+| `Analisi/Export_PAPP.mq5` | `/MQL5/Scripts/` | Script esportazione CSV (legacy) |
+| `Indicatori/PaPP_Median.ex5` | `/MQL5/Indicators/` | Indicatore personalizzato (compilato) |
+| `Analisi/pattern_mining.py` | — | Script Python analisi pattern v3 |
+| `Analisi/PAPP_Export.csv` | — | Dataset D1 EURUSD 4278 barre |
+| `DOCUMENTAZIONE.md` | — | Questo documento |
 
 ## Appendice D: Sequenza Completa dei Comandi
 
@@ -1477,10 +1477,10 @@ Profittevole nel lungo termine, ma la distribuzione non è uniforme — le perdi
 # Output: <CARTELLA_DATI>\MQL5\Files\PAPP_Export.csv
 
 # 2. Copiare il CSV nella directory del progetto
-cp "/percorso/MT5/Files/PAPP_Export.csv" /home/pietro_giacobazzi/Desktop/PAPP_EA/
+cp "/percorso/MT5/Files/PAPP_Export.csv" /home/pietro_giacobazzi/Desktop/PAPP_EA/Analisi/
 
 # 3. Eseguire l'analisi completa
-python3 pattern_mining.py PAPP_Export.csv --spread=15
+cd Analisi && python3 pattern_mining.py PAPP_Export.csv --spread=15
 
 # 4. Con walk-forward validation
 python3 pattern_mining.py PAPP_Export.csv --spread=15 --train-pct=0.7
@@ -1489,8 +1489,11 @@ python3 pattern_mining.py PAPP_Export.csv --spread=15 --train-pct=0.7
 python3 pattern_mining.py PAPP_Export.csv --spread=15 --split-date=2020.01.01
 
 # 6. Copiare EA su MT5
-cp EA_Pattern.mq5 "/percorso/MT5/MQL5/Experts/EA_Pattern.mq5"
+cp EA/EA_Pattern.mq5 "/percorso/MT5/MQL5/Experts/EA_Pattern.mq5"
 
-# 7. Compilare in MetaEditor (F7)
-# 8. Attaccare su chart EURUSD
+# 7. Copiare indicatore su MT5
+cp Indicatori/PaPP_Median.ex5 "/percorso/MT5/MQL5/Indicators/PaPP_Median.ex5"
+
+# 8. Compilare in MetaEditor (F7)
+# 9. Attaccare su chart EURUSD
 ```
