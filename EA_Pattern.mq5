@@ -17,6 +17,7 @@ input string  InpIndicatorName = "PaPP_Median.ex5";
 input group   "==========  RISK GLOBALE  =========="
 input double  InpRiskPct       = 1.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
+input double  InpMaxLot        = 0.0;           // Lotto massimo assoluto (0=usa broker)
 input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
 input int     InpMagic         = 20260623;
 input bool    InpLog           = true;
@@ -270,7 +271,8 @@ double CalcLotByDist(double riskDist)
    double minLot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
    double maxLot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
    double lot = MathFloor(lotRaw / lotStep) * lotStep;
-   return MathMax(minLot, MathMin(lot, maxLot));
+   double brokerMax = (InpMaxLot > 0.0) ? MathMin(maxLot, InpMaxLot) : maxLot;
+   return MathMax(minLot, MathMin(lot, brokerMax));
 }
 
 //+------------------------------------------------------------------+
@@ -319,6 +321,10 @@ void OpenPatternTrade(int pi)
       {
          if(wantDir == 1 && slVal < entry) sl = slVal;
          else if(wantDir == -1 && slVal > entry) sl = slVal;
+      }
+      else
+      {
+         if(InpLog) Print("   WARN [", pi, "] slLine=", p.slLine, " lettura fallita o price non ok");
       }
       if(sl > 0.0)
          riskDist = MathAbs(entry - sl);
