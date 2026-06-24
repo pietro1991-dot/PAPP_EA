@@ -18,6 +18,8 @@ input group   "==========  RISK GLOBALE  =========="
 input double  InpRiskPct       = 1.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input double  InpMaxLot        = 0.0;           // Lotto massimo assoluto (0=usa broker)
+input int     InpMaxSpread     = 50;            // Spread massimo in punti (0=disabilita)
+input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
 input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
 input int     InpMagic         = 20260623;
 input bool    InpLog           = true;
@@ -301,7 +303,7 @@ void OpenPatternTrade(int pi)
    MqlTick tk;
    if(!SymbolInfoTick(_Symbol, tk)) return;
    double spreadPts = (tk.ask - tk.bid) / _Point;
-   if(spreadPts > 50) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt) - salto"); return; }
+   if(InpMaxSpread > 0 && spreadPts > InpMaxSpread) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt > ", InpMaxSpread, ") - salto"); return; }
 
    double pt     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double pipSize = pt * 10.0;
@@ -343,11 +345,11 @@ void OpenPatternTrade(int pi)
    }
 
    // Protezione: distanza minima 50pt per evitare lotti enormi
-   double minDist = 50.0 * pt;
+   double minDist = InpMinSLDistPts * pt;
    if(riskDist < minDist)
    {
       if(InpLog) Print("   Pattern ", pi, " SKIPPED: riskDist troppo piccolo (",
-         DoubleToString(riskDist/pt, 1), "pt < 50pt)");
+         DoubleToString(riskDist/pt, 1), "pt < ", InpMinSLDistPts, "pt)");
       return;
    }
 
@@ -438,9 +440,9 @@ int OnInit()
    }
 
    if(InpLog)
-      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxPos=%d patterns=%d",
+      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%d minSL=%dpt maxPos=%d patterns=%d",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
-         InpMagic, InpRiskPct, InpMaxLot, InpMaxPos, g_numPatterns));
+         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpread, InpMinSLDistPts, InpMaxPos, g_numPatterns));
    return INIT_SUCCEEDED;
 }
 
