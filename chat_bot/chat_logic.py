@@ -1,9 +1,14 @@
-import httpx
+import asyncio
+import json
+import os
+import re
 from typing import Optional
-from fastapi.responses import StreamingResponse
 
-OLLAMA_MODEL = "qwen2.5-coder:1.5b"
-OLLAMA_URL = "http://localhost:11434/api/generate"
+ATTACH_URL = os.getenv("ATTACH_URL", "http://127.0.0.1:34367")
+USERNAME = os.getenv("OPENCODE_USERNAME", "opencode")
+PASSWORD = os.getenv("OPENCODE_PASSWORD", "cc006c31-5748-40ae-b659-7081aa0e9ab8")
+MODEL = os.getenv("API_MODEL", "opencode/deepseek-v4-flash-free")
+WORK_DIR = os.getenv("WORK_DIR", "/home/pietro_giacobazzi/Desktop/PAPP_EA")
 
 SYSTEM_PROMPT = (
     "Sei un assistente esperto di trading algoritmico su MetaTrader 5. "
@@ -22,27 +27,24 @@ def build_prompt(question: str, context: Optional[str] = None) -> str:
     return prompt
 
 
-async def ask_ollama_stream(question: str, context: Optional[str] = None):
+async def ask(question: str, context: Optional[str] = None) -> str:
     prompt = build_prompt(question, context)
-    async with httpx.AsyncClient(timeout=180) as client:
-        async with client.stream(
-            "POST",
-            OLLAMA_URL,
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": True,
-                "options": {"temperature": 0.3, "num_predict": 256},
-            },
-        ) as r:
-            async for line in r.aiter_lines():
-                if not line:
-                    continue
-                try:
-                    data = __import__("json").loads(line)
-                    chunk = data.get("response", "")
-                    if chunk:
-                        yield chunk
-                except Exception:
-                    pass
-
+    cmd = [
+        "opencode", "run",
+        "--attach", ATTACH_URL,
+        "-u", USERNAME,
+        "-p", PASSWORD,
+        "--model", MODEL,
+        prompt,
+    ]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
+        cwd=WORK_DIR,
+    )
+    stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
+    text = stdout.decode("utf-8", errors="replace").strip()
+    # Remove ANSI escape sequences
+    text = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", text)
+    return text

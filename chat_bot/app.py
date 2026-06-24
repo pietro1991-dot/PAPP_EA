@@ -10,7 +10,7 @@ from sqlalchemy import select, desc, func as sa_func
 
 from db import init_db, AsyncSession, Signal, ChatHistory, MarketSnapshot
 from mt5_bridge import LogTailer
-from chat_logic import ask_ollama_stream
+from chat_logic import ask
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("papp")
@@ -207,10 +207,8 @@ async def chat(request: Request):
     context = "\n".join(ctx_lines)
 
     async def event_stream():
-        full = ""
-        async for chunk in ask_ollama_stream(question, context):
-            full += chunk
-            yield f"data: {chunk}\n\n"
+        full = await ask(question, context)
+        yield f"data: {full}\n\n"
         yield f"data: __DONE__\n\n"
 
         async with AsyncSession() as session:

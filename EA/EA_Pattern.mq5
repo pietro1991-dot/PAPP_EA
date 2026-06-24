@@ -14,7 +14,7 @@
 
 input string  InpIndicatorName = "PaPP_Median.ex5";
 
-input group   "==========  RISK GLOBALE  =========="
+//==========  RISK GLOBALE  ==========
 input double  InpRiskPct       = 1.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input double  InpMaxLot        = 0.0;           // Lotto massimo assoluto (0=usa broker)
@@ -26,70 +26,70 @@ input int     InpMagic         = 20260623;
 input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuoto=disabilita)
 input bool    InpLog           = true;
 
-input group   "==========  PATTERN 1 (default: MA3 SELL -> MA121 cross)  =========="
+//==========  PATTERN 1 (default: MA3 SELL -> MA121 cross)  =========="
 input int     InpP1_Entry      = 3;             // Entry line (0=Med,3,7,14,30,121,182,365)
 input int     InpP1_Exit       = 121;           // Exit cross line (0=nessuno)
 input int     InpP1_SL         = 0;             // SL line (0=nessuno)
 input int     InpP1_TP         = 0;             // TP punti (0=nessuno)
 input int     InpP1_Dir        = 2;             // 0=OFF, 1=BUY, 2=SELL
 
-input group   "==========  PATTERN 2 (default: MA7 SELL -> MA121 cross)  =========="
+//==========  PATTERN 2 (default: MA7 SELL -> MA121 cross)  =========="
 input int     InpP2_Entry      = 7;
 input int     InpP2_Exit       = 121;
 input int     InpP2_SL         = 0;
 input int     InpP2_TP         = 0;
 input int     InpP2_Dir        = 2;
 
-input group   "==========  PATTERN 3 (default: MA14 SELL -> MA121 cross)  =========="
+//==========  PATTERN 3 (default: MA14 SELL -> MA121 cross)  =========="
 input int     InpP3_Entry      = 14;
 input int     InpP3_Exit       = 121;
 input int     InpP3_SL         = 0;
 input int     InpP3_TP         = 0;
 input int     InpP3_Dir        = 2;
 
-input group   "==========  PATTERN 4 (default: MA30 SELL -> MA121 cross)  =========="
+//==========  PATTERN 4 (default: MA30 SELL -> MA121 cross)  =========="
 input int     InpP4_Entry      = 30;
 input int     InpP4_Exit       = 121;
 input int     InpP4_SL         = 0;
 input int     InpP4_TP         = 0;
 input int     InpP4_Dir        = 2;
 
-input group   "==========  PATTERN 5 (default: MA365 SELL -> MA7 cross)  =========="
+//==========  PATTERN 5 (default: MA365 SELL -> MA7 cross)  =========="
 input int     InpP5_Entry      = 365;
 input int     InpP5_Exit       = 7;
 input int     InpP5_SL         = 0;
 input int     InpP5_TP         = 0;
 input int     InpP5_Dir        = 2;
 
-input group   "==========  PATTERN 6 (default: MA121 BUY -> MA182 cross)  =========="
+//==========  PATTERN 6 (default: MA121 BUY -> MA182 cross)  =========="
 input int     InpP6_Entry      = 121;
 input int     InpP6_Exit       = 182;
 input int     InpP6_SL         = 0;
 input int     InpP6_TP         = 0;
 input int     InpP6_Dir        = 1;
 
-input group   "==========  PATTERN 7 (default: MA365 BUY -> MA182 cross)  =========="
+//==========  PATTERN 7 (default: MA365 BUY -> MA182 cross)  =========="
 input int     InpP7_Entry      = 365;
 input int     InpP7_Exit       = 182;
 input int     InpP7_SL         = 0;
 input int     InpP7_TP         = 0;
 input int     InpP7_Dir        = 1;
 
-input group   "==========  PATTERN 8 (default: MA365 BUY -> MA121 cross)  =========="
+//==========  PATTERN 8 (default: MA365 BUY -> MA121 cross)  =========="
 input int     InpP8_Entry      = 365;
 input int     InpP8_Exit       = 121;
 input int     InpP8_SL         = 0;
 input int     InpP8_TP         = 0;
 input int     InpP8_Dir        = 1;
 
-input group   "==========  PATTERN 9 (default: MA30 BUY -> SL=MA365 TP=150)  =========="
+//==========  PATTERN 9 (default: MA30 BUY -> SL=MA365 TP=150)  =========="
 input int     InpP9_Entry      = 30;
 input int     InpP9_Exit       = 0;
 input int     InpP9_SL         = 365;
 input int     InpP9_TP         = 150;
 input int     InpP9_Dir        = 1;
 
-input group   "==========  PATTERN 10 (default: MA7 SELL -> SL=MA365 TP=150)  =========="
+//==========  PATTERN 10 (default: MA7 SELL -> SL=MA365 TP=150)  =========="
 input int     InpP10_Entry     = 7;
 input int     InpP10_Exit      = 0;
 input int     InpP10_SL        = 365;
