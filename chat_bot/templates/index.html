@@ -46,6 +46,8 @@ header h1{font-size:18px;color:#4fc3f7}
     <span>Chiuse: <strong id="stat-close">0</strong></span>
     <span>Skip: <strong id="stat-skip">0</strong></span>
     <span>PnL: <strong id="stat-pnl">0 pt</strong></span>
+    <span id="user-email" style="color:#666"></span>
+    <span style="cursor:pointer;color:#4fc3f7" onclick="logout()">Esci</span>
   </div>
 </header>
 <div class="container">
@@ -107,8 +109,14 @@ function addSignal(d){
   if(signalList.children.length > 200) signalList.lastChild.remove();
 }
 
+async function logout(){
+  await fetch('/api/logout', {method:'POST'});
+  location.href = '/';
+}
+
 async function refreshStats(){
   const r = await fetch('/api/stats');
+  if(r.status === 401){ location.href = '/'; return; }
   const s = await r.json();
   document.getElementById('stat-open').textContent = s.open||0;
   document.getElementById('stat-close').textContent = s.close||0;
@@ -143,7 +151,11 @@ chatBtn.onclick = async ()=>{
         if(line.startsWith('data: ')){
           const data = line.slice(6);
           if(data === '__DONE__') { break; }
-          text += data;
+          try{
+            text = JSON.parse(data).text;
+          }catch(_){
+            text += data; // fallback retro-compatibile
+          }
           botMsg.textContent = text;
           chatMsg.scrollTop = chatMsg.scrollHeight;
         }
@@ -168,6 +180,14 @@ function addChatMsg(text, cls){
 
 chatMsg.innerHTML = '<div class="msg bot"><strong>PAPP Assistant</strong><br>Chiedimi qualunque cosa sui pattern, segnali e performance dell\'EA.</div>';
 
+async function loadUser(){
+  const r = await fetch('/api/me');
+  if(r.status === 401){ location.href = '/'; return; }
+  const d = await r.json();
+  document.getElementById('user-email').textContent = d.email || '';
+}
+
+loadUser();
 connectWS();
 loadRecent();
 refreshStats();

@@ -1,0 +1,7 @@
+[Unit]
+Description=Backup giornaliero DB PAPP EA
+
+[Service]
+Type=oneshot
+User=pietro_giacobazzi
+ExecStart=/home/pietro_giacobazzi/Desktop/PAPP_EA/chat_bot/deploy/backup_db.sh

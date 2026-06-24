@@ -6,9 +6,10 @@ from typing import Optional
 
 ATTACH_URL = os.getenv("ATTACH_URL", "http://127.0.0.1:34367")
 USERNAME = os.getenv("OPENCODE_USERNAME", "opencode")
-PASSWORD = os.getenv("OPENCODE_PASSWORD", "cc006c31-5748-40ae-b659-7081aa0e9ab8")
+PASSWORD = os.getenv("OPENCODE_PASSWORD", "")  # solo da .env, nessun segreto nel codice
 MODEL = os.getenv("API_MODEL", "opencode/deepseek-v4-flash-free")
 WORK_DIR = os.getenv("WORK_DIR", "/home/pietro_giacobazzi/Desktop/PAPP_EA")
+LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "120"))
 
 SYSTEM_PROMPT = (
     "Sei un assistente esperto di trading algoritmico su MetaTrader 5. "
@@ -27,7 +28,9 @@ def build_prompt(question: str, context: Optional[str] = None) -> str:
     return prompt
 
 
-async def ask(question: str, context: Optional[str] = None) -> str:
+async def ask(question: str, context: Optional[str] = None) -> Optional[str]:
+    """Interroga l'LLM via opencode. Ritorna il testo, oppure None su errore/timeout
+    (il chiamante — il worker — decide il fallback). Chiamare SOLO dal worker LLM."""
     prompt = build_prompt(question, context)
     cmd = [
         "opencode", "run",
@@ -37,14 +40,26 @@ async def ask(question: str, context: Optional[str] = None) -> str:
         "--model", MODEL,
         prompt,
     ]
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL,
-        cwd=WORK_DIR,
-    )
-    stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
+    proc = None
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+            cwd=WORK_DIR,
+        )
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=LLM_TIMEOUT)
+    except asyncio.TimeoutError:
+        if proc:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
+        return None
+    except Exception:
+        return None
+
     text = stdout.decode("utf-8", errors="replace").strip()
     # Remove ANSI escape sequences
     text = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", text)
-    return text
+    return text or None

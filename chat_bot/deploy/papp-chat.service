@@ -1,0 +1,21 @@
+[Unit]
+Description=PAPP EA Chat Assistant (FastAPI)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=pietro_giacobazzi
+WorkingDirectory=/home/pietro_giacobazzi/Desktop/PAPP_EA/chat_bot
+EnvironmentFile=/home/pietro_giacobazzi/Desktop/PAPP_EA/chat_bot/.env
+# Dietro nginx: bind solo su localhost + cookie solo-HTTPS
+Environment=COOKIE_SECURE=1
+ExecStart=/usr/bin/python3 -m uvicorn app:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=3
+# Hardening leggero
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
