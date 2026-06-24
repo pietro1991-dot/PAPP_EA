@@ -3,7 +3,7 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.01"
+#property version   "2.02"
 #property description "Multi-Pattern EA - Fino a 10 pattern configurabili da input"
 #property description "Ogni pattern: Entry, Exit, SL, TP, Direction. Tutti in simultanea."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL"
@@ -416,10 +416,19 @@ int OnInit()
 
    InitPatterns();
 
+   if(InpMaxLot > 0.0)
+   {
+      double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+      if(InpMaxLot < minLot)
+      {
+         Print("WARNING: InpMaxLot=", InpMaxLot, " < SYMBOL_VOLUME_MIN=", minLot, " - ignorato");
+      }
+   }
+
    if(InpLog)
-      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxPos=%d patterns=%d",
+      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxPos=%d patterns=%d",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
-         InpMagic, InpRiskPct, InpMaxPos, g_numPatterns));
+         InpMagic, InpRiskPct, InpMaxLot, InpMaxPos, g_numPatterns));
    return INIT_SUCCEEDED;
 }
 
