@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -f '/home/pietro_giacobazzi/.mt5/drive_c/Program Files/MetaTrader 5/tester_report_papp.htm' '/home/pietro_giacobazzi/.mt5/drive_c/Program Files/MetaTrader 5/tester_report_papp.html')",
+      "Bash(timeout 280 env WINEDEBUG=-all wine '/home/pietro_giacobazzi/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe' '/config:/home/pietro_giacobazzi/.mt5/drive_c/Program Files/MetaTrader 5/tester_papp.ini' /portable)",
+      "Bash(rm -f '/home/pietro_giacobazzi/.mt5/drive_c/Program Files/MetaTrader 5/tester_report_papp.*')",
+      "Bash(WINEDEBUG=-all wine '/home/pietro_giacobazzi/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe' '/config:/home/pietro_giacobazzi/.mt5/drive_c/Program Files/MetaTrader 5/tester_papp.ini' /portable)",
+      "Bash(echo \"=== tester terminato, exit $? ===\")",
+      "Bash(pkill -f \"terminal64.exe.*tester_papp\")",
+      "Bash(pkill -f \"start.exe.*terminal64\")"
+    ]
+  }
+}

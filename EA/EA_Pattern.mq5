@@ -3,10 +3,11 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.04"
+#property version   "2.05"
 #property description "Multi-Pattern EA - Fino a 10 pattern configurabili da input"
 #property description "Ogni pattern: Entry, Exit, SL, TP, Direction. Tutti in simultanea."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL"
+#property description "Pattern default da ANALISI 3: entry cross + SL dinamico sulla linea + TP fisso"
 
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
@@ -20,6 +21,7 @@ input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input double  InpMaxLot        = 0.0;           // Lotto massimo assoluto (0=usa broker)
 input int     InpMaxSpread     = 50;            // Spread massimo in punti (0=disabilita)
 input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
+input double  InpFallbackRiskPips = 100.0;      // Risk distance in pips quando il pattern non ha SL (per sizing)
 input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
 input int     InpMaxPerPattern = 1;             // Max posizioni per pattern (0=illimitato)
 input int     InpMagic         = 20260623;
@@ -27,75 +29,82 @@ input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuo
 input int     InpMarketInterval = 300;           // Intervallo market snapshot secondi (0=disabilita)
 input bool    InpLog           = true;
 
-//==========  PATTERN 1 (default: MA3 SELL -> MA121 cross)  =========="
-input int     InpP1_Entry      = 3;             // Entry line (0=Med,3,7,14,30,121,182,365)
-input int     InpP1_Exit       = 121;           // Exit cross line (0=nessuno)
-input int     InpP1_SL         = 0;             // SL line (0=nessuno)
-input int     InpP1_TP         = 0;             // TP punti (0=nessuno)
+// Pattern da ANALISI 3 (Entry cross + SL dinamico su linea + TP fisso).
+// SOLO pattern validati out-of-sample (train <=2020, test >2020), ordinati
+// per Sharpe per-trade nel test set. Sharpe corretto (per-trade) + costi
+// (spread+commissione) + niente look-ahead. I pattern deboli/negativi OOS
+// (MA14 SELL TP30, MA182 SELL TP60, MA121 SELL TP80) sono stati rimossi.
+// Linee: 0=Med,3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL. Exit=0.
+
+//==========  PATTERN 1 (MA30 SELL, SL=MA365, TP=150 | OOS Win95% Sh1.96)  =========="
+input int     InpP1_Entry      = 30;            // Entry line (0=Med,3,7,14,30,121,182,365)
+input int     InpP1_Exit       = 0;             // Exit cross line (0=nessuno)
+input int     InpP1_SL         = 365;           // SL line (0=nessuno)
+input int     InpP1_TP         = 150;           // TP punti (0=nessuno)
 input int     InpP1_Dir        = 2;             // 0=OFF, 1=BUY, 2=SELL
 
-//==========  PATTERN 2 (default: MA7 SELL -> MA121 cross)  =========="
-input int     InpP2_Entry      = 7;
-input int     InpP2_Exit       = 121;
-input int     InpP2_SL         = 0;
-input int     InpP2_TP         = 0;
-input int     InpP2_Dir        = 2;
+//==========  PATTERN 2 (MA121 BUY, SL=MA365, TP=150 | OOS Win89% Sh1.07)  =========="
+input int     InpP2_Entry      = 121;
+input int     InpP2_Exit       = 0;
+input int     InpP2_SL         = 365;
+input int     InpP2_TP         = 150;
+input int     InpP2_Dir        = 1;
 
-//==========  PATTERN 3 (default: MA14 SELL -> MA121 cross)  =========="
-input int     InpP3_Entry      = 14;
-input int     InpP3_Exit       = 121;
-input int     InpP3_SL         = 0;
-input int     InpP3_TP         = 0;
+//==========  PATTERN 3 (MA365 SELL, SL=MA121, TP=120 | OOS Win89% Sh0.38)  =========="
+input int     InpP3_Entry      = 365;
+input int     InpP3_Exit       = 0;
+input int     InpP3_SL         = 121;
+input int     InpP3_TP         = 120;
 input int     InpP3_Dir        = 2;
 
-//==========  PATTERN 4 (default: MA30 SELL -> MA121 cross)  =========="
-input int     InpP4_Entry      = 30;
-input int     InpP4_Exit       = 121;
-input int     InpP4_SL         = 0;
-input int     InpP4_TP         = 0;
+//==========  PATTERN 4 (MA7 SELL, SL=MA365, TP=120 | OOS Win93% Sh0.24)  =========="
+input int     InpP4_Entry      = 7;
+input int     InpP4_Exit       = 0;
+input int     InpP4_SL         = 365;
+input int     InpP4_TP         = 120;
 input int     InpP4_Dir        = 2;
 
-//==========  PATTERN 5 (default: MA365 SELL -> MA7 cross)  =========="
-input int     InpP5_Entry      = 365;
-input int     InpP5_Exit       = 7;
-input int     InpP5_SL         = 0;
-input int     InpP5_TP         = 0;
-input int     InpP5_Dir        = 2;
+//==========  PATTERN 5 (MA30 BUY, SL=MA365, TP=150 | OOS Win90% Sh0.23)  =========="
+input int     InpP5_Entry      = 30;
+input int     InpP5_Exit       = 0;
+input int     InpP5_SL         = 365;
+input int     InpP5_TP         = 150;
+input int     InpP5_Dir        = 1;
 
-//==========  PATTERN 6 (default: MA121 BUY -> MA182 cross)  =========="
-input int     InpP6_Entry      = 121;
-input int     InpP6_Exit       = 182;
-input int     InpP6_SL         = 0;
-input int     InpP6_TP         = 0;
+//==========  PATTERN 6 (MA14 BUY, SL=MA365, TP=150 | OOS Win94% Sh0.17)  =========="
+input int     InpP6_Entry      = 14;
+input int     InpP6_Exit       = 0;
+input int     InpP6_SL         = 365;
+input int     InpP6_TP         = 150;
 input int     InpP6_Dir        = 1;
 
-//==========  PATTERN 7 (default: MA365 BUY -> MA182 cross)  =========="
-input int     InpP7_Entry      = 365;
-input int     InpP7_Exit       = 182;
-input int     InpP7_SL         = 0;
-input int     InpP7_TP         = 0;
-input int     InpP7_Dir        = 1;
+//==========  PATTERN 7 (OFF - escluso: debole OOS)  =========="
+input int     InpP7_Entry      = 14;
+input int     InpP7_Exit       = 0;
+input int     InpP7_SL         = 365;
+input int     InpP7_TP         = 30;
+input int     InpP7_Dir        = 0;
 
-//==========  PATTERN 8 (default: MA365 BUY -> MA121 cross)  =========="
-input int     InpP8_Entry      = 365;
-input int     InpP8_Exit       = 121;
-input int     InpP8_SL         = 0;
-input int     InpP8_TP         = 0;
-input int     InpP8_Dir        = 1;
+//==========  PATTERN 8 (OFF - escluso: debole OOS)  =========="
+input int     InpP8_Entry      = 182;
+input int     InpP8_Exit       = 0;
+input int     InpP8_SL         = 365;
+input int     InpP8_TP         = 60;
+input int     InpP8_Dir        = 0;
 
-//==========  PATTERN 9 (default: MA30 BUY -> SL=MA365 TP=150)  =========="
-input int     InpP9_Entry      = 30;
+//==========  PATTERN 9 (OFF - escluso: Sharpe ~0 OOS, campione piccolo)  =========="
+input int     InpP9_Entry      = 121;
 input int     InpP9_Exit       = 0;
 input int     InpP9_SL         = 365;
-input int     InpP9_TP         = 150;
-input int     InpP9_Dir        = 1;
+input int     InpP9_TP         = 80;
+input int     InpP9_Dir        = 0;
 
-//==========  PATTERN 10 (default: MA7 SELL -> SL=MA365 TP=150)  =========="
+//==========  PATTERN 10 (OFF - libero per test)  =========="
 input int     InpP10_Entry     = 7;
 input int     InpP10_Exit      = 0;
 input int     InpP10_SL        = 365;
 input int     InpP10_TP        = 150;
-input int     InpP10_Dir       = 2;
+input int     InpP10_Dir       = 0;
 
 #define BUF_MEDIAN  0
 #define BUF_MA365   1
@@ -130,6 +139,76 @@ datetime g_lastMarketLog;
 CTrade        g_trade;
 CPositionInfo g_pos;
 CAccountInfo  g_acc;
+
+struct PosSnapshot {
+   ulong ticket;
+   double entry;
+   double sl;
+   double tp;
+   int type;
+   int pattern;
+};
+PosSnapshot g_prevPos[100];
+int g_prevCount;
+
+void SavePosSnapshot()
+{
+   g_prevCount = 0;
+   for(int i = 0; i < PositionsTotal(); i++)
+   {
+      if(!g_pos.SelectByIndex(i)) continue;
+      if(g_pos.Symbol() != _Symbol) continue;
+      if(g_pos.Magic() != InpMagic) continue;
+      if(g_prevCount >= 100) break;
+      g_prevPos[g_prevCount].ticket  = g_pos.Ticket();
+      g_prevPos[g_prevCount].entry   = g_pos.PriceOpen();
+      g_prevPos[g_prevCount].sl      = g_pos.StopLoss();
+      g_prevPos[g_prevCount].tp      = g_pos.TakeProfit();
+      g_prevPos[g_prevCount].type    = (int)g_pos.PositionType();
+      g_prevPos[g_prevCount].pattern = GetPatternIndex(g_pos.Ticket());
+      g_prevCount++;
+   }
+}
+
+void LogBrokerCloses()
+{
+   MqlTick tk;
+   if(!SymbolInfoTick(_Symbol, tk)) return;
+
+   for(int i = g_prevCount - 1; i >= 0; i--)
+   {
+      ulong t = g_prevPos[i].ticket;
+      // Check if this ticket still exists
+      if(g_pos.SelectByTicket(t)) continue;
+
+      // Position is gone — closed by broker (TP/SL/StopOut)
+      PosSnapshot p = g_prevPos[i];
+      double exitPr = (p.type == (int)POSITION_TYPE_BUY) ? tk.bid : tk.ask;
+      double pnlPt = (p.type == (int)POSITION_TYPE_BUY) ?
+         (exitPr - p.entry) / _Point : (p.entry - exitPr) / _Point;
+      string dirStr = (p.type == (int)POSITION_TYPE_BUY) ? "BUY" : "SELL";
+
+      // Determine reason: TP, SL, or stop out
+      string reason = "";
+      if(p.tp > 0.0)
+      {
+         bool tpHit = (p.type == (int)POSITION_TYPE_BUY && tk.bid >= p.tp) ||
+                      (p.type == (int)POSITION_TYPE_SELL && tk.ask <= p.tp);
+         if(tpHit) reason = "TP target hit";
+      }
+      if(reason == "" && p.sl > 0.0)
+      {
+         bool slHit = (p.type == (int)POSITION_TYPE_BUY && tk.bid <= p.sl) ||
+                      (p.type == (int)POSITION_TYPE_SELL && tk.ask >= p.sl);
+         if(slHit) reason = "SL stop hit";
+      }
+      if(reason == "") reason = "Stop out / forced close";
+
+      if(InpLog)
+         Print(">>> BROKER CLOSE [", p.pattern, "] ", reason, " pnl=", DoubleToString(pnlPt,1), "pt #", t);
+      LogDecision("close", p.pattern, dirStr, reason, p.entry, p.sl, p.tp, 0, exitPr, pnlPt);
+   }
+}
 
 //+------------------------------------------------------------------+
 int MAPeriodToBuf(int period)
@@ -254,7 +333,19 @@ int  g_crossCache[8];
 
 void BuildCrossCache()
 {
-   for(int b=0; b<8; b++) g_crossCache[b] = CheckCrossD1(b);
+   int periods[8] = {0, 365, 182, 121, 30, 14, 7, 3};
+   string log = "";
+   for(int b=0; b<8; b++)
+   {
+      g_crossCache[b] = CheckCrossD1(b);
+      if(InpLog && g_crossCache[b] != 0)
+      {
+         if(log != "") log += ", ";
+         log += MAPeriodStr(periods[b]) + "=" + IntegerToString(g_crossCache[b]);
+      }
+   }
+   if(InpLog && log != "")
+      Print("   Cross attivi: ", log);
 }
 
 int CachedCross(int buf)
@@ -334,12 +425,17 @@ void OpenPatternTrade(int pi)
 {
    Pattern p = g_patterns[pi];
    int cross = CachedCross(MAPeriodToBuf(p.entry));
-   if(cross == 0) return;
+   if(cross == 0)
+   {
+      if(InpLog)
+         Print("   DEBUG EntryCheck: P", pi, " MA", p.entry, " cross=0 (nessun segnale)");
+      return;
+   }
 
    int wantDir = -1;
-   if(p.dir == 1 && cross == +1) wantDir = 1;
-   else if(p.dir == 2 && cross == -1) wantDir = -1;
-   else return;
+   if(p.dir == 1 && cross == +1) { wantDir = 1; if(InpLog) Print("   DEBUG EntryCheck: P", pi, " MA", p.entry, " cross=+1 -> BUY"); }
+   else if(p.dir == 2 && cross == -1) { wantDir = -1; if(InpLog) Print("   DEBUG EntryCheck: P", pi, " MA", p.entry, " cross=-1 -> SELL"); }
+   else { if(InpLog) Print("   DEBUG EntryCheck: P", pi, " cross=", cross, " dir=", p.dir, " -> no match"); return; }
 
    // Limite posizioni per pattern
    if(InpMaxPerPattern > 0)
@@ -403,7 +499,7 @@ void OpenPatternTrade(int pi)
       if(p.tpPt > 0)
          riskDist = p.tpPt * pt;
       else
-         riskDist = pipSize * 1000.0;
+         riskDist = InpFallbackRiskPips * pipSize;
    }
 
    // Protezione: distanza minima 50pt per evitare lotti enormi
@@ -424,11 +520,11 @@ void OpenPatternTrade(int pi)
    if(InpLog)
       Print(StringFormat(">>> APERTURA [%d] %s lot=%.2f entry=%.5f sl=%.5f tp=%.5f %s",
           pi, (wantDir==1?"BUY":"SELL"), lot, entry, sl, tp, cmt));
-   LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), "", entry, sl, tp, lot);
-
-   if(!g_trade.PositionOpen(_Symbol, (wantDir==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
+   if(g_trade.PositionOpen(_Symbol, (wantDir==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
                             lot, entry, sl, tp, cmt))
-      if(InpLog) Print(">>> ERR entrata [", pi, "] retcode=", g_trade.ResultRetcode());
+      LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), "", entry, sl, tp, lot);
+   else if(InpLog)
+      Print(">>> ERR entrata [", pi, "] retcode=", g_trade.ResultRetcode());
 }
 
 //+------------------------------------------------------------------+
@@ -437,6 +533,7 @@ void CheckPatternExits()
    MqlTick tk;
    SymbolInfoTick(_Symbol, tk);
 
+   int tradeCount = 0;
    for(int i = PositionsTotal() - 1; i >= 0; i--)
    {
       if(!g_pos.SelectByIndex(i)) continue;
@@ -456,28 +553,109 @@ void CheckPatternExits()
       {
          int exitCross = CachedCross(MAPeriodToBuf(p.exit));
          int needExit = (posType == POSITION_TYPE_BUY) ? -1 : +1;
+         if(InpLog && exitCross != 0)
+            Print("   DEBUG ExitCheck: P", pi, " ", (posType==POSITION_TYPE_BUY?"BUY":"SELL"),
+               " exit=MA", p.exit, " cross=", exitCross, " need=", needExit,
+               (exitCross==needExit?" -> CLOSE":" -> NO"));
          if(exitCross == needExit) { shouldClose = true; reason = "EXIT " + MAPeriodStr(p.exit) + " cross"; }
       }
 
-      if(!shouldClose && p.slLine > 0)
-      {
-         int slCross = CachedCross(MAPeriodToBuf(p.slLine));
-         int needSL = (posType == POSITION_TYPE_BUY) ? -1 : +1;
-         if(slCross == needSL) { shouldClose = true; reason = "SL " + MAPeriodStr(p.slLine) + " cross"; }
-      }
+      // SL gestito da UpdateDynamicSL() (trailing dinamico sulla linea, broker-side)
+      if(InpLog && !shouldClose && p.exit <= 0)
+         Print("   DEBUG NoExit: P", pi, " nessun cross-exit (uscita su SL dinamico/TP broker-side)");
 
       if(shouldClose)
       {
+         tradeCount++;
          double entryPr = g_pos.PriceOpen();
          ENUM_POSITION_TYPE ptype = g_pos.PositionType();
          double exitPr = (ptype == POSITION_TYPE_BUY) ? tk.bid : tk.ask;
          double pnlPt = (ptype == POSITION_TYPE_BUY) ?
             (exitPr - entryPr) / _Point : (entryPr - exitPr) / _Point;
          string dirStr = (ptype == POSITION_TYPE_BUY) ? "BUY" : "SELL";
-         LogDecision("close", pi, dirStr, reason, entryPr, 0, 0, 0, exitPr, pnlPt);
 
-         if(InpLog) Print(">>> CHIUSO [", pi, "] ", reason, " pnl=", DoubleToString(pnlPt,1), "pt #", ticket);
-         g_trade.PositionClose(ticket);
+         if(g_trade.PositionClose(ticket))
+         {
+            LogDecision("close", pi, dirStr, reason, entryPr, 0, 0, 0, exitPr, pnlPt);
+            if(InpLog) Print(">>> CHIUSO [", pi, "] ", reason, " pnl=", DoubleToString(pnlPt,1), "pt #", ticket);
+         }
+         else if(InpLog)
+            Print(">>> ERR chiusura [", pi, "] retcode=", g_trade.ResultRetcode());
+      }
+   }
+   if(InpLog && tradeCount > 0)
+      Print("   Chiuse ", tradeCount, " posizioni questo segnale");
+}
+
+//+------------------------------------------------------------------+
+// SL dinamico - replica l'analisi (pattern_mining.simulate_trade):
+// ad ogni barra D1 lo stop e' il valore corrente della linea MA.
+// Trascina lo stop broker-side sul valore della linea (entrambe le
+// direzioni). Se la linea raggiunge il prezzo, chiude a mercato.
+// Usa shift 1 (D1 chiusa): nessun look-ahead, 1 barra piu' prudente
+// dell'analisi che usa il valore della barra corrente.
+//+------------------------------------------------------------------+
+void UpdateDynamicSL()
+{
+   MqlTick tk;
+   if(!SymbolInfoTick(_Symbol, tk)) return;
+
+   long   stopsLevel  = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL);
+   double minStopDist = (double)stopsLevel * _Point;
+
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      if(!g_pos.SelectByIndex(i)) continue;
+      if(g_pos.Symbol() != _Symbol) continue;
+      if(g_pos.Magic() != InpMagic) continue;
+
+      ulong ticket = g_pos.Ticket();
+      int pi = GetPatternIndex(ticket);
+      if(pi < 0 || pi >= g_numPatterns) continue;
+
+      Pattern p = g_patterns[pi];
+      if(p.slLine <= 0) continue;
+
+      double lineVal = 0.0;
+      if(!ReadBufD1(MAPeriodToBuf(p.slLine), 1, lineVal) || !IsPriceOk(lineVal))
+         continue;
+
+      ENUM_POSITION_TYPE posType = g_pos.PositionType();
+      bool   buy     = (posType == POSITION_TYPE_BUY);
+      double curSL   = g_pos.StopLoss();
+      double curTP   = g_pos.TakeProfit();
+      double entryPr = g_pos.PriceOpen();
+      string dirStr  = buy ? "BUY" : "SELL";
+
+      // La linea ha raggiunto/superato il prezzo (entro lo stops level): esci a mercato
+      bool lineReached = buy ? (lineVal >= tk.bid - minStopDist)
+                             : (lineVal <= tk.ask + minStopDist);
+      if(lineReached)
+      {
+         double exitPr = buy ? tk.bid : tk.ask;
+         double pnlPt  = buy ? (exitPr - entryPr) / _Point : (entryPr - exitPr) / _Point;
+         if(g_trade.PositionClose(ticket))
+         {
+            LogDecision("close", pi, dirStr, "SL dinamico " + MAPeriodStr(p.slLine) + " toccato",
+                        entryPr, 0, 0, 0, exitPr, pnlPt);
+            if(InpLog) Print(">>> CHIUSO [", pi, "] SL dinamico ", MAPeriodStr(p.slLine),
+                             " pnl=", DoubleToString(pnlPt,1), "pt #", ticket);
+         }
+         else if(InpLog)
+            Print(">>> ERR chiusura SL dinamico [", pi, "] retcode=", g_trade.ResultRetcode());
+         continue;
+      }
+
+      // Trascina lo stop sul valore corrente della linea (segue la MA)
+      if(MathAbs(lineVal - curSL) > _Point)
+      {
+         if(g_trade.PositionModify(ticket, lineVal, curTP))
+         {
+            if(InpLog) Print("   SL trail [", pi, "] -> ", DoubleToString(lineVal, _Digits),
+                             " (", MAPeriodStr(p.slLine), ")");
+         }
+         else if(InpLog)
+            Print("   ERR SL trail [", pi, "] retcode=", g_trade.ResultRetcode());
       }
    }
 }
@@ -505,6 +683,7 @@ int OnInit()
    g_lastMarketLog = 0;
 
    InitPatterns();
+   SavePosSnapshot();
 
    // Log decisioni su file
    g_logHandle = -1;
@@ -600,20 +779,25 @@ void OnTick()
 
    BuildCrossCache();
    LogMarketSnapshot();
+   LogBrokerCloses();
 
    if(InpLog)
-      Print(StringFormat("=== SEGNALE === barra=%s D1=%s pos=%d patterns=%d",
-          TimeToString(g_bar0), TimeToString(d1today), PositionsTotal(), g_numPatterns));
+      Print(StringFormat("=== SEGNALE === barra=%s D1=%s pos=%d patterns=%d equity=%.0f",
+          TimeToString(g_bar0), TimeToString(d1today), PositionsTotal(), g_numPatterns, g_acc.Equity()));
 
    CheckPatternExits();
+   UpdateDynamicSL();   // trailing SL dinamico sulla linea (allineato all'analisi)
 
    if(InpMaxPos > 0 && PositionsTotal() >= InpMaxPos)
    {
       if(InpLog) Print("   Max posizioni raggiunto (", InpMaxPos, ") - nessuna nuova entrata");
+      SavePosSnapshot();
       return;
    }
 
    for(int pi = 0; pi < g_numPatterns; pi++)
       OpenPatternTrade(pi);
+
+   SavePosSnapshot();
 }
 //+------------------------------------------------------------------+

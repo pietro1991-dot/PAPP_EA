@@ -13,6 +13,8 @@ Uso: python3 pattern_mining.py <PAPP_Export.csv> [opzioni]
 Opzioni:
   --output=NOME       Salva output completo su file (default: solo stdout)
   --spread=N          Spread in punti (default: 15 = 1.5 pip EURUSD)
+  --commission=N      Commissione round-trip in punti (default: 0; es. 7 = 0.7 pip)
+  --swap=N            Swap in punti per barra D1 tenuta (default: 0; puo' essere negativo)
   --train-pct=N       Percentuale per training (default: 1.0 = 100%)
   --split-date=YYYY.MM.DD  Cutoff train/test (sovrascrive train-pct)
   --min-trades=N      Minimo trade per pattern valido (default: 10)
@@ -99,6 +101,10 @@ def detect_entries(rows):
 # SHARPE CORRETTO: gestisce std=0
 # ============================================================
 def compute_sharpe(pnls):
+    # Sharpe PER-TRADE (avg/sd). NON annualizzato con sqrt(252): i trade
+    # sono eventi sporadici (~pochi/anno); moltiplicare per sqrt(252)
+    # assumeva 252 trade/anno e gonfiava il valore di ~10-15x.
+    # Per annualizzare: moltiplicare per sqrt(trade_per_anno).
     if len(pnls) < 2:
         return 0.0
     avg = mean(pnls)
@@ -107,42 +113,62 @@ def compute_sharpe(pnls):
     except:
         sd = 0
     if sd == 0:
-        return 99.0 if avg > 0 else (-99.0 if avg < 0 else 0.0)
-    return avg / sd * sqrt(252)
+        # Varianza nulla = artefatto (es. TP minuscolo sempre colpito,
+        # tutti i pnl identici). Non e' un edge reale: 0 per non
+        # inquinare la classifica con Sharpe finti.
+        return 0.0
+    return avg / sd
 
 # ============================================================
 # SIMULAZIONE TRADE: SL DINAMICO sulla linea, TP fisso
 # ============================================================
 def simulate_trade(rows, entry_idx, buy, entry_price, sl_col, tp_pt,
-                   spread_pt=0, max_bars=MAX_BARS):
-    for j in range(entry_idx+1, min(entry_idx+max_bars, len(rows))):
+                   spread_pt=0, commission_pt=0, swap_pt=0, max_bars=MAX_BARS):
+    end = min(entry_idx + max_bars, len(rows))
+    for j in range(entry_idx+1, end):
         row = rows[j]
         hi = float(row['high'])
         lo = float(row['low'])
-        sl_val = float(row[sl_col])
+        # SL = valore della linea alla barra PRECEDENTE (j-1), noto a inizio
+        # barra j: niente look-ahead. (Prima usava row[j], cioe' la MA
+        # calcolata con la chiusura della stessa barra di cui si testa il low.)
+        sl_val = float(rows[j-1][sl_col])
+        bars = j - entry_idx
+        cost = spread_pt + commission_pt + swap_pt * bars
 
         # SL DINAMICO: il prezzo tocca la linea
         if buy and lo <= sl_val:
-            exit_price = sl_val
-            pnl = (exit_price - entry_price) / PT_SIZE - spread_pt
+            pnl = (sl_val - entry_price) / PT_SIZE - cost
             return pnl, 'SL', j, sl_col
         if not buy and hi >= sl_val:
-            exit_price = sl_val
-            pnl = (entry_price - exit_price) / PT_SIZE - spread_pt
+            pnl = (entry_price - sl_val) / PT_SIZE - cost
             return pnl, 'SL', j, sl_col
 
         # TP fisso
         if buy and hi >= entry_price + tp_pt * PT_SIZE:
-            return tp_pt - spread_pt, 'TP', j, 'TP'
+            return tp_pt - cost, 'TP', j, 'TP'
         if not buy and lo <= entry_price - tp_pt * PT_SIZE:
-            return tp_pt - spread_pt, 'TP', j, 'TP'
+            return tp_pt - cost, 'TP', j, 'TP'
 
+    # TIMEOUT: ne' SL ne' TP entro max_bars -> chiudi mark-to-market
+    # all'ultima close disponibile (NON scartare: scartare nascondeva i
+    # trade-zombie e creava censoring bias).
+    j = end - 1
+    if j > entry_idx:
+        close_j = float(rows[j]['close'])
+        bars = j - entry_idx
+        cost = spread_pt + commission_pt + swap_pt * bars
+        pnl = ((close_j - entry_price) if buy else (entry_price - close_j)) / PT_SIZE - cost
+        return pnl, 'TIMEOUT', j, 'TIMEOUT'
     return None
 
 # ============================================================
 # USCITA SU CROSSOVER DI LINEA SPECIFICA (in direzione opposta)
 # ============================================================
-def simulate_exit_on_cross(rows, entry_idx, buy, exit_cross_col, max_bars=MAX_BARS):
+def simulate_exit_on_cross(rows, entry_idx, buy, exit_cross_col,
+                           commission_pt=0, swap_pt=0, max_bars=MAX_BARS):
+    # NB: lo spread viene sottratto dai chiamanti; qui aggiungiamo
+    # commissione (una volta) e swap (per barra tenuta).
     entry_price = float(rows[entry_idx]['close'])
     for j in range(entry_idx+1, min(entry_idx+max_bars, len(rows))):
         row = rows[j]
@@ -150,16 +176,18 @@ def simulate_exit_on_cross(rows, entry_idx, buy, exit_cross_col, max_bars=MAX_BA
         cv = int(row.get(exit_cross_col, 0))
         if cv == 0:
             continue
+        bars = j - entry_idx
+        cost = commission_pt + swap_pt * bars
         if buy and cv == -1:
-            return (close_j - entry_price) / PT_SIZE, 'CROSS', j, exit_cross_col
+            return (close_j - entry_price) / PT_SIZE - cost, 'CROSS', j, exit_cross_col
         if not buy and cv == 1:
-            return (entry_price - close_j) / PT_SIZE, 'CROSS', j, exit_cross_col
+            return (entry_price - close_j) / PT_SIZE - cost, 'CROSS', j, exit_cross_col
     return None
 
 # ============================================================
 # ANALISI 1: Entry su crossover → exit su prossimo crossover opposto (qualsiasi linea)
 # ============================================================
-def analyze_cross_to_opposite(entries, rows, spread_pt=0):
+def analyze_cross_to_opposite(entries, rows, spread_pt=0, commission_pt=0, swap_pt=0):
     results = []
     for ent in entries:
         buy = (ent['dir'] == 1)
@@ -168,19 +196,20 @@ def analyze_cross_to_opposite(entries, rows, spread_pt=0):
         for j in range(idx+1, min(idx+MAX_BARS, len(rows))):
             row = rows[j]
             close_j = float(row['close'])
+            cost = spread_pt + commission_pt + swap_pt * (j - idx)
             hit = False
             for cross_col in CROSS_COLS:
                 cv = int(row.get(cross_col, 0))
                 if cv == 0:
                     continue
                 if buy and cv == -1:
-                    pnl = (close_j - entry_price) / PT_SIZE - spread_pt
+                    pnl = (close_j - entry_price) / PT_SIZE - cost
                     results.append({**ent, 'exit_line': cross_col, 'exit_type': 'OPP_CROSS',
                                     'bars_held': j-idx, 'pnl_pt': pnl, 'exit_idx': j})
                     hit = True
                     break
                 if not buy and cv == 1:
-                    pnl = (entry_price - close_j) / PT_SIZE - spread_pt
+                    pnl = (entry_price - close_j) / PT_SIZE - cost
                     results.append({**ent, 'exit_line': cross_col, 'exit_type': 'OPP_CROSS',
                                     'bars_held': j-idx, 'pnl_pt': pnl, 'exit_idx': j})
                     hit = True
@@ -192,12 +221,13 @@ def analyze_cross_to_opposite(entries, rows, spread_pt=0):
 # ============================================================
 # ANALISI 2: Entry su crossover → exit su crossover di linea specifica
 # ============================================================
-def analyze_cross_to_specific(entries, rows, spread_pt=0):
+def analyze_cross_to_specific(entries, rows, spread_pt=0, commission_pt=0, swap_pt=0):
     results = []
     for ent in entries:
         buy = (ent['dir'] == 1)
         for exit_cross_col in CROSS_COLS:
-            ex = simulate_exit_on_cross(rows, ent['idx'], buy, exit_cross_col)
+            ex = simulate_exit_on_cross(rows, ent['idx'], buy, exit_cross_col,
+                                        commission_pt, swap_pt)
             if ex is None:
                 continue
             pnl, etype, eidx, eline = ex
@@ -209,7 +239,7 @@ def analyze_cross_to_specific(entries, rows, spread_pt=0):
 # ============================================================
 # ANALISI 3: Grid search - SL dinamico su linea + TP fisso
 # ============================================================
-def analyze_dynamic_sl_grid(entries, rows, spread_pt=0):
+def analyze_dynamic_sl_grid(entries, rows, spread_pt=0, commission_pt=0, swap_pt=0):
     results = []
     for ent in entries:
         buy = (ent['dir'] == 1)
@@ -229,7 +259,8 @@ def analyze_dynamic_sl_grid(entries, rows, spread_pt=0):
 
             for tp_pt in TP_CANDIDATES:
                 outcome = simulate_trade(rows, idx, buy, entry_price,
-                                         sl_col, tp_pt, spread_pt)
+                                         sl_col, tp_pt, spread_pt,
+                                         commission_pt, swap_pt)
                 if outcome is None:
                     continue
                 pnl, exit_type, exit_idx, exit_line = outcome
@@ -394,6 +425,8 @@ def main():
 
     # Default parametri
     spread_pt = 15
+    commission_pt = 0    # commissione round-trip in punti (es. 7 = 0.7 pip)
+    swap_pt = 0.0        # swap in punti per barra D1 tenuta (puo' essere negativo)
     train_pct = 1.0
     split_date = None
     min_trades = 10
@@ -406,6 +439,10 @@ def main():
             out_path = arg.split('=', 1)[1]
         elif arg.startswith('--spread='):
             spread_pt = int(arg.split('=', 1)[1])
+        elif arg.startswith('--commission='):
+            commission_pt = float(arg.split('=', 1)[1])
+        elif arg.startswith('--swap='):
+            swap_pt = float(arg.split('=', 1)[1])
         elif arg.startswith('--train-pct='):
             train_pct = float(arg.split('=', 1)[1])
         elif arg.startswith('--split-date='):
@@ -476,7 +513,19 @@ def main():
         print("Troppo poche entrate. Abbassa i filtri o usa --min-trades.")
         return
 
-    print(f"\nSpread applicato: {spread_pt}pt ({spread_pt/10:.1f} pip)")
+    print(f"\nCosti applicati: spread={spread_pt}pt ({spread_pt/10:.1f} pip), "
+          f"commissione={commission_pt}pt, swap={swap_pt}pt/barra")
+    if commission_pt == 0 and swap_pt == 0:
+        print("  ATTENZIONE: commissione e swap a 0. Usa --commission= e --swap= "
+              "per costi realistici (lo swap pesa sui pattern a lunga tenuta).")
+    print("  NOTA: Sharpe = PER-TRADE (avg/sd), non annualizzato. Per annualizzare "
+          "moltiplica per sqrt(trade/anno).")
+    if not test_rows:
+        print("\n  " + "!"*72)
+        print("  !! IN-SAMPLE AL 100%: nessun test set. I 'migliori' pattern sono")
+        print("  !! soggetti a selection bias (centinaia di combinazioni testate).")
+        print("  !! Usa --split-date=YYYY.MM.DD o --train-pct=0.7 per validare OOS.")
+        print("  " + "!"*72)
 
     # ============================================================
     # DEBUG: stampa i primi N trade per verifica manuale
@@ -525,7 +574,7 @@ def main():
     # ANALISI 1
     # ============================================================
     print_section("ANALISI 1: Entry = crossover D1, Exit = prossimo crossover opposto (qualsiasi)")
-    res1 = analyze_cross_to_opposite(entries, rows, spread_pt)
+    res1 = analyze_cross_to_opposite(entries, rows, spread_pt, commission_pt, swap_pt)
     print(f"  Trade chiusi: {len(res1)}")
     if res1:
         p1 = aggregate(res1, ['line', 'dir'], min_trades)
@@ -535,7 +584,7 @@ def main():
     # ANALISI 2
     # ============================================================
     print_section("ANALISI 2: Entry = crossover, Exit = crossover su linea specifica (opposta)")
-    res2 = analyze_cross_to_specific(entries, rows, spread_pt)
+    res2 = analyze_cross_to_specific(entries, rows, spread_pt, commission_pt, swap_pt)
     print(f"  Trade chiusi: {len(res2)}")
     if res2:
         p2 = aggregate(res2, ['line', 'dir', 'exit_line'], min_trades)
@@ -546,7 +595,7 @@ def main():
     # ANALISI 3 - Grid Search con SL DINAMICO
     # ============================================================
     print_section("ANALISI 3: Entry = crossover, Exit = SL dinamico su linea + TP fisso")
-    res3 = analyze_dynamic_sl_grid(entries, rows, spread_pt)
+    res3 = analyze_dynamic_sl_grid(entries, rows, spread_pt, commission_pt, swap_pt)
     print(f"  Trade chiusi: {len(res3)}")
     if res3:
         p3 = aggregate(res3, ['line', 'dir', 'sl_line', 'tp_pt'], min_trades)
@@ -620,13 +669,14 @@ def main():
                         sl_col = LINE_COLS[LINE_NAMES.index(sl)] if sl and sl in LINE_NAMES else None
                         if sl_col:
                             out = simulate_trade(test_rows, te['idx'], buy, te['price'],
-                                                 sl_col, tp, spread_pt)
+                                                 sl_col, tp, spread_pt, commission_pt, swap_pt)
                             if out:
                                 test_trades.append(out[0])
                     elif etype in ('OPP_CROSS', 'SPEC_CROSS'):
                         ec_col = ex_line if ex_line in CROSS_COLS else None
                         if ec_col:
-                            out = simulate_exit_on_cross(test_rows, te['idx'], buy, ec_col)
+                            out = simulate_exit_on_cross(test_rows, te['idx'], buy, ec_col,
+                                                         commission_pt, swap_pt)
                             if out:
                                 test_trades.append(out[0] - spread_pt)
 

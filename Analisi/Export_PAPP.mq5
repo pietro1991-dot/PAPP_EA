@@ -3,9 +3,10 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.01"
+#property version   "2.02"
 #property description "Esporta D1-anchor MA + tutte le metriche PaPP in CSV"
 #property description "Crossover calcolati su D1 reali, non su valori interpolati"
+#property description "v2.02: iCustom con stessi parametri dell'EA (raw step) + cluster% su finestra"
 #property script_show_inputs
 
 input string InpIndicatorName = "PaPP_Median.ex5";
@@ -58,7 +59,13 @@ double MedArr(double &src[],int c)
 //+------------------------------------------------------------------+
 void OnStart()
 {
-   int g_ind = iCustom(_Symbol,_Period,InpIndicatorName);
+   // IMPORTANTE: stessi parametri dell'EA (EA_Pattern OnInit) per ottenere
+   // valori MA IDENTICI. Mapping input PaPP_Median:
+   //   FontSize=9, Smooth=false, ShowMA=true, ShowPanel=true, PanelBg, InpSignals=true
+   // Smooth=false / InpSignals=true => valori RAW a gradino (no interpolazione,
+   // no look-ahead) coerenti su qualunque timeframe, identici a quelli usati dall'EA.
+   int g_ind = iCustom(_Symbol,_Period,InpIndicatorName,
+      9, false, true, true, C'20,20,25', true);
    if(g_ind==INVALID_HANDLE) { Print("ERRORE: iCustom fallito"); return; }
 
    for(int att=0; att<100; att++)
@@ -294,7 +301,9 @@ void OnStart()
                if(md>0) { double ds=0; for(int n=0;n<cv;n++) ds+=MathAbs(vv[n]-md)/md*100.0; if(cc<252) ca[cc++]=ds/cv; }
             }
          }
-         if(cc>0) clu=ca[0];
+         // cluster% = dispersione MEDIA delle MA sulla finestra CLWIN (252 barre D1),
+         // non solo la barra corrente (prima usava ca[0], buttando via la finestra).
+         if(cc>0) { double sm=0; for(int q=0;q<cc;q++) sm+=ca[q]; clu=sm/cc; }
 
          double v7b[7]; int v7c=0;
          for(int m=0;m<7;m++)
