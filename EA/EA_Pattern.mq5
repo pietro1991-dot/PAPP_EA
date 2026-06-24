@@ -3,7 +3,7 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.03"
+#property version   "2.04"
 #property description "Multi-Pattern EA - Fino a 10 pattern configurabili da input"
 #property description "Ogni pattern: Entry, Exit, SL, TP, Direction. Tutti in simultanea."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL"
@@ -24,6 +24,7 @@ input int     InpMaxPos        = 20;            // Max posizioni totali (0=illim
 input int     InpMaxPerPattern = 1;             // Max posizioni per pattern (0=illimitato)
 input int     InpMagic         = 20260623;
 input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuoto=disabilita)
+input int     InpMarketInterval = 300;           // Intervallo market snapshot secondi (0=disabilita)
 input bool    InpLog           = true;
 
 //==========  PATTERN 1 (default: MA3 SELL -> MA121 cross)  =========="
@@ -124,6 +125,7 @@ datetime g_bar0;
 datetime g_lastD1Today;
 bool     g_ready;
 int      g_logHandle = -1;
+datetime g_lastMarketLog;
 
 CTrade        g_trade;
 CPositionInfo g_pos;
@@ -500,6 +502,7 @@ int OnInit()
    g_ready  = false;
    g_bar0   = 0;
    g_lastD1Today = 0;
+   g_lastMarketLog = 0;
 
    InitPatterns();
 
@@ -514,6 +517,17 @@ int OnInit()
          Print("WARNING: log file non aperto: ", InpLogFile);
       else
          Print("Log decisioni: ", TerminalInfoString(TERMINAL_COMMONDATA_PATH), "\\Files\\", InpLogFile);
+   }
+
+   // Timer market snapshot
+   if(InpMarketInterval > 0)
+   {
+      if(EventSetTimer(InpMarketInterval))
+      {
+         if(InpLog) Print("Timer market snapshot avviato: ", InpMarketInterval, "s");
+      }
+      else
+         Print("WARNING: EventSetTimer fallito per ", InpMarketInterval, "s");
    }
 
    if(InpMaxLot > 0.0)
@@ -538,7 +552,18 @@ void OnDeinit(const int reason)
    if(g_ind != INVALID_HANDLE) IndicatorRelease(g_ind);
    if(g_indD1 != INVALID_HANDLE) IndicatorRelease(g_indD1);
    if(g_logHandle >= 0) FileClose(g_logHandle);
+   EventKillTimer();
    if(InpLog) Print("DEINIT reason=" + IntegerToString(reason));
+}
+
+//+------------------------------------------------------------------+
+void OnTimer()
+{
+   if(g_logHandle < 0) return;
+   datetime now = TimeCurrent();
+   if(now - g_lastMarketLog < 60) return;  // non piu' spesso di 60s
+   g_lastMarketLog = now;
+   LogMarketSnapshot();
 }
 
 //+------------------------------------------------------------------+
