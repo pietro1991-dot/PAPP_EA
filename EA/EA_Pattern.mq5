@@ -3,7 +3,7 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.05"
+#property version   "2.08"
 #property description "Multi-Pattern EA - Fino a 10 pattern configurabili da input"
 #property description "Ogni pattern: Entry, Exit, SL, TP, Direction. Tutti in simultanea."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL"
@@ -22,6 +22,7 @@ input double  InpMaxLot        = 0.0;           // Lotto massimo assoluto (0=usa
 input int     InpMaxSpread     = 50;            // Spread massimo in punti (0=disabilita)
 input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
 input double  InpFallbackRiskPips = 100.0;      // Risk distance in pips quando il pattern non ha SL (per sizing)
+input bool    InpDynamicSL     = true;          // true=SL trascina sulla linea MA ogni D1; false=SL statico all'entry
 input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
 input int     InpMaxPerPattern = 1;             // Max posizioni per pattern (0=illimitato)
 input int     InpMagic         = 20260623;
@@ -29,12 +30,12 @@ input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuo
 input int     InpMarketInterval = 300;           // Intervallo market snapshot secondi (0=disabilita)
 input bool    InpLog           = true;
 
-// Pattern da ANALISI 3 (Entry cross + SL dinamico su linea + TP fisso).
-// SOLO pattern validati out-of-sample (train <=2020, test >2020), ordinati
-// per Sharpe per-trade nel test set. Sharpe corretto (per-trade) + costi
-// (spread+commissione) + niente look-ahead. I pattern deboli/negativi OOS
-// (MA14 SELL TP30, MA182 SELL TP60, MA121 SELL TP80) sono stati rimossi.
-// Linee: 0=Med,3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL. Exit=0.
+// TUTTI i pattern validati out-of-sample (train <=2020, test >2020).
+// Due famiglie affiancate:
+//  - P1-P6: ANALISI 3 (SL su linea + TP fisso) - win ~60%, drawdown contenuto.
+//  - P7-P10: ANALISI 2 (uscita su incrocio MA121) - trend-following, profitto OOS
+//            molto alto ma drawdown grande, niente hard SL (gap risk).
+// Linee: 0=Med,3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL.
 
 //==========  PATTERN 1 (MA30 SELL, SL=MA365, TP=150 | OOS Win95% Sh1.96)  =========="
 input int     InpP1_Entry      = 30;            // Entry line (0=Med,3,7,14,30,121,182,365)
@@ -78,33 +79,37 @@ input int     InpP6_SL         = 365;
 input int     InpP6_TP         = 150;
 input int     InpP6_Dir        = 1;
 
-//==========  PATTERN 7 (OFF - escluso: debole OOS)  =========="
-input int     InpP7_Entry      = 14;
-input int     InpP7_Exit       = 0;
-input int     InpP7_SL         = 365;
-input int     InpP7_TP         = 30;
-input int     InpP7_Dir        = 0;
+// P7-P10: TP ampio (default 1500pt) come TETTO oltre all'uscita su incrocio MA121.
+// Chiude su MA121 cross OPPURE al TP, quel che viene prima. TP=1500 = compromesso
+// (OOS ~+192k, win 64%); modificabile da input. Metti TP=0 per il trend-following puro.
 
-//==========  PATTERN 8 (OFF - escluso: debole OOS)  =========="
-input int     InpP8_Entry      = 182;
-input int     InpP8_Exit       = 0;
-input int     InpP8_SL         = 365;
-input int     InpP8_TP         = 60;
-input int     InpP8_Dir        = 0;
+//==========  PATTERN 7 (MA3 SELL -> cross MA121, TP cap 1500)  =========="
+input int     InpP7_Entry      = 3;
+input int     InpP7_Exit       = 121;
+input int     InpP7_SL         = 0;
+input int     InpP7_TP         = 1500;
+input int     InpP7_Dir        = 2;
 
-//==========  PATTERN 9 (OFF - escluso: Sharpe ~0 OOS, campione piccolo)  =========="
-input int     InpP9_Entry      = 121;
-input int     InpP9_Exit       = 0;
-input int     InpP9_SL         = 365;
-input int     InpP9_TP         = 80;
-input int     InpP9_Dir        = 0;
+//==========  PATTERN 8 (MA7 SELL -> cross MA121, TP cap 1500)  =========="
+input int     InpP8_Entry      = 7;
+input int     InpP8_Exit       = 121;
+input int     InpP8_SL         = 0;
+input int     InpP8_TP         = 1500;
+input int     InpP8_Dir        = 2;
 
-//==========  PATTERN 10 (OFF - libero per test)  =========="
-input int     InpP10_Entry     = 7;
-input int     InpP10_Exit      = 0;
-input int     InpP10_SL        = 365;
-input int     InpP10_TP        = 150;
-input int     InpP10_Dir       = 0;
+//==========  PATTERN 9 (MA14 SELL -> cross MA121, TP cap 1500)  =========="
+input int     InpP9_Entry      = 14;
+input int     InpP9_Exit       = 121;
+input int     InpP9_SL         = 0;
+input int     InpP9_TP         = 1500;
+input int     InpP9_Dir        = 2;
+
+//==========  PATTERN 10 (MA30 SELL -> cross MA121, TP cap 1500)  =========="
+input int     InpP10_Entry     = 30;
+input int     InpP10_Exit      = 121;
+input int     InpP10_SL        = 0;
+input int     InpP10_TP        = 1500;
+input int     InpP10_Dir       = 2;
 
 #define BUF_MEDIAN  0
 #define BUF_MA365   1
@@ -597,6 +602,8 @@ void CheckPatternExits()
 //+------------------------------------------------------------------+
 void UpdateDynamicSL()
 {
+   if(!InpDynamicSL) return;   // SL statico: lo stop resta al valore impostato all'entry
+
    MqlTick tk;
    if(!SymbolInfoTick(_Symbol, tk)) return;
 
