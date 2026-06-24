@@ -3,10 +3,10 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.00"
-#property description "Multi-Pattern EA - TUTTI i pattern da pattern_mining.py in simultanea"
-#property description "9 pattern simultanei: entry/exit cross + SL/TP. Ogni pattern ha la sua logica."
-#property description "Basato su analisi: MA3/7/14/30/121/182/365/Median + SL=MA365 + TP fisso"
+#property version   "2.01"
+#property description "Multi-Pattern EA - Fino a 10 pattern configurabili da input"
+#property description "Ogni pattern: Entry, Exit, SL, TP, Direction. Tutti in simultanea."
+#property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL"
 
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
@@ -16,12 +16,79 @@ input string  InpIndicatorName = "PaPP_Median.ex5";
 
 input group   "==========  RISK GLOBALE  =========="
 input double  InpRiskPct       = 1.0;           // Rischio % per trade
-input double  InpLotFixed      = 0.0;           // Lotto fisso per pattern (0=usa %)
+input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input int     InpMagic         = 20260623;
 input bool    InpLog           = true;
 
-input group   "==========  SPREAD (solo log)  =========="
-input int     InpSpreadPt      = 15;            // Spread stimato in punti (log)
+input group   "==========  PATTERN 1 (default: MA3 SELL -> MA121 cross)  =========="
+input int     InpP1_Entry      = 3;             // Entry line (0=Med,3,7,14,30,121,182,365)
+input int     InpP1_Exit       = 121;           // Exit cross line (0=nessuno)
+input int     InpP1_SL         = 0;             // SL line (0=nessuno)
+input int     InpP1_TP         = 0;             // TP punti (0=nessuno)
+input int     InpP1_Dir        = 2;             // 0=OFF, 1=BUY, 2=SELL
+
+input group   "==========  PATTERN 2 (default: MA7 SELL -> MA121 cross)  =========="
+input int     InpP2_Entry      = 7;
+input int     InpP2_Exit       = 121;
+input int     InpP2_SL         = 0;
+input int     InpP2_TP         = 0;
+input int     InpP2_Dir        = 2;
+
+input group   "==========  PATTERN 3 (default: MA14 SELL -> MA121 cross)  =========="
+input int     InpP3_Entry      = 14;
+input int     InpP3_Exit       = 121;
+input int     InpP3_SL         = 0;
+input int     InpP3_TP         = 0;
+input int     InpP3_Dir        = 2;
+
+input group   "==========  PATTERN 4 (default: MA30 SELL -> MA121 cross)  =========="
+input int     InpP4_Entry      = 30;
+input int     InpP4_Exit       = 121;
+input int     InpP4_SL         = 0;
+input int     InpP4_TP         = 0;
+input int     InpP4_Dir        = 2;
+
+input group   "==========  PATTERN 5 (default: MA365 SELL -> MA7 cross)  =========="
+input int     InpP5_Entry      = 365;
+input int     InpP5_Exit       = 7;
+input int     InpP5_SL         = 0;
+input int     InpP5_TP         = 0;
+input int     InpP5_Dir        = 2;
+
+input group   "==========  PATTERN 6 (default: MA121 BUY -> MA182 cross)  =========="
+input int     InpP6_Entry      = 121;
+input int     InpP6_Exit       = 182;
+input int     InpP6_SL         = 0;
+input int     InpP6_TP         = 0;
+input int     InpP6_Dir        = 1;
+
+input group   "==========  PATTERN 7 (default: MA365 BUY -> MA182 cross)  =========="
+input int     InpP7_Entry      = 365;
+input int     InpP7_Exit       = 182;
+input int     InpP7_SL         = 0;
+input int     InpP7_TP         = 0;
+input int     InpP7_Dir        = 1;
+
+input group   "==========  PATTERN 8 (default: MA365 BUY -> MA121 cross)  =========="
+input int     InpP8_Entry      = 365;
+input int     InpP8_Exit       = 121;
+input int     InpP8_SL         = 0;
+input int     InpP8_TP         = 0;
+input int     InpP8_Dir        = 1;
+
+input group   "==========  PATTERN 9 (default: MA30 BUY -> SL=MA365 TP=150)  =========="
+input int     InpP9_Entry      = 30;
+input int     InpP9_Exit       = 0;
+input int     InpP9_SL         = 365;
+input int     InpP9_TP         = 150;
+input int     InpP9_Dir        = 1;
+
+input group   "==========  PATTERN 10 (default: MA7 SELL -> SL=MA365 TP=150)  =========="
+input int     InpP10_Entry     = 7;
+input int     InpP10_Exit      = 0;
+input int     InpP10_SL        = 365;
+input int     InpP10_TP        = 150;
+input int     InpP10_Dir       = 2;
 
 #define BUF_MEDIAN  0
 #define BUF_MA365   1
@@ -35,14 +102,14 @@ input int     InpSpreadPt      = 15;            // Spread stimato in punti (log)
 #define MAX_PATTERNS 20
 
 struct Pattern {
-   int   entry;       // MA line for entry cross
-   int   exit;        // MA line for exit cross (0=nessuno)
-   int   slLine;      // MA line for SL dynamic check (0=nessuno)
-   int   tpPt;        // TP in punti (0=nessuno)
-   int   dir;         // 1=BUY, 2=SELL
+   int entry;
+   int exit;
+   int slLine;
+   int tpPt;
+   int dir;
 };
 
-Pattern g_patterns[MAX_PATTERNS];
+Pattern  g_patterns[MAX_PATTERNS];
 int      g_numPatterns;
 
 int      g_ind;
@@ -75,34 +142,43 @@ int MAPeriodToBuf(int period)
 string MAPeriodStr(int period)
 {
    if(period == 0) return "Median";
+   if(period < 0)  return "OFF";
    return "MA" + IntegerToString(period);
 }
 
-string DirStr(int dir) { return (dir==1)?"BUY":"SELL"; }
+string DirStr(int dir)
+{
+   if(dir == 0) return "OFF";
+   if(dir == 1) return "BUY";
+   return "SELL";
+}
 
 //+------------------------------------------------------------------+
 void InitPatterns()
 {
    g_numPatterns = 0;
 
-   // Pattern da Analisi 2: entry su cross, exit su cross opposto
-   // (entry, exit, slLine, tpPt, dir)
+   int e[10] = {InpP1_Entry, InpP2_Entry, InpP3_Entry, InpP4_Entry, InpP5_Entry,
+                InpP6_Entry, InpP7_Entry, InpP8_Entry, InpP9_Entry, InpP10_Entry};
+   int x[10] = {InpP1_Exit,  InpP2_Exit,  InpP3_Exit,  InpP4_Exit,  InpP5_Exit,
+                InpP6_Exit,  InpP7_Exit,  InpP8_Exit,  InpP9_Exit,  InpP10_Exit};
+   int s[10] = {InpP1_SL,    InpP2_SL,    InpP3_SL,    InpP4_SL,    InpP5_SL,
+                InpP6_SL,    InpP7_SL,    InpP8_SL,    InpP9_SL,    InpP10_SL};
+   int t[10] = {InpP1_TP,    InpP2_TP,    InpP3_TP,    InpP4_TP,    InpP5_TP,
+                InpP6_TP,    InpP7_TP,    InpP8_TP,    InpP9_TP,    InpP10_TP};
+   int d[10] = {InpP1_Dir,    InpP2_Dir,   InpP3_Dir,   InpP4_Dir,   InpP5_Dir,
+                InpP6_Dir,    InpP7_Dir,   InpP8_Dir,   InpP9_Dir,   InpP10_Dir};
 
-   // --- SELL patterns (entrate ribassiste) ---
-   g_patterns[g_numPatterns++] = {3,   121, 0, 0, 2};  // MA3 SELL -> MA121 cross  (Sharpe 2.07, 1060t)
-   g_patterns[g_numPatterns++] = {7,   121, 0, 0, 2};  // MA7 SELL -> MA121 cross  (Sharpe 2.09, 544t)
-   g_patterns[g_numPatterns++] = {14,  121, 0, 0, 2};  // MA14 SELL -> MA121 cross (Sharpe 1.61, 363t)
-   g_patterns[g_numPatterns++] = {30,  121, 0, 0, 2};  // MA30 SELL -> MA121 cross (Sharpe 2.64, 245t)
-   g_patterns[g_numPatterns++] = {365, 7,   0, 0, 2};  // MA365 SELL -> MA7 cross  (Sharpe 3.35, 60t)
-
-   // --- BUY patterns (entrate rialziste) ---
-   g_patterns[g_numPatterns++] = {121, 182, 0, 0, 1};  // MA121 BUY -> MA182 cross  (Sharpe 2.20, 118t)
-   g_patterns[g_numPatterns++] = {365, 182, 0, 0, 1};  // MA365 BUY -> MA182 cross  (Sharpe 1.51, 55t)
-   g_patterns[g_numPatterns++] = {365, 121, 0, 0, 1};  // MA365 BUY -> MA121 cross  (Sharpe 1.08, 56t)
-
-   // Pattern da Analisi 3: SL su MA365 + TP fisso
-   g_patterns[g_numPatterns++] = {30,  0,   365, 150, 1}; // MA30 BUY -> SL=MA365 TP=150 (Sharpe 8.77)
-   g_patterns[g_numPatterns++] = {7,   0,   365, 150, 2}; // MA7 SELL -> SL=MA365 TP=150 (Sharpe 2.98)
+   for(int i=0; i<10; i++)
+   {
+      if(d[i] == 0) continue;
+      g_patterns[g_numPatterns].entry  = e[i];
+      g_patterns[g_numPatterns].exit   = x[i];
+      g_patterns[g_numPatterns].slLine = s[i];
+      g_patterns[g_numPatterns].tpPt   = t[i];
+      g_patterns[g_numPatterns].dir    = d[i];
+      g_numPatterns++;
+   }
 
    if(InpLog)
       for(int i=0; i<g_numPatterns; i++)
@@ -153,13 +229,11 @@ int CheckCrossD1(int buf)
 }
 
 //+------------------------------------------------------------------+
-// Cache dei cross per tutte le linee usate
-int g_crossCache[8]; // indici 0-7 corrispondono ai buffer
+int  g_crossCache[8];
 
 void BuildCrossCache()
 {
-   for(int b=0; b<8; b++)
-      g_crossCache[b] = CheckCrossD1(b);
+   for(int b=0; b<8; b++) g_crossCache[b] = CheckCrossD1(b);
 }
 
 int CachedCross(int buf)
@@ -197,20 +271,13 @@ int GetPatternIndex(ulong ticket)
 }
 
 //+------------------------------------------------------------------+
-void CloseTicket(ulong ticket)
-{
-   g_trade.PositionClose(ticket);
-}
-
-//+------------------------------------------------------------------+
 void OpenPatternTrade(int pi)
 {
    Pattern &p = g_patterns[pi];
    int cross = CachedCross(MAPeriodToBuf(p.entry));
    if(cross == 0) return;
 
-   // Determine direction from pattern
-   int wantDir = -1; // 1=BUY, -1=SELL
+   int wantDir = -1;
    if(p.dir == 1 && cross == +1) wantDir = 1;
    else if(p.dir == 2 && cross == -1) wantDir = -1;
    else return;
@@ -225,15 +292,11 @@ void OpenPatternTrade(int pi)
    double sl = 0.0, tp = 0.0;
    double riskDist = pipSize * 1000.0;
 
-   // TP fisso
    if(p.tpPt > 0)
    {
       tp = (wantDir == 1) ? entry + p.tpPt * pt : entry - p.tpPt * pt;
       riskDist = p.tpPt * pt;
    }
-
-   // SL fisso (usa InpSLPoints se > 0, altrimenti la distanza di rischio usa il TP o virtuale)
-   // Per pattern con SL su linea (slLine>0), NON settiamo SL fixed (dynamic check)
 
    double lot = CalcLotByDist(riskDist);
    if(lot <= 0.0) return;
@@ -246,9 +309,7 @@ void OpenPatternTrade(int pi)
 
    if(!g_trade.PositionOpen(_Symbol, (wantDir==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
                             lot, entry, sl, tp, cmt))
-   {
       if(InpLog) Print(">>> ERR entrata [", pi, "] retcode=", g_trade.ResultRetcode());
-   }
 }
 
 //+------------------------------------------------------------------+
@@ -269,34 +330,24 @@ void CheckPatternExits()
       bool shouldClose = false;
       string reason = "";
 
-      // Exit cross: direzione opposta sulla linea di uscita
       if(p.exit > 0)
       {
          int exitCross = CachedCross(MAPeriodToBuf(p.exit));
          int needExit = (posType == POSITION_TYPE_BUY) ? -1 : +1;
-         if(exitCross == needExit)
-         {
-            shouldClose = true;
-            reason = "EXIT " + MAPeriodStr(p.exit) + " cross";
-         }
+         if(exitCross == needExit) { shouldClose = true; reason = "EXIT " + MAPeriodStr(p.exit) + " cross"; }
       }
 
-      // SL su linea: stessa direzione = colpito
       if(!shouldClose && p.slLine > 0)
       {
          int slCross = CachedCross(MAPeriodToBuf(p.slLine));
          int needSL = (posType == POSITION_TYPE_BUY) ? -1 : +1;
-         if(slCross == needSL)
-         {
-            shouldClose = true;
-            reason = "SL " + MAPeriodStr(p.slLine) + " cross";
-         }
+         if(slCross == needSL) { shouldClose = true; reason = "SL " + MAPeriodStr(p.slLine) + " cross"; }
       }
 
       if(shouldClose)
       {
          if(InpLog) Print(">>> CHIUSO [", pi, "] ", reason, " #", ticket);
-         CloseTicket(ticket);
+         g_trade.PositionClose(ticket);
       }
    }
 }
@@ -344,10 +395,9 @@ bool WaitIndicator()
 {
    if(g_ready) return true;
    double tmp[1];
-   if(CopyBuffer(g_ind, BUF_MEDIAN, 0, 1, tmp) != 1 || !IsPriceOk(tmp[0]))
-      return false;
-   g_ready = true;
+   if(CopyBuffer(g_ind, BUF_MEDIAN, 0, 1, tmp) != 1 || !IsPriceOk(tmp[0])) return false;
    if(InpLog) Print("Indicatore pronto");
+   g_ready = true;
    return true;
 }
 
@@ -372,17 +422,14 @@ void OnTick()
    if(d1today == g_lastD1Today) return;
    g_lastD1Today = d1today;
 
-   // Costruisce cache dei cross per TUTTE le linee
    BuildCrossCache();
 
    if(InpLog)
-      Print(StringFormat("=== SEGNALE === barra=%s D1=%s pos=%d pattern=%d",
+      Print(StringFormat("=== SEGNALE === barra=%s D1=%s pos=%d patterns=%d",
           TimeToString(g_bar0), TimeToString(d1today), PositionsTotal(), g_numPatterns));
 
-   // --- EXIT: controlla ogni posizione aperta contro il suo pattern ---
    CheckPatternExits();
 
-   // --- ENTRY: controlla ogni pattern per nuovi ingressi ---
    for(int pi = 0; pi < g_numPatterns; pi++)
       OpenPatternTrade(pi);
 }
