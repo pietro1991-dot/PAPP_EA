@@ -259,7 +259,8 @@ int CachedCross(int buf)
 //+------------------------------------------------------------------+
 double CalcLotByDist(double riskDist)
 {
-   if(InpLotFixed > 0.0) return InpLotFixed;
+   if(InpLotFixed > 0.0)
+      return (InpMaxLot > 0.0) ? MathMin(InpLotFixed, InpMaxLot) : InpLotFixed;
    double risk = g_acc.Equity() * InpRiskPct / 100.0;
    if(risk <= 0.0) return 0.0;
    double tickVal  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
