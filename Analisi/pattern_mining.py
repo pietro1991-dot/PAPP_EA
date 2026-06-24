@@ -11,6 +11,7 @@ Pattern Mining per PaPP Median v3 - CORRETTO
 Uso: python3 pattern_mining.py <PAPP_Export.csv> [opzioni]
 
 Opzioni:
+  --output=NOME       Salva output completo su file (default: solo stdout)
   --spread=N          Spread in punti (default: 15 = 1.5 pip EURUSD)
   --train-pct=N       Percentuale per training (default: 1.0 = 100%)
   --split-date=YYYY.MM.DD  Cutoff train/test (sovrascrive train-pct)
@@ -33,6 +34,17 @@ import csv, sys, os
 from collections import defaultdict
 from statistics import mean, stdev, median
 from math import sqrt
+
+class Tee:
+    def __init__(self, *files):
+        self.files = files
+    def write(self, data):
+        for f in self.files:
+            f.write(data)
+            f.flush()
+    def flush(self):
+        for f in self.files:
+            f.flush()
 
 PT_SIZE  = 0.00001
 MAX_BARS = 200
@@ -386,10 +398,13 @@ def main():
     split_date = None
     min_trades = 10
     debug_n = 0
+    out_path = None
     ctx_filters = {}
 
     for arg in sys.argv[2:]:
-        if arg.startswith('--spread='):
+        if arg.startswith('--output='):
+            out_path = arg.split('=', 1)[1]
+        elif arg.startswith('--spread='):
             spread_pt = int(arg.split('=', 1)[1])
         elif arg.startswith('--train-pct='):
             train_pct = float(arg.split('=', 1)[1])
@@ -406,6 +421,10 @@ def main():
     if not os.path.exists(path):
         print(f"File non trovato: {path}")
         return
+
+    if out_path:
+        logfile = open(out_path, 'w', encoding='utf-8')
+        sys.stdout = Tee(sys.__stdout__, logfile)
 
     print(f"Caricamento {path}...")
     all_rows = load_csv(path)
