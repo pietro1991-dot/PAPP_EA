@@ -3,24 +3,25 @@
 //|                                          PaPP v2 - simbolo GBPUSD  |
 //+------------------------------------------------------------------+
 //  SCHELETRO GBPUSD - DA COMPLETARE
-//  I pattern qui sotto sono ancora quelli di EURUSD (PLACEHOLDER).
-//  Prima di usare in reale: esporta i dati GBPUSD, lancia il miner e
-//  sostituisci i pattern con quelli VALIDATI su GBPUSD (vedi README).
+//  I pattern qui sotto sono ancora quelli di EURUSD (PLACEHOLDER) e sono
+//  TUTTI OFF (InpPx_On=false). Prima di usare: esporta i dati GBPUSD,
+//  lancia il miner, sostituisci i pattern con quelli VALIDATI su GBPUSD
+//  e attivali con InpPx_On=true (vedi README).
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.08"
-#property description "Multi-Pattern EA - GBPUSD (pattern DA VALIDARE)"
-#property description "Ogni pattern: Entry, Exit, SL, TP, Direction. Tutti in simultanea."
-#property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL"
+#property version   "2.09"
+#property description "Multi-Pattern EA - GBPUSD (pattern DA VALIDARE, tutti OFF)"
+#property description "Ogni pattern: On, Entry, Exit, SL, TP, Direction."
+#property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 1=BUY, 2=SELL"
 #property description "PLACEHOLDER: pattern ancora EURUSD - rivalidare su GBPUSD"
 
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include <Trade\AccountInfo.mqh>
 
+input group "======  GENERALE / RISCHIO  ======"
 input string  InpIndicatorName = "PaPP_Median.ex5";
 
-//==========  RISK GLOBALE  ==========
 input double  InpRiskPct       = 1.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input double  InpMaxLot        = 0.0;           // Lotto massimo assoluto (0=usa broker)
@@ -42,42 +43,48 @@ input bool    InpLog           = true;
 //            molto alto ma drawdown grande, niente hard SL (gap risk).
 // Linee: 0=Med,3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL.
 
-//==========  PATTERN 1 (MA30 SELL, SL=MA365, TP=150 | OOS Win95% Sh1.96)  =========="
+input group "==  PATTERN 1 - MA30 SELL, SL=MA365, TP=150  =="
+input bool    InpP1_On         = false;          // ATTIVA pattern 1
 input int     InpP1_Entry      = 30;            // Entry line (0=Med,3,7,14,30,121,182,365)
 input int     InpP1_Exit       = 0;             // Exit cross line (0=nessuno)
 input int     InpP1_SL         = 365;           // SL line (0=nessuno)
 input int     InpP1_TP         = 150;           // TP punti (0=nessuno)
 input int     InpP1_Dir        = 2;             // 0=OFF, 1=BUY, 2=SELL
 
-//==========  PATTERN 2 (MA121 BUY, SL=MA365, TP=150 | OOS Win89% Sh1.07)  =========="
+input group "==  PATTERN 2 - MA121 BUY, SL=MA365, TP=150  =="
+input bool    InpP2_On         = false;          // ATTIVA pattern 2
 input int     InpP2_Entry      = 121;
 input int     InpP2_Exit       = 0;
 input int     InpP2_SL         = 365;
 input int     InpP2_TP         = 150;
 input int     InpP2_Dir        = 1;
 
-//==========  PATTERN 3 (MA365 SELL, SL=MA121, TP=120 | OOS Win89% Sh0.38)  =========="
+input group "==  PATTERN 3 - MA365 SELL, SL=MA121, TP=120  =="
+input bool    InpP3_On         = false;          // ATTIVA pattern 3
 input int     InpP3_Entry      = 365;
 input int     InpP3_Exit       = 0;
 input int     InpP3_SL         = 121;
 input int     InpP3_TP         = 120;
 input int     InpP3_Dir        = 2;
 
-//==========  PATTERN 4 (MA7 SELL, SL=MA365, TP=120 | OOS Win93% Sh0.24)  =========="
+input group "==  PATTERN 4 - MA7 SELL, SL=MA365, TP=120  =="
+input bool    InpP4_On         = false;          // ATTIVA pattern 4
 input int     InpP4_Entry      = 7;
 input int     InpP4_Exit       = 0;
 input int     InpP4_SL         = 365;
 input int     InpP4_TP         = 120;
 input int     InpP4_Dir        = 2;
 
-//==========  PATTERN 5 (MA30 BUY, SL=MA365, TP=150 | OOS Win90% Sh0.23)  =========="
+input group "==  PATTERN 5 - MA30 BUY, SL=MA365, TP=150  =="
+input bool    InpP5_On         = false;          // ATTIVA pattern 5
 input int     InpP5_Entry      = 30;
 input int     InpP5_Exit       = 0;
 input int     InpP5_SL         = 365;
 input int     InpP5_TP         = 150;
 input int     InpP5_Dir        = 1;
 
-//==========  PATTERN 6 (MA14 BUY, SL=MA365, TP=150 | OOS Win94% Sh0.17)  =========="
+input group "==  PATTERN 6 - MA14 BUY, SL=MA365, TP=150  =="
+input bool    InpP6_On         = false;          // ATTIVA pattern 6
 input int     InpP6_Entry      = 14;
 input int     InpP6_Exit       = 0;
 input int     InpP6_SL         = 365;
@@ -88,28 +95,32 @@ input int     InpP6_Dir        = 1;
 // Chiude su MA121 cross OPPURE al TP, quel che viene prima. TP=1500 = compromesso
 // (OOS ~+192k, win 64%); modificabile da input. Metti TP=0 per il trend-following puro.
 
-//==========  PATTERN 7 (MA3 SELL -> cross MA121, TP cap 1500)  =========="
+input group "==  PATTERN 7 - MA3 SELL -> cross MA121, TP cap 1500  =="
+input bool    InpP7_On         = false;          // ATTIVA pattern 7
 input int     InpP7_Entry      = 3;
 input int     InpP7_Exit       = 121;
 input int     InpP7_SL         = 0;
 input int     InpP7_TP         = 1500;
 input int     InpP7_Dir        = 2;
 
-//==========  PATTERN 8 (MA7 SELL -> cross MA121, TP cap 1500)  =========="
+input group "==  PATTERN 8 - MA7 SELL -> cross MA121, TP cap 1500  =="
+input bool    InpP8_On         = false;          // ATTIVA pattern 8
 input int     InpP8_Entry      = 7;
 input int     InpP8_Exit       = 121;
 input int     InpP8_SL         = 0;
 input int     InpP8_TP         = 1500;
 input int     InpP8_Dir        = 2;
 
-//==========  PATTERN 9 (MA14 SELL -> cross MA121, TP cap 1500)  =========="
+input group "==  PATTERN 9 - MA14 SELL -> cross MA121, TP cap 1500  =="
+input bool    InpP9_On         = false;          // ATTIVA pattern 9
 input int     InpP9_Entry      = 14;
 input int     InpP9_Exit       = 121;
 input int     InpP9_SL         = 0;
 input int     InpP9_TP         = 1500;
 input int     InpP9_Dir        = 2;
 
-//==========  PATTERN 10 (MA30 SELL -> cross MA121, TP cap 1500)  =========="
+input group "==  PATTERN 10 - MA30 SELL -> cross MA121, TP cap 1500  =="
+input bool    InpP10_On        = false;          // ATTIVA pattern 10
 input int     InpP10_Entry     = 30;
 input int     InpP10_Exit      = 121;
 input int     InpP10_SL        = 0;
@@ -266,9 +277,12 @@ void InitPatterns()
                 InpP6_TP,    InpP7_TP,    InpP8_TP,    InpP9_TP,    InpP10_TP};
    int d[10] = {InpP1_Dir,    InpP2_Dir,   InpP3_Dir,   InpP4_Dir,   InpP5_Dir,
                 InpP6_Dir,    InpP7_Dir,   InpP8_Dir,   InpP9_Dir,   InpP10_Dir};
+   bool on[10] = {InpP1_On, InpP2_On, InpP3_On, InpP4_On, InpP5_On,
+                  InpP6_On, InpP7_On, InpP8_On, InpP9_On, InpP10_On};
 
    for(int i=0; i<10; i++)
    {
+      if(!on[i]) continue;          // pattern disattivato dall'interruttore
       if(d[i] == 0) continue;
 
       // Validazione linee
@@ -285,7 +299,7 @@ void InitPatterns()
    }
 
    if(g_numPatterns == 0)
-      Print("ATTENZIONE: Nessun pattern attivo! Imposta Dir>0 per almeno un pattern.");
+      Print("ATTENZIONE: Nessun pattern attivo! Attiva InpPx_On per almeno un pattern.");
 
    if(InpLog)
    {
