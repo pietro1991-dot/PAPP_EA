@@ -9,7 +9,7 @@ log = logging.getLogger("papp.llm")
 
 # OpenCode Zen è OpenAI-compatibile: chiamata HTTP diretta, niente processo opencode.
 ZEN_BASE_URL = os.getenv("ZEN_BASE_URL", "https://opencode.ai/zen/v1")
-ZEN_MODEL = os.getenv("ZEN_MODEL", "deepseek-v4-flash-free")
+ZEN_MODEL = os.getenv("ZEN_MODEL", "mimo-v2.5-free")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "60"))
 # deepseek-v4-flash-free è un modello "reasoning": consuma token nel ragionamento
 # prima di produrre `content`. Serve un tetto ampio o `content` resta vuoto.

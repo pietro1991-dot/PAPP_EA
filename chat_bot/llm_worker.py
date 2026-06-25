@@ -27,7 +27,7 @@ LLM_RETRIES = int(os.getenv("LLM_RETRIES", "2"))     # tentativi extra su rispos
 LLM_RETRY_DELAY = float(os.getenv("LLM_RETRY_DELAY", "2"))  # attesa tra i tentativi (s)
 # Modello di riserva se il primario fallisce anche dopo i retry (es. deepseek va in 500).
 # Vuoto = nessun fallback. Garantisce una risposta anche durante i down del primario.
-LLM_FALLBACK_MODEL = os.getenv("LLM_FALLBACK_MODEL", "mimo-v2.5-free").strip()
+LLM_FALLBACK_MODEL = os.getenv("LLM_FALLBACK_MODEL", "deepseek-v4-flash-free").strip()
 # Timeout breve sul primario: se non risponde entro questo tempo, passa al fallback.
 LLM_PRIMARY_TIMEOUT = float(os.getenv("LLM_PRIMARY_TIMEOUT", "10"))
 
