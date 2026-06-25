@@ -209,6 +209,21 @@ string DirStr(int dir)
    return "SELL";
 }
 
+// Descrizione leggibile del setup di un pattern: ingresso + piano d'uscita.
+// Registrata come "reason" all'apertura, cosi' ogni ordine dice perche' e' nato e come uscira'.
+string PatternSetupStr(int pi)
+{
+   Pattern p = g_patterns[pi];
+   string s = "Ingresso: cross " + MAPeriodStr(p.entry) + " " + DirStr(p.dir) + " | Uscita:";
+   bool any = false;
+   if(p.exit > 0)        { s += " cross " + MAPeriodStr(p.exit); any = true; }
+   if(p.slLine > 0)      { s += (any ? "," : "") + " SL " + MAPeriodStr(p.slLine) + " dinamico"; any = true; }
+   else if(p.slPips > 0) { s += (any ? "," : "") + " SL " + IntegerToString(p.slPips) + "pip"; any = true; }
+   if(p.tpPt > 0)        { s += (any ? "," : "") + " TP " + IntegerToString(p.tpPt) + "pt"; any = true; }
+   if(!any) s += " gestione manuale";
+   return s;
+}
+
 //+------------------------------------------------------------------+
 void InitPatterns()
 {
@@ -500,7 +515,7 @@ void OpenPatternTrade(int pi)
           pi, (wantDir==1?"BUY":"SELL"), lot, entry, sl, tp, cmt));
    if(g_trade.PositionOpen(_Symbol, (wantDir==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
                             lot, entry, sl, tp, cmt))
-      LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), "", entry, sl, tp, lot);
+      LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), PatternSetupStr(pi), entry, sl, tp, lot);
    else if(InpLog)
       Print(">>> ERR entrata [", pi, "] retcode=", g_trade.ResultRetcode());
 }
@@ -667,10 +682,10 @@ int OnInit()
 
    // Log decisioni su file
    g_logHandle = -1;
-   if(StringLen(InpLogFile) > 0)
+   if(StringLen(InpLogFile) > 0 && !MQLInfoInteger(MQL_TESTER))
    {
       g_logHandle = FileOpen(InpLogFile,
-         FILE_WRITE|FILE_READ|FILE_TXT|FILE_COMMON|
+         FILE_WRITE|FILE_READ|FILE_TXT|FILE_ANSI|FILE_COMMON|
          FILE_SHARE_READ|FILE_SHARE_WRITE);
       if(g_logHandle == INVALID_HANDLE)
          Print("WARNING: log file non aperto: ", InpLogFile);

@@ -32,6 +32,24 @@ P3 tiene SL=MA121+TP (GRID gia' protetto).
 SIZING: P1/P2 senza SL -> InpFallbackRiskPips alzato 100 -> 600 (escursione reale)
 cosi' il lotto e' corretto senza piazzare uno stop. InpRiskPct=10 (come GBP).
 
+v2.13 - TUTTI i pattern base meritevoli (8 slot). Ricerca piu' approfondita:
+exhaustive scan (split 2020) + walk-forward 5 finestre. I 22 superstiti collassano
+in 3 BET distinti (le correlazioni entrate lo confermano):
+  ON (de-correlati):
+    P1 MA14 SELL  -> crossMA182 +trail   [SELL-trend, 5/5, Ret/DD 6.57]
+    P2 MA182 BUY  -> crossMA14            [BUY-trend, 5/5, Ret/DD 1.88, +20237] <- NUOVO, forte
+    P3 MA14 BUY, SL=MA121, TP=120         [BUY mean-revert, win 82%]
+  OFF (robusti ma CORRELATI alla famiglia SELL - attivabili per test):
+    P4 MA14 SELL  -> crossMA365 +trail    [5/5]
+    P5 MA3 SELL   -> crossMA182 +trail    [5/5]
+    P6 MA7 SELL   -> crossMA182 +trail    [5/5]
+    P7 Median SELL-> crossMA182 +trail    [Ret/DD 2.03]
+    P8 MA14 SELL  -> crossMA30            [exit veloce, Ret/DD 2.41]
+NOTA CRITICA: i SELL-variant sono la STESSA scommessa di P1 (entry 56-76% overlap).
+Attivarli tutti = sovraesposizione, non diversificazione. P2/P3 sono i veri
+diversificatori (BUY). I pattern su MA14 fanno whipsaw (cross up/down 70% entro 3 barre).
+
+--- precedente ---
 v2.12 - RIDUZIONE GIVE-BACK (dopo backtest: equity sale poi restituisce ~meta'):
 - P2 (Median SELL) DISATTIVATO: e' lo stesso pattern di P1 (76% overlap entro 3 barre,
   48% stessa barra) -> raddoppiava la stessa scommessa e il give-back. Tengo solo MA14.

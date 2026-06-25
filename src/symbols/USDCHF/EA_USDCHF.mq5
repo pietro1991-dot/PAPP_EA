@@ -9,7 +9,7 @@
 //  rischio/rendimento. NB: su USDCHF le uscite migliori sono LENTE (crossMA182).
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.12"
+#property version   "2.13"
 #property description "Multi-Pattern EA - USDCHF (motore BASE, pattern validati OOS)"
 #property description "Ogni pattern: On, Entry, Exit, SL, SLpips, TP, Direction."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 1=BUY, 2=SELL"
@@ -46,38 +46,96 @@ input bool    InpLog           = true;
 //   Dir   : 0=OFF, 1=BUY, 2=SELL
 // ===========================================================================
 
-input group "==  P1 - MA14 SELL -> crossMA182 + trailing profit (Ret/DD 3.41)  =="
-input bool    InpP1_On    = true;    // ATTIVA pattern 1
+// === ON di default = i 3 bet DISTINTI (de-correlati). I SELL-variant sotto sono
+// === robusti ma CORRELATI tra loro (stessa scommessa) -> OFF, attivabili per test.
+
+input group "==  P1 - MA14 SELL -> crossMA182 +trail [SELL-trend, 5/5, Ret/DD 6.57]  =="
+input bool    InpP1_On    = true;    // ATTIVA
 input int     InpP1_Entry = 14;
 input int     InpP1_Exit  = 182;
 input int     InpP1_SL     = 0;
-input int     InpP1_SLpips = 0;      // disaster stop in pip (0=off)
-input int     InpP1_TrailAct  = 500; // attiva trailing dopo +N pip di profitto (0=off)
-input int     InpP1_TrailGive = 500; // il trailing cede N pip dal picco (blocca il resto)
+input int     InpP1_SLpips = 0;
+input int     InpP1_TrailAct  = 500; // trailing profit: attiva dopo +N pip
+input int     InpP1_TrailGive = 500; // trailing profit: cede N pip dal picco
 input int     InpP1_TP     = 0;
 input int     InpP1_Dir    = 2;
 
-input group "==  P2 - Median SELL -> crossMA182 (OFF: stesso pattern di P1, 76% overlap)  =="
-input bool    InpP2_On    = false;   // OFF: correlato a P1 (raddoppia la stessa scommessa)
-input int     InpP2_Entry = 0;       // 0 = Median
-input int     InpP2_Exit  = 182;
+input group "==  P2 - MA182 BUY -> crossMA14 [BUY-trend, 5/5, Ret/DD 1.88, +20237]  =="
+input bool    InpP2_On    = true;    // ATTIVA (BUY robusto, diversifica direzione)
+input int     InpP2_Entry = 182;
+input int     InpP2_Exit  = 14;
 input int     InpP2_SL     = 0;
 input int     InpP2_SLpips = 0;
-input int     InpP2_TrailAct  = 500;
-input int     InpP2_TrailGive = 500;
+input int     InpP2_TrailAct  = 0;   // exit veloce (MA14): trail non serve
+input int     InpP2_TrailGive = 0;
 input int     InpP2_TP     = 0;
-input int     InpP2_Dir    = 2;
+input int     InpP2_Dir    = 1;
 
-input group "==  P3 - MA14 BUY, SL=MA121, TP=120 (win 82%, test+1735)  =="
-input bool    InpP3_On    = true;    // ATTIVA pattern 3
+input group "==  P3 - MA14 BUY, SL=MA121, TP=120 [BUY mean-revert, win 82%]  =="
+input bool    InpP3_On    = true;    // ATTIVA (stile diverso; 68% corr. con P2)
 input int     InpP3_Entry = 14;
 input int     InpP3_Exit  = 0;
 input int     InpP3_SL     = 121;
 input int     InpP3_SLpips = 0;
-input int     InpP3_TrailAct  = 0;   // P3 e' GRID (SL+TP): niente trailing
+input int     InpP3_TrailAct  = 0;   // GRID (SL+TP): niente trailing
 input int     InpP3_TrailGive = 0;
 input int     InpP3_TP     = 120;
 input int     InpP3_Dir    = 1;
+
+input group "==  P4 - MA14 SELL -> crossMA365 +trail [variante SELL lenta, 5/5]  =="
+input bool    InpP4_On    = false;   // OFF: correlato a P1 (stesso entry MA14 SELL)
+input int     InpP4_Entry = 14;
+input int     InpP4_Exit  = 365;
+input int     InpP4_SL     = 0;
+input int     InpP4_SLpips = 0;
+input int     InpP4_TrailAct  = 500;
+input int     InpP4_TrailGive = 500;
+input int     InpP4_TP     = 0;
+input int     InpP4_Dir    = 2;
+
+input group "==  P5 - MA3 SELL -> crossMA182 +trail [variante SELL, 5/5]  =="
+input bool    InpP5_On    = false;   // OFF: correlato alla famiglia SELL
+input int     InpP5_Entry = 3;
+input int     InpP5_Exit  = 182;
+input int     InpP5_SL     = 0;
+input int     InpP5_SLpips = 0;
+input int     InpP5_TrailAct  = 500;
+input int     InpP5_TrailGive = 500;
+input int     InpP5_TP     = 0;
+input int     InpP5_Dir    = 2;
+
+input group "==  P6 - MA7 SELL -> crossMA182 +trail [variante SELL, 5/5]  =="
+input bool    InpP6_On    = false;   // OFF: correlato alla famiglia SELL
+input int     InpP6_Entry = 7;
+input int     InpP6_Exit  = 182;
+input int     InpP6_SL     = 0;
+input int     InpP6_SLpips = 0;
+input int     InpP6_TrailAct  = 500;
+input int     InpP6_TrailGive = 500;
+input int     InpP6_TP     = 0;
+input int     InpP6_Dir    = 2;
+
+input group "==  P7 - Median SELL -> crossMA182 +trail [variante SELL, Ret/DD 2.03]  =="
+input bool    InpP7_On    = false;   // OFF: correlato alla famiglia SELL
+input int     InpP7_Entry = 0;       // 0 = Median
+input int     InpP7_Exit  = 182;
+input int     InpP7_SL     = 0;
+input int     InpP7_SLpips = 0;
+input int     InpP7_TrailAct  = 500;
+input int     InpP7_TrailGive = 500;
+input int     InpP7_TP     = 0;
+input int     InpP7_Dir    = 2;
+
+input group "==  P8 - MA14 SELL -> crossMA30 [SELL exit veloce, Ret/DD 2.41]  =="
+input bool    InpP8_On    = false;   // OFF: stesso entry di P1, hold piu' corto
+input int     InpP8_Entry = 14;
+input int     InpP8_Exit  = 30;
+input int     InpP8_SL     = 0;
+input int     InpP8_SLpips = 0;
+input int     InpP8_TrailAct  = 0;
+input int     InpP8_TrailGive = 0;
+input int     InpP8_TP     = 0;
+input int     InpP8_Dir    = 2;
 
 #define BUF_MEDIAN  0
 #define BUF_MA365   1
@@ -89,7 +147,7 @@ input int     InpP3_Dir    = 1;
 #define BUF_MA3     7
 
 #define MAX_PATTERNS 20
-#define NUM_INPUTS   3
+#define NUM_INPUTS   8
 
 struct Pattern {
    int entry;
@@ -218,20 +276,37 @@ string DirStr(int dir)
    return "SELL";
 }
 
+// Descrizione leggibile del setup di un pattern: ingresso + piano d'uscita.
+// Registrata come "reason" all'apertura, cosi' ogni ordine dice perche' e' nato e come uscira'.
+string PatternSetupStr(int pi)
+{
+   Pattern p = g_patterns[pi];
+   string s = "Ingresso: cross " + MAPeriodStr(p.entry) + " " + DirStr(p.dir) + " | Uscita:";
+   bool any = false;
+   if(p.exit > 0)        { s += " cross " + MAPeriodStr(p.exit);
+                           if(p.trailAct > 0) s += " +trail " + IntegerToString(p.trailAct) + "/" + IntegerToString(p.trailGive) + "pip";
+                           any = true; }
+   if(p.slLine > 0)      { s += (any ? "," : "") + " SL " + MAPeriodStr(p.slLine) + " dinamico"; any = true; }
+   else if(p.slPips > 0) { s += (any ? "," : "") + " SL " + IntegerToString(p.slPips) + "pip"; any = true; }
+   if(p.tpPt > 0)        { s += (any ? "," : "") + " TP " + IntegerToString(p.tpPt) + "pt"; any = true; }
+   if(!any) s += " gestione manuale";
+   return s;
+}
+
 //+------------------------------------------------------------------+
 void InitPatterns()
 {
    g_numPatterns = 0;
 
-   bool on[NUM_INPUTS] = {InpP1_On, InpP2_On, InpP3_On};
-   int  e[NUM_INPUTS]  = {InpP1_Entry, InpP2_Entry, InpP3_Entry};
-   int  x[NUM_INPUTS]  = {InpP1_Exit,  InpP2_Exit,  InpP3_Exit};
-   int  s[NUM_INPUTS]  = {InpP1_SL,    InpP2_SL,    InpP3_SL};
-   int  sp[NUM_INPUTS] = {InpP1_SLpips, InpP2_SLpips, InpP3_SLpips};
-   int  ta[NUM_INPUTS] = {InpP1_TrailAct,  InpP2_TrailAct,  InpP3_TrailAct};
-   int  tg[NUM_INPUTS] = {InpP1_TrailGive, InpP2_TrailGive, InpP3_TrailGive};
-   int  t[NUM_INPUTS]  = {InpP1_TP,    InpP2_TP,    InpP3_TP};
-   int  d[NUM_INPUTS]  = {InpP1_Dir,   InpP2_Dir,   InpP3_Dir};
+   bool on[NUM_INPUTS] = {InpP1_On, InpP2_On, InpP3_On, InpP4_On, InpP5_On, InpP6_On, InpP7_On, InpP8_On};
+   int  e[NUM_INPUTS]  = {InpP1_Entry, InpP2_Entry, InpP3_Entry, InpP4_Entry, InpP5_Entry, InpP6_Entry, InpP7_Entry, InpP8_Entry};
+   int  x[NUM_INPUTS]  = {InpP1_Exit,  InpP2_Exit,  InpP3_Exit,  InpP4_Exit,  InpP5_Exit,  InpP6_Exit,  InpP7_Exit,  InpP8_Exit};
+   int  s[NUM_INPUTS]  = {InpP1_SL,    InpP2_SL,    InpP3_SL,    InpP4_SL,    InpP5_SL,    InpP6_SL,    InpP7_SL,    InpP8_SL};
+   int  sp[NUM_INPUTS] = {InpP1_SLpips, InpP2_SLpips, InpP3_SLpips, InpP4_SLpips, InpP5_SLpips, InpP6_SLpips, InpP7_SLpips, InpP8_SLpips};
+   int  ta[NUM_INPUTS] = {InpP1_TrailAct,  InpP2_TrailAct,  InpP3_TrailAct,  InpP4_TrailAct,  InpP5_TrailAct,  InpP6_TrailAct,  InpP7_TrailAct,  InpP8_TrailAct};
+   int  tg[NUM_INPUTS] = {InpP1_TrailGive, InpP2_TrailGive, InpP3_TrailGive, InpP4_TrailGive, InpP5_TrailGive, InpP6_TrailGive, InpP7_TrailGive, InpP8_TrailGive};
+   int  t[NUM_INPUTS]  = {InpP1_TP,    InpP2_TP,    InpP3_TP,    InpP4_TP,    InpP5_TP,    InpP6_TP,    InpP7_TP,    InpP8_TP};
+   int  d[NUM_INPUTS]  = {InpP1_Dir,   InpP2_Dir,   InpP3_Dir,   InpP4_Dir,   InpP5_Dir,   InpP6_Dir,   InpP7_Dir,   InpP8_Dir};
 
    for(int i=0; i<NUM_INPUTS; i++)
    {
@@ -512,7 +587,7 @@ void OpenPatternTrade(int pi)
           pi, (wantDir==1?"BUY":"SELL"), lot, entry, sl, tp, cmt));
    if(g_trade.PositionOpen(_Symbol, (wantDir==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
                             lot, entry, sl, tp, cmt))
-      LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), "", entry, sl, tp, lot);
+      LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), PatternSetupStr(pi), entry, sl, tp, lot);
    else if(InpLog)
       Print(">>> ERR entrata [", pi, "] retcode=", g_trade.ResultRetcode());
 }
@@ -744,10 +819,10 @@ int OnInit()
 
    // Log decisioni su file
    g_logHandle = -1;
-   if(StringLen(InpLogFile) > 0)
+   if(StringLen(InpLogFile) > 0 && !MQLInfoInteger(MQL_TESTER))
    {
       g_logHandle = FileOpen(InpLogFile,
-         FILE_WRITE|FILE_READ|FILE_TXT|FILE_COMMON|
+         FILE_WRITE|FILE_READ|FILE_TXT|FILE_ANSI|FILE_COMMON|
          FILE_SHARE_READ|FILE_SHARE_WRITE);
       if(g_logHandle == INVALID_HANDLE)
          Print("WARNING: log file non aperto: ", InpLogFile);
