@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenCode headless server (LLM per PAPP EA Chat)
+After=network.target
+
+[Service]
+Type=simple
+User=pietro_giacobazzi
+WorkingDirectory=/home/pietro_giacobazzi/Desktop/PAPP_EA/chat_bot
+# Fornisce OPENCODE_SERVER_USERNAME / OPENCODE_SERVER_PASSWORD (basic auth attach)
+EnvironmentFile=/home/pietro_giacobazzi/Desktop/PAPP_EA/chat_bot/.env
+ExecStart=/home/pietro_giacobazzi/.opencode/bin/opencode serve --port 34367 --hostname 127.0.0.1
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

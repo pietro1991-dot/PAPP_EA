@@ -23,6 +23,8 @@ log = logging.getLogger("papp.llm")
 LLM_RPM = int(os.getenv("LLM_RPM", "15"))         # chiamate/minuto verso l'LLM (globale)
 LLM_USER_RPM = int(os.getenv("LLM_USER_RPM", "5"))  # domande/minuto per utente
 CACHE_MAX = int(os.getenv("CACHE_MAX", "500"))    # voci LRU in memoria
+LLM_RETRIES = int(os.getenv("LLM_RETRIES", "2"))     # tentativi extra su risposta vuota
+LLM_RETRY_DELAY = float(os.getenv("LLM_RETRY_DELAY", "2"))  # attesa tra i tentativi (s)
 
 FALLBACK = (
     "Il servizio AI è momentaneamente al limite. Riprova tra qualche minuto."
@@ -181,8 +183,20 @@ async def _worker():
                     job.future.set_result(hit)
                 continue
 
-            await _bucket.acquire()
-            answer = await ask(job.question, job.context)
+            # Il free tier può restituire risposte vuote in modo transitorio:
+            # ritenta qualche volta prima di mostrare il fallback all'utente.
+            answer = None
+            for attempt in range(LLM_RETRIES + 1):
+                await _bucket.acquire()
+                answer = await ask(job.question, job.context)
+                if answer:
+                    break
+                if attempt < LLM_RETRIES:
+                    log.warning(
+                        "Risposta LLM vuota (tentativo %d/%d), ritento",
+                        attempt + 1, LLM_RETRIES + 1,
+                    )
+                    await asyncio.sleep(LLM_RETRY_DELAY)
 
             if answer:
                 _lru_put(job.key, answer)

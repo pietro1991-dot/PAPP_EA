@@ -1,15 +1,22 @@
-import asyncio
-import json
 import os
-import re
+import json
+import logging
 from typing import Optional
 
-ATTACH_URL = os.getenv("ATTACH_URL", "http://127.0.0.1:34367")
-USERNAME = os.getenv("OPENCODE_USERNAME", "opencode")
-PASSWORD = os.getenv("OPENCODE_PASSWORD", "")  # solo da .env, nessun segreto nel codice
-MODEL = os.getenv("API_MODEL", "opencode/deepseek-v4-flash-free")
-WORK_DIR = os.getenv("WORK_DIR", "/home/pietro_giacobazzi/Desktop/PAPP_EA")
-LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "120"))
+import httpx
+
+log = logging.getLogger("papp.llm")
+
+# OpenCode Zen è OpenAI-compatibile: chiamata HTTP diretta, niente processo opencode.
+ZEN_BASE_URL = os.getenv("ZEN_BASE_URL", "https://opencode.ai/zen/v1")
+ZEN_MODEL = os.getenv("ZEN_MODEL", "deepseek-v4-flash-free")
+LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "60"))
+# deepseek-v4-flash-free è un modello "reasoning": consuma token nel ragionamento
+# prima di produrre `content`. Serve un tetto ampio o `content` resta vuoto.
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2000"))
+# deepseek accetta reasoning_effort=low (riduce un po' il ragionamento, chat più veloce).
+# Vuoto = ometti il parametro (per modelli che lo rifiutano con 400).
+LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "low").strip()
 
 SYSTEM_PROMPT = (
     "Sei un assistente esperto di trading algoritmico su MetaTrader 5. "
@@ -20,46 +27,58 @@ SYSTEM_PROMPT = (
 )
 
 
-def build_prompt(question: str, context: Optional[str] = None) -> str:
-    prompt = f"{SYSTEM_PROMPT}\n\n"
-    if context:
-        prompt += f"Contesto:\n{context}\n\n"
-    prompt += f"Domanda: {question}\n\nRisposta:"
-    return prompt
-
-
-async def ask(question: str, context: Optional[str] = None) -> Optional[str]:
-    """Interroga l'LLM via opencode. Ritorna il testo, oppure None su errore/timeout
-    (il chiamante — il worker — decide il fallback). Chiamare SOLO dal worker LLM."""
-    prompt = build_prompt(question, context)
-    cmd = [
-        "opencode", "run",
-        "--attach", ATTACH_URL,
-        "-u", USERNAME,
-        "-p", PASSWORD,
-        "--model", MODEL,
-        prompt,
-    ]
-    proc = None
+def _api_key() -> Optional[str]:
+    """API key Zen: da env OPENCODE_API_KEY, con fallback al file auth.json di opencode."""
+    key = os.getenv("OPENCODE_API_KEY")
+    if key:
+        return key
     try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
-            cwd=WORK_DIR,
-        )
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=LLM_TIMEOUT)
-    except asyncio.TimeoutError:
-        if proc:
-            try:
-                proc.kill()
-            except ProcessLookupError:
-                pass
-        return None
+        path = os.path.expanduser("~/.local/share/opencode/auth.json")
+        with open(path) as f:
+            return json.load(f)["opencode"]["key"]
     except Exception:
         return None
 
-    text = stdout.decode("utf-8", errors="replace").strip()
-    # Remove ANSI escape sequences
-    text = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", text)
-    return text or None
+
+def build_user_message(question: str, context: Optional[str] = None) -> str:
+    msg = ""
+    if context:
+        msg += f"Contesto:\n{context}\n\n"
+    msg += f"Domanda: {question}"
+    return msg
+
+
+async def ask(question: str, context: Optional[str] = None) -> Optional[str]:
+    """Interroga l'LLM via API HTTP OpenAI-compatibile (OpenCode Zen).
+    Ritorna il testo, oppure None su errore (il worker decide il fallback)."""
+    key = _api_key()
+    if not key:
+        log.error("OPENCODE_API_KEY mancante: impossibile interrogare l'LLM")
+        return None
+
+    payload = {
+        "model": ZEN_MODEL,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": build_user_message(question, context)},
+        ],
+        "max_tokens": LLM_MAX_TOKENS,
+    }
+    if LLM_REASONING_EFFORT:
+        payload["reasoning_effort"] = LLM_REASONING_EFFORT
+    try:
+        async with httpx.AsyncClient(timeout=LLM_TIMEOUT) as client:
+            r = await client.post(
+                f"{ZEN_BASE_URL}/chat/completions",
+                headers={"Authorization": f"Bearer {key}"},
+                json=payload,
+            )
+        if r.status_code != 200:
+            log.warning("Zen API HTTP %s: %s", r.status_code, r.text[:200])
+            return None
+        data = r.json()
+        content = (data["choices"][0]["message"].get("content") or "").strip()
+        return content or None
+    except Exception:
+        log.exception("Errore nella chiamata all'API Zen")
+        return None
