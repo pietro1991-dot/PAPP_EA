@@ -42,25 +42,26 @@ def _is_common_question(q: str) -> bool:
     return any(k in ql for k in COMMON_KEYWORDS)
 
 
-async def _build_context():
+async def _build_context(symbol: str = ""):
     """Contesto condiviso (segnali recenti + statistiche) usato sia dalla chat sia
-    dal riassunto. Ritorna (context_str, last_signal_id, recent_count)."""
+    dal riassunto. Se `symbol` è valorizzato, filtra su quel simbolo.
+    Ritorna (context_str, last_signal_id, recent_count)."""
     async with AsyncSession() as session:
-        recent = (
-            (await session.execute(select(Signal).order_by(desc(Signal.id)).limit(20)))
-            .scalars()
-            .all()
-        )
-        stats = (
-            await session.execute(
-                select(
-                    sa_func.count(Signal.id),
-                    sa_func.coalesce(sa_func.sum(Signal.pnl_pt), 0),
-                ).where(Signal.action == "close")
-            )
-        ).first()
+        rq = select(Signal).order_by(desc(Signal.id))
+        if symbol:
+            rq = rq.where(Signal.symbol == symbol)
+        recent = (await session.execute(rq.limit(20))).scalars().all()
 
-    ctx_lines = ["Segnali recenti (ultimi 20):"]
+        sq = select(
+            sa_func.count(Signal.id),
+            sa_func.coalesce(sa_func.sum(Signal.pnl_pt), 0),
+        ).where(Signal.action == "close")
+        if symbol:
+            sq = sq.where(Signal.symbol == symbol)
+        stats = (await session.execute(sq)).first()
+
+    scope = f" ({symbol})" if symbol else ""
+    ctx_lines = [f"Segnali recenti{scope} (ultimi 20):"]
     for s in recent[:10]:
         line = f"[{s.action}] {s.symbol or '?'} pattern={s.pattern} dir={s.dir}"
         if s.reason:
@@ -307,50 +308,68 @@ async def get_market(user: User = Depends(auth.current_user)):
     }
 
 
-@app.get("/api/stats")
-async def get_stats(user: User = Depends(auth.current_user)):
+@app.get("/api/symbols")
+async def get_symbols(user: User = Depends(auth.current_user)):
+    """Elenco dei simboli presenti nei segnali (per le tab di navigazione)."""
     async with AsyncSession() as session:
-        total = (await session.execute(select(sa_func.count(Signal.id)))).scalar() or 0
-        opens = (
+        rows = (
             await session.execute(
-                select(sa_func.count(Signal.id)).where(Signal.action == "open")
+                select(Signal.symbol).where(Signal.symbol.isnot(None)).distinct()
             )
-        ).scalar() or 0
-        closes = (
-            await session.execute(
-                select(sa_func.count(Signal.id)).where(Signal.action == "close")
-            )
-        ).scalar() or 0
-        skips = (
-            await session.execute(
-                select(sa_func.count(Signal.id)).where(Signal.action == "skip")
-            )
-        ).scalar() or 0
+        ).scalars().all()
+    return sorted(s for s in rows if s)
+
+
+@app.get("/api/stats")
+async def get_stats(symbol: str = "", user: User = Depends(auth.current_user)):
+    def _scoped(q):
+        return q.where(Signal.symbol == symbol) if symbol else q
+
+    async with AsyncSession() as session:
+        async def cnt(*conds):
+            q = select(sa_func.count(Signal.id))
+            for c in conds:
+                q = q.where(c)
+            return (await session.execute(_scoped(q))).scalar() or 0
+
+        total = await cnt()
+        opens = await cnt(Signal.action == "open")
+        closes = await cnt(Signal.action == "close")
+        skips = await cnt(Signal.action == "skip")
         pnl_sum = (
             await session.execute(
-                select(sa_func.coalesce(sa_func.sum(Signal.pnl_pt), 0)).where(
-                    Signal.action == "close"
+                _scoped(
+                    select(sa_func.coalesce(sa_func.sum(Signal.pnl_pt), 0)).where(
+                        Signal.action == "close"
+                    )
                 )
             )
         ).scalar() or 0
-    return {"total": total, "open": opens, "close": closes, "skip": skips, "pnl_pt": round(float(pnl_sum), 1)}
+    return {
+        "total": total,
+        "open": opens,
+        "close": closes,
+        "skip": skips,
+        "pnl_pt": round(float(pnl_sum), 1),
+    }
 
 
 @app.post("/api/chat")
 async def chat(request: Request, user: User = Depends(auth.current_user)):
     body = await request.json()
     question = body.get("question", "").strip()
+    symbol = (body.get("symbol") or "").strip()
     if not question:
         return JSONResponse({"error": "Domanda vuota"}, status_code=400)
 
-    context, last_id, recent_count = await _build_context()
-    # Firma del contesto per la cache: cambia ad ogni nuovo segnale, così le
-    # risposte cachate restano valide finché il quadro dei segnali non cambia.
-    context_sig = f"sig{last_id}"
+    context, last_id, recent_count = await _build_context(symbol)
+    # Firma del contesto per la cache: cambia ad ogni nuovo segnale o cambio simbolo.
+    context_sig = f"{symbol or 'all'}:sig{last_id}"
 
     # Domande comuni → riassunto condiviso precalcolato, 0 quota LLM.
+    # (solo per la vista globale: il riassunto precalcolato non è per-simbolo)
     precomputed = None
-    if _is_common_question(question):
+    if not symbol and _is_common_question(question):
         precomputed = await _latest_summary("perf_today")
 
     async def event_stream():
