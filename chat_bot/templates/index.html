@@ -20,6 +20,16 @@ header h1{font-size:18px;color:#4fc3f7}
 .msg.user{background:#1e3a5f;align-self:flex-end}
 .msg.bot{background:#222;align-self:flex-start;color:#ccc}
 .msg.bot strong{color:#4fc3f7}
+.msg.bot{max-width:92%}
+.msg.bot .md-h{font-weight:600;color:#4fc3f7;margin:8px 0 3px;font-size:14px}
+.msg.bot p{margin:5px 0}
+.msg.bot ul,.msg.bot ol{margin:5px 0 5px 20px}
+.msg.bot li{margin:2px 0}
+.msg.bot code{background:#2a2a2a;padding:1px 5px;border-radius:3px;font-size:13px}
+.msg.bot table{border-collapse:collapse;margin:8px 0;font-size:13px;display:block;overflow-x:auto}
+.msg.bot th,.msg.bot td{border:1px solid #333;padding:4px 9px;text-align:left;white-space:nowrap}
+.msg.bot th{background:#1e1e2a;color:#4fc3f7}
+.msg.bot p:first-child,.msg.bot .md-h:first-child{margin-top:0}
 .input-bar{display:flex;padding:10px;gap:8px;border-top:1px solid #333;background:#1a1a2e}
 .input-bar input{flex:1;padding:10px;border-radius:6px;border:1px solid #333;background:#222;color:#e0e0e0;font-size:14px}
 .input-bar button{padding:10px 20px;border-radius:6px;border:none;background:#4fc3f7;color:#111;font-weight:600;cursor:pointer}
@@ -156,7 +166,7 @@ chatBtn.onclick = async ()=>{
           }catch(_){
             text += data; // fallback retro-compatibile
           }
-          botMsg.textContent = text;
+          botMsg.innerHTML = renderMarkdown(text);
           chatMsg.scrollTop = chatMsg.scrollHeight;
         }
       }
@@ -168,6 +178,56 @@ chatBtn.onclick = async ()=>{
 };
 
 chatInput.addEventListener('keydown', e=>{if(e.key==='Enter') chatBtn.click()});
+
+// Renderer markdown minimale e sicuro (escape HTML prima di formattare, niente XSS).
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function mdInline(t){
+  return t
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<em>$2</em>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>');
+}
+function mdCells(line){
+  return line.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim());
+}
+function renderMarkdown(src){
+  const lines = escapeHtml(src).split('\n');
+  let html = '', i = 0;
+  while(i < lines.length){
+    const line = lines[i];
+    // tabella: riga con | seguita da riga separatrice |---|
+    if(line.indexOf('|')>=0 && i+1<lines.length && /^[\s:|\-]+$/.test(lines[i+1]) && lines[i+1].indexOf('-')>=0){
+      const head = mdCells(line); i += 2;
+      const rows = [];
+      while(i<lines.length && lines[i].indexOf('|')>=0){ rows.push(mdCells(lines[i])); i++; }
+      html += '<table><thead><tr>'+head.map(c=>'<th>'+mdInline(c)+'</th>').join('')+'</tr></thead><tbody>'
+            + rows.map(r=>'<tr>'+r.map(c=>'<td>'+mdInline(c)+'</td>').join('')+'</tr>').join('')
+            + '</tbody></table>';
+      continue;
+    }
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if(h){ html += '<div class="md-h">'+mdInline(h[2])+'</div>'; i++; continue; }
+    if(/^\s*[-*]\s+/.test(line)){
+      html += '<ul>';
+      while(i<lines.length && /^\s*[-*]\s+/.test(lines[i])){ html += '<li>'+mdInline(lines[i].replace(/^\s*[-*]\s+/,''))+'</li>'; i++; }
+      html += '</ul>'; continue;
+    }
+    if(/^\s*\d+\.\s+/.test(line)){
+      html += '<ol>';
+      while(i<lines.length && /^\s*\d+\.\s+/.test(lines[i])){ html += '<li>'+mdInline(lines[i].replace(/^\s*\d+\.\s+/,''))+'</li>'; i++; }
+      html += '</ol>'; continue;
+    }
+    if(line.trim()===''){ i++; continue; }
+    const para = [];
+    while(i<lines.length && lines[i].trim()!=='' && !/^#{1,4}\s/.test(lines[i]) && !/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\d+\.\s+/.test(lines[i]) && lines[i].indexOf('|')<0){
+      para.push(lines[i]); i++;
+    }
+    if(para.length) html += '<p>'+para.map(mdInline).join('<br>')+'</p>';
+  }
+  return html;
+}
 
 function addChatMsg(text, cls){
   const div = document.createElement('div');
