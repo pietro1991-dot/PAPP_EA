@@ -49,15 +49,15 @@ input bool    InpLog           = true;
 // === ON di default = i 3 bet DISTINTI (de-correlati). I SELL-variant sotto sono
 // === robusti ma CORRELATI tra loro (stessa scommessa) -> OFF, attivabili per test.
 
-input group "==  P1 - MA14 SELL -> crossMA182 +trail [SELL-trend, 5/5, Ret/DD 6.57]  =="
+input group "==  P1 - MA14 SELL -> crossMA182, TP=500 [SELL-trend; TP +OOS, de-concentra]  =="
 input bool    InpP1_On    = true;    // ATTIVA
 input int     InpP1_Entry = 14;
 input int     InpP1_Exit  = 182;
 input int     InpP1_SL     = 0;
 input int     InpP1_SLpips = 0;
-input int     InpP1_TrailAct  = 500; // trailing profit: attiva dopo +N pip
-input int     InpP1_TrailGive = 500; // trailing profit: cede N pip dal picco
-input int     InpP1_TP     = 0;
+input int     InpP1_TrailAct  = 0;   // trail OFF: il TP=500 lo supera (meglio validato)
+input int     InpP1_TrailGive = 0;
+input int     InpP1_TP     = 500;    // take profit 500pip: +OOS su 3/4 split, chiude e rientra
 input int     InpP1_Dir    = 2;
 
 input group "==  P2 - MA182 BUY -> crossMA14 [BUY-trend, 5/5, Ret/DD 1.88, +20237]  =="
@@ -82,48 +82,48 @@ input int     InpP3_TrailGive = 0;
 input int     InpP3_TP     = 120;
 input int     InpP3_Dir    = 1;
 
-input group "==  P4 - MA14 SELL -> crossMA365 +trail [variante SELL lenta, 5/5]  =="
+input group "==  P4 - MA14 SELL -> crossMA365, TP=500 [variante SELL lenta, 5/5]  =="
 input bool    InpP4_On    = false;   // OFF: correlato a P1 (stesso entry MA14 SELL)
 input int     InpP4_Entry = 14;
 input int     InpP4_Exit  = 365;
 input int     InpP4_SL     = 0;
 input int     InpP4_SLpips = 0;
-input int     InpP4_TrailAct  = 500;
-input int     InpP4_TrailGive = 500;
-input int     InpP4_TP     = 0;
+input int     InpP4_TrailAct  = 0;
+input int     InpP4_TrailGive = 0;
+input int     InpP4_TP     = 500;
 input int     InpP4_Dir    = 2;
 
-input group "==  P5 - MA3 SELL -> crossMA182 +trail [variante SELL, 5/5]  =="
+input group "==  P5 - MA3 SELL -> crossMA182, TP=500 [variante SELL, 5/5]  =="
 input bool    InpP5_On    = false;   // OFF: correlato alla famiglia SELL
 input int     InpP5_Entry = 3;
 input int     InpP5_Exit  = 182;
 input int     InpP5_SL     = 0;
 input int     InpP5_SLpips = 0;
-input int     InpP5_TrailAct  = 500;
-input int     InpP5_TrailGive = 500;
-input int     InpP5_TP     = 0;
+input int     InpP5_TrailAct  = 0;
+input int     InpP5_TrailGive = 0;
+input int     InpP5_TP     = 500;
 input int     InpP5_Dir    = 2;
 
-input group "==  P6 - MA7 SELL -> crossMA182 +trail [variante SELL, 5/5]  =="
+input group "==  P6 - MA7 SELL -> crossMA182, TP=500 [variante SELL, 5/5]  =="
 input bool    InpP6_On    = false;   // OFF: correlato alla famiglia SELL
 input int     InpP6_Entry = 7;
 input int     InpP6_Exit  = 182;
 input int     InpP6_SL     = 0;
 input int     InpP6_SLpips = 0;
-input int     InpP6_TrailAct  = 500;
-input int     InpP6_TrailGive = 500;
-input int     InpP6_TP     = 0;
+input int     InpP6_TrailAct  = 0;
+input int     InpP6_TrailGive = 0;
+input int     InpP6_TP     = 500;
 input int     InpP6_Dir    = 2;
 
-input group "==  P7 - Median SELL -> crossMA182 +trail [variante SELL, Ret/DD 2.03]  =="
+input group "==  P7 - Median SELL -> crossMA182, TP=500 [variante SELL, Ret/DD 2.03]  =="
 input bool    InpP7_On    = false;   // OFF: correlato alla famiglia SELL
 input int     InpP7_Entry = 0;       // 0 = Median
 input int     InpP7_Exit  = 182;
 input int     InpP7_SL     = 0;
 input int     InpP7_SLpips = 0;
-input int     InpP7_TrailAct  = 500;
-input int     InpP7_TrailGive = 500;
-input int     InpP7_TP     = 0;
+input int     InpP7_TrailAct  = 0;
+input int     InpP7_TrailGive = 0;
+input int     InpP7_TP     = 500;
 input int     InpP7_Dir    = 2;
 
 input group "==  P8 - MA14 SELL -> crossMA30 [SELL exit veloce, Ret/DD 2.41]  =="
