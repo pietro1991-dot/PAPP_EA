@@ -358,8 +358,8 @@ void LogDecision(string action, int pi, string dir, string reason,
 {
    if(g_logHandle < 0) return;
    string json = StringFormat(
-      "{\"t\":%d,\"action\":\"%s\",\"pattern\":%d,\"dir\":\"%s\"",
-      (int)TimeCurrent(), action, pi, dir);
+      "{\"t\":%d,\"symbol\":\"%s\",\"action\":\"%s\",\"pattern\":%d,\"dir\":\"%s\"",
+      (int)TimeCurrent(), _Symbol, action, pi, dir);
    if(StringLen(reason) > 0) json += ",\"reason\":\"" + reason + "\"";
    if(entry > 0.0)    json += StringFormat(",\"entry\":%.5f", entry);
    if(sl > 0.0)       json += StringFormat(",\"sl\":%.5f", sl);
@@ -381,8 +381,8 @@ void LogMarketSnapshot()
    if(!SymbolInfoTick(_Symbol, tk)) return;
    double spreadPts = (tk.ask - tk.bid) / _Point;
    string json = StringFormat(
-      "{\"t\":%d,\"action\":\"market\",\"bid\":%.5f,\"ask\":%.5f,\"spread_pts\":%.1f}\n",
-      (int)TimeCurrent(), tk.bid, tk.ask, spreadPts);
+      "{\"t\":%d,\"symbol\":\"%s\",\"action\":\"market\",\"bid\":%.5f,\"ask\":%.5f,\"spread_pts\":%.1f}\n",
+      (int)TimeCurrent(), _Symbol, tk.bid, tk.ask, spreadPts);
    FileSeek(g_logHandle, 0, SEEK_END);
    FileWriteString(g_logHandle, json);
    FileFlush(g_logHandle);

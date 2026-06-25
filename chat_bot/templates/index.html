@@ -103,7 +103,7 @@ function addSignal(d){
 
   const info = document.createElement('span');
   info.className = 'info';
-  let txt = 'P'+(d.pattern??'?')+' '+(d.dir||'');
+  let txt = (d.symbol?d.symbol+' ':'')+'P'+(d.pattern??'?')+' '+(d.dir||'');
   if(d.reason) txt += ' '+d.reason;
   if(d.entry) txt += ' @'+d.entry.toFixed(5);
   info.textContent = txt;

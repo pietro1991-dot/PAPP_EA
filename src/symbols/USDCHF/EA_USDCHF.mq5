@@ -9,7 +9,7 @@
 //  rischio/rendimento. NB: su USDCHF le uscite migliori sono LENTE (crossMA182).
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.11"
+#property version   "2.12"
 #property description "Multi-Pattern EA - USDCHF (motore BASE, pattern validati OOS)"
 #property description "Ogni pattern: On, Entry, Exit, SL, SLpips, TP, Direction."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 1=BUY, 2=SELL"
@@ -46,21 +46,25 @@ input bool    InpLog           = true;
 //   Dir   : 0=OFF, 1=BUY, 2=SELL
 // ===========================================================================
 
-input group "==  P1 - MA14 SELL -> crossMA182 (test+18076, Ret/DD 3.41)  =="
+input group "==  P1 - MA14 SELL -> crossMA182 + trailing profit (Ret/DD 3.41)  =="
 input bool    InpP1_On    = true;    // ATTIVA pattern 1
 input int     InpP1_Entry = 14;
 input int     InpP1_Exit  = 182;
 input int     InpP1_SL     = 0;
-input int     InpP1_SLpips = 0;      // disaster stop in pip (0=off; da validare)
+input int     InpP1_SLpips = 0;      // disaster stop in pip (0=off)
+input int     InpP1_TrailAct  = 500; // attiva trailing dopo +N pip di profitto (0=off)
+input int     InpP1_TrailGive = 500; // il trailing cede N pip dal picco (blocca il resto)
 input int     InpP1_TP     = 0;
 input int     InpP1_Dir    = 2;
 
-input group "==  P2 - Median SELL -> crossMA182 (test+14837, Ret/DD 2.03)  =="
-input bool    InpP2_On    = true;    // ATTIVA pattern 2
+input group "==  P2 - Median SELL -> crossMA182 (OFF: stesso pattern di P1, 76% overlap)  =="
+input bool    InpP2_On    = false;   // OFF: correlato a P1 (raddoppia la stessa scommessa)
 input int     InpP2_Entry = 0;       // 0 = Median
 input int     InpP2_Exit  = 182;
 input int     InpP2_SL     = 0;
 input int     InpP2_SLpips = 0;
+input int     InpP2_TrailAct  = 500;
+input int     InpP2_TrailGive = 500;
 input int     InpP2_TP     = 0;
 input int     InpP2_Dir    = 2;
 
@@ -70,6 +74,8 @@ input int     InpP3_Entry = 14;
 input int     InpP3_Exit  = 0;
 input int     InpP3_SL     = 121;
 input int     InpP3_SLpips = 0;
+input int     InpP3_TrailAct  = 0;   // P3 e' GRID (SL+TP): niente trailing
+input int     InpP3_TrailGive = 0;
 input int     InpP3_TP     = 120;
 input int     InpP3_Dir    = 1;
 
@@ -89,7 +95,9 @@ struct Pattern {
    int entry;
    int exit;
    int slLine;
-   int slPips;   // SL fisso a distanza in pip (disaster stop); 0=off, usato solo se slLine==0
+   int slPips;     // SL fisso a distanza in pip (disaster stop); 0=off, usato solo se slLine==0
+   int trailAct;   // trailing profit: attiva dopo +N pip di profitto (0=off)
+   int trailGive;  // trailing profit: cede N pip dal picco
    int tpPt;
    int dir;
 };
@@ -220,6 +228,8 @@ void InitPatterns()
    int  x[NUM_INPUTS]  = {InpP1_Exit,  InpP2_Exit,  InpP3_Exit};
    int  s[NUM_INPUTS]  = {InpP1_SL,    InpP2_SL,    InpP3_SL};
    int  sp[NUM_INPUTS] = {InpP1_SLpips, InpP2_SLpips, InpP3_SLpips};
+   int  ta[NUM_INPUTS] = {InpP1_TrailAct,  InpP2_TrailAct,  InpP3_TrailAct};
+   int  tg[NUM_INPUTS] = {InpP1_TrailGive, InpP2_TrailGive, InpP3_TrailGive};
    int  t[NUM_INPUTS]  = {InpP1_TP,    InpP2_TP,    InpP3_TP};
    int  d[NUM_INPUTS]  = {InpP1_Dir,   InpP2_Dir,   InpP3_Dir};
 
@@ -237,6 +247,8 @@ void InitPatterns()
       g_patterns[g_numPatterns].exit   = x[i];
       g_patterns[g_numPatterns].slLine = s[i];
       g_patterns[g_numPatterns].slPips = sp[i];
+      g_patterns[g_numPatterns].trailAct  = ta[i];
+      g_patterns[g_numPatterns].trailGive = tg[i];
       g_patterns[g_numPatterns].tpPt   = t[i];
       g_patterns[g_numPatterns].dir    = d[i];
       g_numPatterns++;
@@ -359,8 +371,8 @@ void LogDecision(string action, int pi, string dir, string reason,
 {
    if(g_logHandle < 0) return;
    string json = StringFormat(
-      "{\"t\":%d,\"action\":\"%s\",\"pattern\":%d,\"dir\":\"%s\"",
-      (int)TimeCurrent(), action, pi, dir);
+      "{\"t\":%d,\"symbol\":\"%s\",\"action\":\"%s\",\"pattern\":%d,\"dir\":\"%s\"",
+      (int)TimeCurrent(), _Symbol, action, pi, dir);
    if(StringLen(reason) > 0) json += ",\"reason\":\"" + reason + "\"";
    if(entry > 0.0)    json += StringFormat(",\"entry\":%.5f", entry);
    if(sl > 0.0)       json += StringFormat(",\"sl\":%.5f", sl);
@@ -382,8 +394,8 @@ void LogMarketSnapshot()
    if(!SymbolInfoTick(_Symbol, tk)) return;
    double spreadPts = (tk.ask - tk.bid) / _Point;
    string json = StringFormat(
-      "{\"t\":%d,\"action\":\"market\",\"bid\":%.5f,\"ask\":%.5f,\"spread_pts\":%.1f}\n",
-      (int)TimeCurrent(), tk.bid, tk.ask, spreadPts);
+      "{\"t\":%d,\"symbol\":\"%s\",\"action\":\"market\",\"bid\":%.5f,\"ask\":%.5f,\"spread_pts\":%.1f}\n",
+      (int)TimeCurrent(), _Symbol, tk.bid, tk.ask, spreadPts);
    FileSeek(g_logHandle, 0, SEEK_END);
    FileWriteString(g_logHandle, json);
    FileFlush(g_logHandle);
@@ -641,6 +653,71 @@ void UpdateDynamicSL()
 }
 
 //+------------------------------------------------------------------+
+// TRAILING PROFIT: blocca il profitto sui trade trend (uscita lenta su cross).
+// Quando il trade e' >= trailAct pip in profitto, piazza/sposta lo stop a
+// trailGive pip dal prezzo corrente, muovendolo SOLO in direzione favorevole
+// (ratchet): lo stop segue il picco e cede al massimo trailGive pip, invece di
+// restituire tutto aspettando il crossMA182. Ignora i pattern con trailGive=0.
+//+------------------------------------------------------------------+
+void UpdateProfitTrail()
+{
+   MqlTick tk;
+   if(!SymbolInfoTick(_Symbol, tk)) return;
+   double pt   = _Point;
+   double pip  = pt * 10.0;
+   long   stopsLevel  = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL);
+   double minStopDist = (double)stopsLevel * pt;
+
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      if(!g_pos.SelectByIndex(i)) continue;
+      if(g_pos.Symbol() != _Symbol) continue;
+      if(g_pos.Magic() != InpMagic) continue;
+
+      ulong ticket = g_pos.Ticket();
+      int pi = GetPatternIndex(ticket);
+      if(pi < 0 || pi >= g_numPatterns) continue;
+
+      Pattern p = g_patterns[pi];
+      if(p.trailGive <= 0) continue;   // trailing disattivato per questo pattern
+
+      bool   buy   = (g_pos.PositionType() == POSITION_TYPE_BUY);
+      double entry = g_pos.PriceOpen();
+      double curSL = g_pos.StopLoss();
+      double curTP = g_pos.TakeProfit();
+      double price = buy ? tk.bid : tk.ask;     // prezzo di uscita corrente
+      double profitPips = (buy ? (price - entry) : (entry - price)) / pip;
+      if(profitPips < p.trailAct) continue;     // non ancora abbastanza in profitto
+
+      double give = p.trailGive * pip;
+      if(buy)
+      {
+         double newSL = tk.bid - give;
+         double cap   = tk.bid - minStopDist;
+         if(newSL > cap) newSL = cap;
+         if(curSL <= 0.0 || newSL > curSL + pt)        // ratchet verso l'alto (solo migliora)
+         {
+            if(g_trade.PositionModify(ticket, newSL, curTP) && InpLog)
+               Print("   TRAIL [", pi, "] SL -> ", DoubleToString(newSL, _Digits),
+                     " (profit ", DoubleToString(profitPips,0), "pip)");
+         }
+      }
+      else
+      {
+         double newSL = tk.ask + give;
+         double cap   = tk.ask + minStopDist;
+         if(newSL < cap) newSL = cap;
+         if(curSL <= 0.0 || newSL < curSL - pt)         // ratchet verso il basso (solo migliora)
+         {
+            if(g_trade.PositionModify(ticket, newSL, curTP) && InpLog)
+               Print("   TRAIL [", pi, "] SL -> ", DoubleToString(newSL, _Digits),
+                     " (profit ", DoubleToString(profitPips,0), "pip)");
+         }
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
 int OnInit()
 {
    g_ind = iCustom(_Symbol, _Period, InpIndicatorName,
@@ -767,6 +844,7 @@ void OnTick()
 
    CheckPatternExits();
    UpdateDynamicSL();   // trailing SL dinamico sulla linea (allineato all'analisi)
+   UpdateProfitTrail(); // trailing che blocca il profitto sui trade trend
 
    if(InpMaxPos > 0 && PositionsTotal() >= InpMaxPos)
    {

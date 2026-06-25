@@ -14,6 +14,12 @@ async def main():
         await conn.execute(
             text("ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS user_id INTEGER")
         )
+        await conn.execute(
+            text("ALTER TABLE signals ADD COLUMN IF NOT EXISTS symbol VARCHAR(20)")
+        )
+        await conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_signals_symbol ON signals (symbol)")
+        )
     print("Migrazione completata (dati preservati).")
 
 

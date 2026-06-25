@@ -31,3 +31,17 @@ P3 tiene SL=MA121+TP (GRID gia' protetto).
 
 SIZING: P1/P2 senza SL -> InpFallbackRiskPips alzato 100 -> 600 (escursione reale)
 cosi' il lotto e' corretto senza piazzare uno stop. InpRiskPct=10 (come GBP).
+
+v2.12 - RIDUZIONE GIVE-BACK (dopo backtest: equity sale poi restituisce ~meta'):
+- P2 (Median SELL) DISATTIVATO: e' lo stesso pattern di P1 (76% overlap entro 3 barre,
+  48% stessa barra) -> raddoppiava la stessa scommessa e il give-back. Tengo solo MA14.
+- TRAILING PROFIT su P1: nuovo input InpPx_TrailAct/TrailGive. Quando il trade e'
+  >= TrailAct pip in profitto, lo stop traila a TrailGive pip dal picco (ratchet).
+  Default 500/500 (validato: tiene tutti i mega-trade, Ret/DD 6.96 -> 9.44).
+  Blocca il picco invece di restituirlo aspettando il lento crossMA182.
+- NIENTE stop di equity a livello conto: validato controproducente (uno stop al 10%
+  scatta nel 2016 e fa perdere tutti i trend successivi; il give-back 19% e' il prezzo
+  per restare dentro ai trend rari, che sono l'edge).
+- ATTENZIONE RISCHIO: al 10% il conto era saltato nel 2010 (margin call). Per il backtest
+  completo serve InpRiskPct basso (1-2%): l'edge sono pochi trend rari, devi sopravvivere
+  alle lunghe magre per incassarli.

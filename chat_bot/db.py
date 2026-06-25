@@ -18,6 +18,7 @@ class Signal(Base):
     __tablename__ = "signals"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     t: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    symbol: Mapped[str | None] = mapped_column(String(20), index=True, nullable=True)
     action: Mapped[str] = mapped_column(String(20), index=True)
     pattern: Mapped[int | None] = mapped_column(Integer, nullable=True)
     dir: Mapped[str | None] = mapped_column(String(10), nullable=True)

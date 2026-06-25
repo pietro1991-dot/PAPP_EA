@@ -62,7 +62,7 @@ async def _build_context():
 
     ctx_lines = ["Segnali recenti (ultimi 20):"]
     for s in recent[:10]:
-        line = f"[{s.action}] pattern={s.pattern} dir={s.dir}"
+        line = f"[{s.action}] {s.symbol or '?'} pattern={s.pattern} dir={s.dir}"
         if s.reason:
             line += f" reason={s.reason}"
         if s.pnl_pt is not None:
@@ -122,6 +122,7 @@ async def on_signal(data: dict):
         async with AsyncSession() as session:
             snap = MarketSnapshot(
                 t=data.get("t"),
+                symbol=data.get("symbol") or "EURUSD",
                 bid=data.get("bid"),
                 ask=data.get("ask"),
                 spread_pts=data.get("spread_pts"),
@@ -133,6 +134,7 @@ async def on_signal(data: dict):
     async with AsyncSession() as session:
         sig = Signal(
             t=data.get("t"),
+            symbol=data.get("symbol"),
             action=data.get("action", ""),
             pattern=data.get("pattern"),
             dir=data.get("dir"),
@@ -151,6 +153,7 @@ async def on_signal(data: dict):
     payload = {
         "id": sig.id,
         "t": sig.t.isoformat() if sig.t else None,
+        "symbol": sig.symbol,
         "action": sig.action,
         "pattern": sig.pattern,
         "dir": sig.dir,
@@ -255,18 +258,24 @@ async def api_me(user: User = Depends(auth.current_user)):
 
 @app.get("/api/signals")
 async def get_signals(
-    limit: int = 50, action: str = "", user: User = Depends(auth.current_user)
+    limit: int = 50,
+    action: str = "",
+    symbol: str = "",
+    user: User = Depends(auth.current_user),
 ):
     async with AsyncSession() as session:
         q = select(Signal).order_by(desc(Signal.id))
         if action:
             q = q.where(Signal.action == action)
+        if symbol:
+            q = q.where(Signal.symbol == symbol)
         q = q.limit(limit)
         rows = (await session.execute(q)).scalars().all()
     return [
         {
             "id": r.id,
             "t": r.t.isoformat() if r.t else None,
+            "symbol": r.symbol,
             "action": r.action,
             "pattern": r.pattern,
             "dir": r.dir,
