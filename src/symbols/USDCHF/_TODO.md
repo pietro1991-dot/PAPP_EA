@@ -32,6 +32,18 @@ P3 tiene SL=MA121+TP (GRID gia' protetto).
 SIZING: P1/P2 senza SL -> InpFallbackRiskPips alzato 100 -> 600 (escursione reale)
 cosi' il lotto e' corretto senza piazzare uno stop. InpRiskPct=10 (come GBP).
 
+v2.14 - TAKE PROFIT sui pattern SELL (ricerca su griglia TP 0..2000 pip):
+- Su MA14 SELL->crossMA182, un TP~500 pip MIGLIORA total E OOS E Ret/DD, e
+  DE-CONCENTRA il profitto (da 1 mega-trade a 0, win 43%->46%, piu' trade).
+  Robusto su 4 date di split (TP500 batte TP0 su 2015/2017/2019; pari nel 2021).
+- Meccanismo: chiudi a +500 e RIENTRI al prossimo cross -> cavalchi il trend a
+  pezzi invece di un trade enorme che restituisce. Risolve la fragilita' "83% in
+  2 mesi" e batte anche il trailing stop in OOS -> il TP=500 SOSTITUISCE il trail.
+- Applicato a P1 e a tutte le varianti SELL (P4-P7). P2 (BUY, exit veloce) e P3
+  (GRID) invariati. P8 (exit veloce) senza TP.
+- Caveat: nel periodo piu' recente (2021+) il no-TP fa marginalmente meglio
+  (trend lisci 2022-23). Da confermare nel backtest MT5 completo.
+
 v2.13 - TUTTI i pattern base meritevoli (8 slot). Ricerca piu' approfondita:
 exhaustive scan (split 2020) + walk-forward 5 finestre. I 22 superstiti collassano
 in 3 BET distinti (le correlazioni entrate lo confermano):

@@ -9,7 +9,7 @@
 //  rischio/rendimento. NB: su USDCHF le uscite migliori sono LENTE (crossMA182).
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.13"
+#property version   "2.14"
 #property description "Multi-Pattern EA - USDCHF (motore BASE, pattern validati OOS)"
 #property description "Ogni pattern: On, Entry, Exit, SL, SLpips, TP, Direction."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 1=BUY, 2=SELL"
