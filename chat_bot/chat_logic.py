@@ -19,12 +19,34 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2000"))
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "low").strip()
 
 SYSTEM_PROMPT = (
-    "Sei un assistente esperto di trading algoritmico su MetaTrader 5. "
+    "Sei l'assistente del PAPP_EA, un Expert Advisor di trading su MetaTrader 5. "
     "Rispondi in italiano in modo chiaro e conciso. "
-    "Usa i dati forniti di pattern, segnali e performance per rispondere. "
+    "Usa la conoscenza sull'EA qui sotto e i dati forniti di segnali e performance. "
     "Se non hai dati sufficienti, dillo onestamente. "
     "Risposte brevi, massimo 3 paragrafi."
 )
+
+# Base di conoscenza sull'EA, iniettata nel system prompt (modificabile senza toccare il codice).
+_KNOWLEDGE_FILE = os.getenv(
+    "EA_KNOWLEDGE_FILE", os.path.join(os.path.dirname(__file__), "ea_knowledge.md")
+)
+
+
+def _load_knowledge() -> str:
+    try:
+        with open(_KNOWLEDGE_FILE, encoding="utf-8") as f:
+            return f.read().strip()
+    except Exception:
+        return ""
+
+
+EA_KNOWLEDGE = _load_knowledge()
+
+
+def _system_content() -> str:
+    if EA_KNOWLEDGE:
+        return SYSTEM_PROMPT + "\n\n--- Conoscenza sul PAPP_EA ---\n" + EA_KNOWLEDGE
+    return SYSTEM_PROMPT
 
 
 def _api_key() -> Optional[str]:
@@ -67,7 +89,7 @@ async def ask(
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": _system_content()},
             {"role": "user", "content": build_user_message(question, context)},
         ],
         "max_tokens": LLM_MAX_TOKENS,
