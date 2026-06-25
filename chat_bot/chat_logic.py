@@ -48,26 +48,35 @@ def build_user_message(question: str, context: Optional[str] = None) -> str:
     return msg
 
 
-async def ask(question: str, context: Optional[str] = None) -> Optional[str]:
+async def ask(
+    question: str,
+    context: Optional[str] = None,
+    model: Optional[str] = None,
+    timeout: Optional[float] = None,
+) -> Optional[str]:
     """Interroga l'LLM via API HTTP OpenAI-compatibile (OpenCode Zen).
+    `model` permette di usare un modello diverso da quello di default (es. fallback).
+    `timeout` limita l'attesa (oltre il quale si ripiega sul fallback).
     Ritorna il testo, oppure None su errore (il worker decide il fallback)."""
     key = _api_key()
     if not key:
         log.error("OPENCODE_API_KEY mancante: impossibile interrogare l'LLM")
         return None
 
+    model = model or ZEN_MODEL
     payload = {
-        "model": ZEN_MODEL,
+        "model": model,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": build_user_message(question, context)},
         ],
         "max_tokens": LLM_MAX_TOKENS,
     }
-    if LLM_REASONING_EFFORT:
+    # reasoning_effort solo per i modelli deepseek (altri lo rifiutano con 400).
+    if LLM_REASONING_EFFORT and "deepseek" in model:
         payload["reasoning_effort"] = LLM_REASONING_EFFORT
     try:
-        async with httpx.AsyncClient(timeout=LLM_TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=timeout or LLM_TIMEOUT) as client:
             r = await client.post(
                 f"{ZEN_BASE_URL}/chat/completions",
                 headers={"Authorization": f"Bearer {key}"},

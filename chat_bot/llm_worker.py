@@ -25,6 +25,11 @@ LLM_USER_RPM = int(os.getenv("LLM_USER_RPM", "5"))  # domande/minuto per utente
 CACHE_MAX = int(os.getenv("CACHE_MAX", "500"))    # voci LRU in memoria
 LLM_RETRIES = int(os.getenv("LLM_RETRIES", "2"))     # tentativi extra su risposta vuota
 LLM_RETRY_DELAY = float(os.getenv("LLM_RETRY_DELAY", "2"))  # attesa tra i tentativi (s)
+# Modello di riserva se il primario fallisce anche dopo i retry (es. deepseek va in 500).
+# Vuoto = nessun fallback. Garantisce una risposta anche durante i down del primario.
+LLM_FALLBACK_MODEL = os.getenv("LLM_FALLBACK_MODEL", "mimo-v2.5-free").strip()
+# Timeout breve sul primario: se non risponde entro questo tempo, passa al fallback.
+LLM_PRIMARY_TIMEOUT = float(os.getenv("LLM_PRIMARY_TIMEOUT", "10"))
 
 FALLBACK = (
     "Il servizio AI è momentaneamente al limite. Riprova tra qualche minuto."
@@ -188,7 +193,7 @@ async def _worker():
             answer = None
             for attempt in range(LLM_RETRIES + 1):
                 await _bucket.acquire()
-                answer = await ask(job.question, job.context)
+                answer = await ask(job.question, job.context, timeout=LLM_PRIMARY_TIMEOUT)
                 if answer:
                     break
                 if attempt < LLM_RETRIES:
@@ -197,6 +202,12 @@ async def _worker():
                         attempt + 1, LLM_RETRIES + 1,
                     )
                     await asyncio.sleep(LLM_RETRY_DELAY)
+
+            # Primario fallito (es. deepseek in 500): prova il modello di riserva.
+            if not answer and LLM_FALLBACK_MODEL:
+                log.warning("Primario fallito, provo il fallback %s", LLM_FALLBACK_MODEL)
+                await _bucket.acquire()
+                answer = await ask(job.question, job.context, model=LLM_FALLBACK_MODEL)
 
             if answer:
                 _lru_put(job.key, answer)
