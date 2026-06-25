@@ -3,255 +3,336 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PAPP EA - Chat &amp; Segnali</title>
+<title>PAPP EA — Monitor</title>
 <style>
+:root{
+  --bg:#0d0f14; --panel:#161922; --panel2:#1c2029; --border:#262b36;
+  --text:#e6e8ec; --muted:#8a909c; --accent:#4fc3f7;
+  --green:#34d399; --red:#f87171;
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,sans-serif;background:#111;color:#e0e0e0;height:100vh;display:flex;flex-direction:column}
-header{background:#1a1a2e;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333}
-header h1{font-size:18px;color:#4fc3f7}
-.stats{display:flex;gap:16px;font-size:13px;color:#aaa}
-.stats span strong{color:#4fc3f7}
-.container{display:flex;flex:1;overflow:hidden}
-.chat-panel{flex:1;display:flex;flex-direction:column;border-right:1px solid #333}
-.signals-panel{width:380px;display:flex;flex-direction:column;background:#16161e}
-.panel-header{padding:10px 14px;font-size:13px;font-weight:600;color:#888;border-bottom:1px solid #333;text-transform:uppercase;letter-spacing:.5px}
-.messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.msg{max-width:85%;padding:8px 12px;border-radius:8px;font-size:14px;line-height:1.5}
-.msg.user{background:#1e3a5f;align-self:flex-end}
-.msg.bot{background:#222;align-self:flex-start;color:#ccc}
-.msg.bot strong{color:#4fc3f7}
-.msg.bot{max-width:92%}
-.msg.bot .md-h{font-weight:600;color:#4fc3f7;margin:8px 0 3px;font-size:14px}
-.msg.bot p{margin:5px 0}
-.msg.bot ul,.msg.bot ol{margin:5px 0 5px 20px}
-.msg.bot li{margin:2px 0}
-.msg.bot code{background:#2a2a2a;padding:1px 5px;border-radius:3px;font-size:13px}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#2c3340;border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:#3a4250}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- Header ---------- */
+header{background:linear-gradient(180deg,#12151d,#0f1219);border-bottom:1px solid var(--border);padding:0 18px;display:flex;align-items:center;gap:18px;height:54px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;letter-spacing:.2px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.brand span{color:var(--accent)}
+.tabs{display:flex;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:20px;background:#1a1e27;border:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s}
+.tab:hover{background:#222734;color:var(--text)}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#0a0d12}
+.tab .tdot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.85}
+.user{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);flex-shrink:0}
+.user .email{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user .logout{cursor:pointer;color:var(--accent);font-weight:600}
+.user .logout:hover{text-decoration:underline}
+
+/* ---------- Stat cards ---------- */
+.cards{display:flex;gap:12px;padding:14px 18px;flex-shrink:0}
+.card{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 16px;min-width:0}
+.card-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px}
+.card-val{font-size:24px;font-weight:700;line-height:1}
+.card-val.pos{color:var(--green)} .card-val.neg{color:var(--red)}
+.card .accent{color:var(--accent)}
+
+/* ---------- Layout ---------- */
+.container{display:flex;flex:1;gap:14px;padding:0 18px 16px;overflow:hidden}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
+.chat-panel{flex:1}
+.signals-panel{width:400px;flex-shrink:0}
+.panel-head{padding:13px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.panel-head .scope{color:var(--accent)}
+.live{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--green);text-transform:none;letter-spacing:0}
+.live .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ---------- Chat ---------- */
+.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:88%;padding:11px 14px;border-radius:14px;font-size:14px;line-height:1.55;animation:rise .2s ease}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg.user{background:linear-gradient(135deg,#1d4e6b,#1a3a52);align-self:flex-end;border-bottom-right-radius:4px}
+.msg.bot{background:var(--panel2);align-self:flex-start;border:1px solid var(--border);border-bottom-left-radius:4px;color:#dfe2e7}
+.msg.bot .who{font-weight:700;color:var(--accent);font-size:12px;display:block;margin-bottom:4px}
+.msg.bot strong{color:var(--accent)}
+.msg.bot .md-h{font-weight:700;color:var(--accent);margin:9px 0 3px;font-size:14px}
+.msg.bot p{margin:6px 0}.msg.bot p:first-child,.msg.bot .md-h:first-child{margin-top:0}
+.msg.bot ul,.msg.bot ol{margin:6px 0 6px 20px}.msg.bot li{margin:3px 0}
+.msg.bot code{background:#11141b;padding:1px 6px;border-radius:4px;font-size:13px}
 .msg.bot table{border-collapse:collapse;margin:8px 0;font-size:13px;display:block;overflow-x:auto}
-.msg.bot th,.msg.bot td{border:1px solid #333;padding:4px 9px;text-align:left;white-space:nowrap}
-.msg.bot th{background:#1e1e2a;color:#4fc3f7}
-.msg.bot p:first-child,.msg.bot .md-h:first-child{margin-top:0}
-.input-bar{display:flex;padding:10px;gap:8px;border-top:1px solid #333;background:#1a1a2e}
-.input-bar input{flex:1;padding:10px;border-radius:6px;border:1px solid #333;background:#222;color:#e0e0e0;font-size:14px}
-.input-bar button{padding:10px 20px;border-radius:6px;border:none;background:#4fc3f7;color:#111;font-weight:600;cursor:pointer}
+.msg.bot th,.msg.bot td{border:1px solid var(--border);padding:5px 10px;text-align:left;white-space:nowrap}
+.msg.bot th{background:#11141b;color:var(--accent)}
+.typing{display:inline-flex;gap:4px;padding:2px 0}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+.input-bar{display:flex;padding:12px;gap:10px;border-top:1px solid var(--border)}
+.input-bar input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:#11141b;color:var(--text);font-size:14px;outline:none;transition:.15s}
+.input-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,195,247,.12)}
+.input-bar button{padding:12px 22px;border-radius:10px;border:none;background:var(--accent);color:#0a0d12;font-weight:700;cursor:pointer;font-size:14px;transition:.15s}
+.input-bar button:hover{filter:brightness(1.08)}
 .input-bar button:disabled{opacity:.4;cursor:not-allowed}
-.signal-list{flex:1;overflow-y:auto;padding:6px}
-.sig{padding:8px 10px;border-bottom:1px solid #222;font-size:12px;display:flex;justify-content:space-between;align-items:center}
-.sig .action{font-weight:600;padding:2px 6px;border-radius:4px;font-size:11px}
-.sig .action.open{background:#1b5e20;color:#81c784}
-.sig .action.close{background:#b71c1c;color:#ef9a9a}
-.sig .action.skip{background:#555;color:#ccc}
-.sig .info{color:#999}
-.sig .pnl{font-weight:600}
-.sig .pnl.pos{color:#81c784}
-.sig .pnl.neg{color:#ef9a9a}
-.meta{text-align:center;padding:20px;color:#555;font-size:13px}
-.loading{color:#888;font-style:italic}
+
+/* ---------- Signals ---------- */
+.signal-list{flex:1;overflow-y:auto;padding:8px}
+.sig{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;margin-bottom:4px;transition:.12s;position:relative}
+.sig:hover{background:var(--panel2)}
+.sig .bar{width:3px;align-self:stretch;border-radius:3px;background:var(--c,#4fc3f7);flex-shrink:0}
+.sig-main{flex:1;min-width:0}
+.sig-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.sym{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;color:var(--c,#4fc3f7);background:color-mix(in srgb,var(--c,#4fc3f7) 16%,transparent)}
+.action{font-weight:700;padding:2px 7px;border-radius:5px;font-size:10px;letter-spacing:.3px}
+.action.open{background:rgba(52,211,153,.16);color:var(--green)}
+.action.close{background:rgba(248,113,113,.16);color:var(--red)}
+.action.skip{background:#2a2f3a;color:var(--muted)}
+.sig-pat{font-size:12px;color:#c4c9d2;font-weight:600}
+.sig-setup{font-size:11.5px;color:#aeb4c0;margin-top:3px;line-height:1.4}
+.sig-setup .lab{color:var(--accent);font-weight:600}
+.sig-sub{font-size:11px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pnl{font-weight:700;font-size:13px;flex-shrink:0}
+.pnl.pos{color:var(--green)} .pnl.neg{color:var(--red)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#565d6a;gap:10px;text-align:center;padding:30px}
+.empty svg{opacity:.4}
+
+@media(max-width:880px){
+  .container{flex-direction:column;overflow:auto}
+  .signals-panel{width:100%;height:300px}
+  .chat-panel{min-height:340px}
+  .cards{flex-wrap:wrap}.card{min-width:calc(50% - 6px)}
+}
 </style>
 </head>
 <body>
 <header>
-  <h1>PAPP EA Monitor</h1>
-  <div class="stats">
-    <span>Aperte: <strong id="stat-open">0</strong></span>
-    <span>Chiuse: <strong id="stat-close">0</strong></span>
-    <span>Skip: <strong id="stat-skip">0</strong></span>
-    <span>PnL: <strong id="stat-pnl">0 pt</strong></span>
-    <span id="user-email" style="color:#666"></span>
-    <span style="cursor:pointer;color:#4fc3f7" onclick="logout()">Esci</span>
+  <div class="brand"><span class="dot"></span>PAPP <span>EA</span></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="user">
+    <span class="email" id="user-email"></span>
+    <span class="logout" onclick="logout()">Esci</span>
   </div>
 </header>
+
+<div class="cards">
+  <div class="card"><div class="card-label">Aperte</div><div class="card-val accent" id="stat-open">0</div></div>
+  <div class="card"><div class="card-label">Chiuse</div><div class="card-val" id="stat-close">0</div></div>
+  <div class="card"><div class="card-label">Skip</div><div class="card-val" id="stat-skip">0</div></div>
+  <div class="card"><div class="card-label">PnL (punti)</div><div class="card-val" id="stat-pnl">0</div></div>
+</div>
+
 <div class="container">
-  <div class="chat-panel">
+  <div class="panel chat-panel">
+    <div class="panel-head">Assistente <span class="scope" id="chat-scope"></span></div>
     <div class="messages" id="chat-messages"></div>
     <div class="input-bar">
-      <input type="text" id="chat-input" placeholder="Chiedi qualcosa sul trading..." />
+      <input type="text" id="chat-input" placeholder="Chiedi qualcosa sull'EA…" autocomplete="off"/>
       <button id="chat-btn">Invia</button>
     </div>
   </div>
-  <div class="signals-panel">
-    <div class="panel-header">Segnali in tempo reale</div>
+  <div class="panel signals-panel">
+    <div class="panel-head">Segnali <span class="scope" id="sig-scope">· Tutti</span>
+      <span class="live"><span class="pulse"></span>LIVE</span>
+    </div>
     <div class="signal-list" id="signal-list"></div>
   </div>
 </div>
+
 <script>
-const chatMsg = document.getElementById('chat-messages');
-const chatInput = document.getElementById('chat-input');
-const chatBtn = document.getElementById('chat-btn');
-const signalList = document.getElementById('signal-list');
+const $=id=>document.getElementById(id);
+const chatMsg=$('chat-messages'), chatInput=$('chat-input'), chatBtn=$('chat-btn'), signalList=$('signal-list');
+let activeSymbol='';            // '' = tutti
+let knownSymbols=[];
+let ws=null;
 
-let ws = null;
+// colore stabile per simbolo: palette curata per indice, distinta e leggibile su scuro
+const SYM_PALETTE=['#4fc3f7','#a78bfa','#fbbf24','#34d399','#f472b6','#fb923c','#38bdf8','#c084fc'];
+function symColor(sym){
+  if(!sym) return '#4fc3f7';
+  const i=knownSymbols.indexOf(sym);
+  if(i>=0) return SYM_PALETTE[i%SYM_PALETTE.length];
+  let h=0; for(const c of sym) h=(h*31+c.charCodeAt(0))>>>0;  // fallback simboli non ancora noti
+  return `hsl(${(h*137)%360} 68% 62%)`;
+}
+function fmtTime(iso){
+  if(!iso) return ''; const d=new Date(iso);
+  return isNaN(d)?'':d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+}
 
+/* ---------- Tabs simboli ---------- */
+async function loadSymbols(){
+  try{
+    const r=await fetch('/api/symbols'); if(r.status===401){location.href='/';return;}
+    knownSymbols=await r.json();
+  }catch(_){ knownSymbols=[]; }
+  renderTabs();
+}
+function renderTabs(){
+  const tabs=$('tabs'); tabs.innerHTML='';
+  const mk=(label,val)=>{
+    const t=document.createElement('div'); t.className='tab'+(val===activeSymbol?' active':'');
+    if(val){const d=document.createElement('span');d.className='tdot';d.style.color=symColor(val);t.appendChild(d);}
+    t.appendChild(document.createTextNode(label));
+    t.onclick=()=>setSymbol(val); tabs.appendChild(t);
+  };
+  mk('Tutti','');
+  knownSymbols.forEach(s=>mk(s,s));
+}
+function setSymbol(sym){
+  activeSymbol=sym; renderTabs();
+  const label=sym||'Tutti';
+  $('sig-scope').textContent='· '+label;
+  $('chat-scope').textContent=sym?('· '+sym):'';
+  chatInput.placeholder=sym?`Chiedi su ${sym}…`:"Chiedi qualcosa sull'EA…";
+  loadRecent(); refreshStats();
+}
+
+/* ---------- Stats ---------- */
+async function refreshStats(){
+  const q=activeSymbol?('?symbol='+encodeURIComponent(activeSymbol)):'';
+  const r=await fetch('/api/stats'+q); if(r.status===401){location.href='/';return;}
+  const s=await r.json();
+  $('stat-open').textContent=s.open||0;
+  $('stat-close').textContent=s.close||0;
+  $('stat-skip').textContent=s.skip||0;
+  const pnl=$('stat-pnl'); const v=s.pnl_pt||0;
+  pnl.textContent=(v>=0?'+':'')+v; pnl.className='card-val '+(v>0?'pos':v<0?'neg':'');
+}
+
+/* ---------- Segnali ---------- */
+function renderSignal(d){
+  const c=symColor(d.symbol);
+  const row=document.createElement('div'); row.className='sig'; row.style.setProperty('--c',c);
+  const bar=document.createElement('div'); bar.className='bar'; row.appendChild(bar);
+
+  const main=document.createElement('div'); main.className='sig-main';
+  const top=document.createElement('div'); top.className='sig-top';
+  if(d.symbol){const sy=document.createElement('span');sy.className='sym';sy.textContent=d.symbol;top.appendChild(sy);}
+  const ac=document.createElement('span'); ac.className='action '+d.action; ac.textContent=(d.action||'').toUpperCase(); top.appendChild(ac);
+  const pat=document.createElement('span'); pat.className='sig-pat'; pat.textContent='P'+(d.pattern??'?')+' '+(d.dir||''); top.appendChild(pat);
+  main.appendChild(top);
+
+  // Riga "perché e come": all'apertura il setup (ingresso + piano d'uscita),
+  // alla chiusura il motivo d'uscita, allo skip la causa. Sempre visibile.
+  if(d.reason){
+    d.reason.split('|').map(s=>s.trim()).filter(Boolean).forEach(part=>{
+      const sd=document.createElement('div'); sd.className='sig-setup';
+      const m=part.match(/^([^:]{2,14}):\s*(.*)$/);
+      if(m){
+        const lab=document.createElement('span'); lab.className='lab'; lab.textContent=m[1]+': ';
+        sd.appendChild(lab); sd.appendChild(document.createTextNode(m[2]));
+      } else sd.textContent=part;
+      main.appendChild(sd);
+    });
+  }
+  // Riga livelli: prezzo entrata + SL/TP reali + ora.
+  const sub=document.createElement('div'); sub.className='sig-sub';
+  let st=[];
+  if(d.entry) st.push('@'+d.entry.toFixed(5));
+  if(d.sl) st.push('SL '+d.sl.toFixed(5));
+  if(d.tp) st.push('TP '+d.tp.toFixed(5));
+  const tm=fmtTime(d.t); if(tm) st.push(tm);
+  sub.textContent=st.join(' · '); main.appendChild(sub);
+  row.appendChild(main);
+
+  if(d.pnl_pt!=null){
+    const p=document.createElement('div'); p.className='pnl '+(d.pnl_pt>=0?'pos':'neg');
+    p.textContent=(d.pnl_pt>=0?'+':'')+d.pnl_pt.toFixed(1); row.appendChild(p);
+  }
+  return row;
+}
+function showEmpty(){
+  signalList.innerHTML='';
+  const e=document.createElement('div'); e.className='empty';
+  e.innerHTML='<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>'
+    +'<div>Nessun segnale ancora'+(activeSymbol?(' per '+activeSymbol):'')+'.<br>Appariranno qui in tempo reale.</div>';
+  signalList.appendChild(e);
+}
+async function loadRecent(){
+  const q='?limit=60'+(activeSymbol?('&symbol='+encodeURIComponent(activeSymbol)):'');
+  const r=await fetch('/api/signals'+q); if(r.status===401){location.href='/';return;}
+  const list=await r.json();
+  signalList.innerHTML='';
+  if(!list.length){showEmpty();return;}
+  list.forEach(d=>signalList.appendChild(renderSignal(d)));
+}
+
+/* ---------- WebSocket ---------- */
 function connectWS(){
-  ws = new WebSocket((location.protocol==='https'?'wss':'ws')+'://'+location.host+'/ws');
-  ws.onclose = ()=>{setTimeout(connectWS,3000)};
-  ws.onmessage = (e)=>{
-    try{
-      const d = JSON.parse(e.data);
-      addSignal(d);
-      refreshStats();
-    }catch(_){}
+  ws=new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');
+  ws.onclose=()=>setTimeout(connectWS,3000);
+  ws.onmessage=e=>{
+    let d; try{d=JSON.parse(e.data)}catch(_){return;}
+    if(d.symbol && !knownSymbols.includes(d.symbol)){knownSymbols.push(d.symbol);knownSymbols.sort();renderTabs();}
+    if(!activeSymbol || d.symbol===activeSymbol){
+      const empty=signalList.querySelector('.empty'); if(empty)signalList.innerHTML='';
+      signalList.insertBefore(renderSignal(d),signalList.firstChild);
+      while(signalList.children.length>200)signalList.lastChild.remove();
+    }
+    refreshStats();
   };
 }
 
-function addSignal(d){
-  const div = document.createElement('div');
-  div.className = 'sig';
-  const action = document.createElement('span');
-  action.className = 'action '+d.action;
-  action.textContent = d.action.toUpperCase();
-  div.appendChild(action);
-
-  const info = document.createElement('span');
-  info.className = 'info';
-  let txt = (d.symbol?d.symbol+' ':'')+'P'+(d.pattern??'?')+' '+(d.dir||'');
-  if(d.reason) txt += ' '+d.reason;
-  if(d.entry) txt += ' @'+d.entry.toFixed(5);
-  info.textContent = txt;
-  div.appendChild(info);
-
-  if(d.pnl_pt != null){
-    const pnl = document.createElement('span');
-    pnl.className = 'pnl '+(d.pnl_pt>=0?'pos':'neg');
-    pnl.textContent = (d.pnl_pt>=0?'+':'')+d.pnl_pt.toFixed(1)+'pt';
-    div.appendChild(pnl);
-  }
-  signalList.prepend(div);
-  if(signalList.children.length > 200) signalList.lastChild.remove();
-}
-
-async function logout(){
-  await fetch('/api/logout', {method:'POST'});
-  location.href = '/';
-}
-
-async function refreshStats(){
-  const r = await fetch('/api/stats');
-  if(r.status === 401){ location.href = '/'; return; }
-  const s = await r.json();
-  document.getElementById('stat-open').textContent = s.open||0;
-  document.getElementById('stat-close').textContent = s.close||0;
-  document.getElementById('stat-skip').textContent = s.skip||0;
-  document.getElementById('stat-pnl').textContent = (s.pnl_pt>=0?'+':'')+s.pnl_pt+' pt';
-}
-
-async function loadRecent(){
-  const r = await fetch('/api/signals?limit=50');
-  const list = await r.json();
-  signalList.innerHTML = '';
-  list.forEach(d=>addSignal(d));
-}
-
-chatBtn.onclick = async ()=>{
-  const q = chatInput.value.trim();
-  if(!q) return;
-  chatBtn.disabled = true;
-  chatInput.value = '';
-  addChatMsg(q, 'user');
-  const botMsg = addChatMsg('', 'bot');
+/* ---------- Chat ---------- */
+chatBtn.onclick=async()=>{
+  const q=chatInput.value.trim(); if(!q)return;
+  chatBtn.disabled=true; chatInput.value='';
+  addUserMsg(q);
+  const bot=addBotMsg(); bot.innerHTML='<span class="who">PAPP Assistant</span><span class="typing"><i></i><i></i><i></i></span>';
   try{
-    const r = await fetch('/api/chat', {method:'POST', body:JSON.stringify({question:q}), headers:{'Content-Type':'application/json'}});
-    const reader = r.body.getReader();
-    const decoder = new TextDecoder();
-    let text = '';
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,symbol:activeSymbol})});
+    const reader=r.body.getReader(); const dec=new TextDecoder(); let text='';
     while(true){
-      const {done, value} = await reader.read();
-      if(done) break;
-      const chunk = decoder.decode(value, {stream:true});
-      for(const line of chunk.split('\n')){
+      const {done,value}=await reader.read(); if(done)break;
+      for(const line of dec.decode(value,{stream:true}).split('\n')){
         if(line.startsWith('data: ')){
-          const data = line.slice(6);
-          if(data === '__DONE__') { break; }
-          try{
-            text = JSON.parse(data).text;
-          }catch(_){
-            text += data; // fallback retro-compatibile
-          }
-          botMsg.innerHTML = renderMarkdown(text);
-          chatMsg.scrollTop = chatMsg.scrollHeight;
+          const data=line.slice(6); if(data==='__DONE__')break;
+          try{text=JSON.parse(data).text}catch(_){text+=data}
+          bot.innerHTML='<span class="who">PAPP Assistant</span>'+renderMarkdown(text);
+          chatMsg.scrollTop=chatMsg.scrollHeight;
         }
       }
     }
-  }catch(e){
-    botMsg.textContent = 'Errore: '+e.message;
-  }
-  chatBtn.disabled = false;
+  }catch(e){ bot.innerHTML='<span class="who">PAPP Assistant</span>Errore: '+e.message; }
+  chatBtn.disabled=false; chatInput.focus();
 };
+chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')chatBtn.click()});
+function addUserMsg(t){const d=document.createElement('div');d.className='msg user';d.textContent=t;chatMsg.appendChild(d);chatMsg.scrollTop=chatMsg.scrollHeight;}
+function addBotMsg(){const d=document.createElement('div');d.className='msg bot';chatMsg.appendChild(d);chatMsg.scrollTop=chatMsg.scrollHeight;return d;}
 
-chatInput.addEventListener('keydown', e=>{if(e.key==='Enter') chatBtn.click()});
-
-// Renderer markdown minimale e sicuro (escape HTML prima di formattare, niente XSS).
-function escapeHtml(s){
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function mdInline(t){
-  return t
-    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
-    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<em>$2</em>')
-    .replace(/`([^`]+)`/g,'<code>$1</code>');
-}
-function mdCells(line){
-  return line.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim());
-}
+/* ---------- Markdown (sicuro) ---------- */
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function mdInline(t){return t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<em>$2</em>').replace(/`([^`]+)`/g,'<code>$1</code>');}
+function mdCells(l){return l.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim());}
 function renderMarkdown(src){
-  const lines = escapeHtml(src).split('\n');
-  let html = '', i = 0;
-  while(i < lines.length){
-    const line = lines[i];
-    // tabella: riga con | seguita da riga separatrice |---|
-    if(line.indexOf('|')>=0 && i+1<lines.length && /^[\s:|\-]+$/.test(lines[i+1]) && lines[i+1].indexOf('-')>=0){
-      const head = mdCells(line); i += 2;
-      const rows = [];
-      while(i<lines.length && lines[i].indexOf('|')>=0){ rows.push(mdCells(lines[i])); i++; }
-      html += '<table><thead><tr>'+head.map(c=>'<th>'+mdInline(c)+'</th>').join('')+'</tr></thead><tbody>'
-            + rows.map(r=>'<tr>'+r.map(c=>'<td>'+mdInline(c)+'</td>').join('')+'</tr>').join('')
-            + '</tbody></table>';
-      continue;
-    }
-    const h = line.match(/^(#{1,4})\s+(.*)$/);
-    if(h){ html += '<div class="md-h">'+mdInline(h[2])+'</div>'; i++; continue; }
-    if(/^\s*[-*]\s+/.test(line)){
-      html += '<ul>';
-      while(i<lines.length && /^\s*[-*]\s+/.test(lines[i])){ html += '<li>'+mdInline(lines[i].replace(/^\s*[-*]\s+/,''))+'</li>'; i++; }
-      html += '</ul>'; continue;
-    }
-    if(/^\s*\d+\.\s+/.test(line)){
-      html += '<ol>';
-      while(i<lines.length && /^\s*\d+\.\s+/.test(lines[i])){ html += '<li>'+mdInline(lines[i].replace(/^\s*\d+\.\s+/,''))+'</li>'; i++; }
-      html += '</ol>'; continue;
-    }
-    if(line.trim()===''){ i++; continue; }
-    const para = [];
-    while(i<lines.length && lines[i].trim()!=='' && !/^#{1,4}\s/.test(lines[i]) && !/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\d+\.\s+/.test(lines[i]) && lines[i].indexOf('|')<0){
-      para.push(lines[i]); i++;
-    }
-    if(para.length) html += '<p>'+para.map(mdInline).join('<br>')+'</p>';
+  const lines=escapeHtml(src).split('\n'); let html='',i=0;
+  while(i<lines.length){const line=lines[i];
+    if(line.indexOf('|')>=0&&i+1<lines.length&&/^[\s:|\-]+$/.test(lines[i+1])&&lines[i+1].indexOf('-')>=0){
+      const head=mdCells(line);i+=2;const rows=[];
+      while(i<lines.length&&lines[i].indexOf('|')>=0){rows.push(mdCells(lines[i]));i++;}
+      html+='<table><thead><tr>'+head.map(c=>'<th>'+mdInline(c)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+mdInline(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';continue;}
+    const h=line.match(/^(#{1,4})\s+(.*)$/); if(h){html+='<div class="md-h">'+mdInline(h[2])+'</div>';i++;continue;}
+    if(/^\s*[-*]\s+/.test(line)){html+='<ul>';while(i<lines.length&&/^\s*[-*]\s+/.test(lines[i])){html+='<li>'+mdInline(lines[i].replace(/^\s*[-*]\s+/,''))+'</li>';i++;}html+='</ul>';continue;}
+    if(/^\s*\d+\.\s+/.test(line)){html+='<ol>';while(i<lines.length&&/^\s*\d+\.\s+/.test(lines[i])){html+='<li>'+mdInline(lines[i].replace(/^\s*\d+\.\s+/,''))+'</li>';i++;}html+='</ol>';continue;}
+    if(line.trim()===''){i++;continue;}
+    const para=[];while(i<lines.length&&lines[i].trim()!==''&&!/^#{1,4}\s/.test(lines[i])&&!/^\s*[-*]\s+/.test(lines[i])&&!/^\s*\d+\.\s+/.test(lines[i])&&lines[i].indexOf('|')<0){para.push(lines[i]);i++;}
+    if(para.length)html+='<p>'+para.map(mdInline).join('<br>')+'</p>';
   }
   return html;
 }
 
-function addChatMsg(text, cls){
-  const div = document.createElement('div');
-  div.className = 'msg '+cls;
-  div.textContent = text;
-  chatMsg.appendChild(div);
-  chatMsg.scrollTop = chatMsg.scrollHeight;
-  return div;
-}
-
-chatMsg.innerHTML = '<div class="msg bot"><strong>PAPP Assistant</strong><br>Chiedimi qualunque cosa sui pattern, segnali e performance dell\'EA.</div>';
-
+/* ---------- Init ---------- */
 async function loadUser(){
-  const r = await fetch('/api/me');
-  if(r.status === 401){ location.href = '/'; return; }
-  const d = await r.json();
-  document.getElementById('user-email').textContent = d.email || '';
+  const r=await fetch('/api/me'); if(r.status===401){location.href='/';return;}
+  const d=await r.json(); $('user-email').textContent=d.email||'';
 }
-
-loadUser();
-connectWS();
-loadRecent();
-refreshStats();
-setInterval(refreshStats, 10000);
+chatMsg.innerHTML='<div class="msg bot"><span class="who">PAPP Assistant</span>Ciao! Chiedimi pattern, segnali e performance dell\'EA. Usa le tab in alto per filtrare per simbolo.</div>';
+loadUser(); loadSymbols(); connectWS(); loadRecent(); refreshStats();
+setInterval(refreshStats,10000);
 </script>
 </body>
 </html>
