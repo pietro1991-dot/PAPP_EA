@@ -5,7 +5,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 
@@ -25,6 +25,7 @@ from db import (
 from mt5_bridge import LogTailer
 import llm_worker
 import auth
+import metrics
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("papp")
@@ -85,14 +86,14 @@ async def _build_context(symbol: str = ""):
 async def _generate_perf_summary():
     """Genera UNA volta il riassunto della performance e lo salva: servito a tutti
     gli utenti senza ulteriori chiamate LLM."""
-    context, last_id, n = await _build_context()
-    if n == 0:
+    digest = await metrics.build_digest()
+    if digest["recent_count"] == 0:
         return
     question = (
         "Riassumi in massimo 3 frasi l'andamento della strategia oggi: numero di "
         "operazioni, PnL complessivo e il pattern più attivo."
     )
-    answer = await llm_worker.submit(question, context, f"summary{last_id}")
+    answer = await llm_worker.submit(question, digest["text"], "summary:" + digest["sig"])
     if answer and answer not in (llm_worker.FALLBACK, llm_worker.BUSY, llm_worker.RATE):
         async with AsyncSession() as session:
             session.add(DailySummary(kind="perf_today", content=answer))
@@ -225,6 +226,26 @@ async def index(request: Request):
     if token and auth.verify_session_token(token):
         return HTMLResponse(open("templates/index.html").read())
     return HTMLResponse(open("templates/login.html").read())
+
+
+# --- PWA: manifest e service worker (pubblici, a scope root) ---
+@app.get("/manifest.webmanifest")
+async def manifest():
+    return FileResponse("static/manifest.webmanifest", media_type="application/manifest+json")
+
+
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse(
+        "static/sw.js",
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+    )
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("static/favicon-32.png", media_type="image/png")
 
 
 @app.post("/api/register")
@@ -487,9 +508,14 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
     if not question:
         return JSONResponse({"error": "Domanda vuota"}, status_code=400)
 
-    context, last_id, recent_count = await _build_context(symbol)
-    # Firma del contesto per la cache: cambia ad ogni nuovo segnale o cambio simbolo.
-    context_sig = f"{symbol or 'all'}:sig{last_id}"
+    # Digest completo di metriche dal DB: l'assistente riceve numeri già calcolati
+    # (conto, performance per simbolo/pattern, periodo, ultimi segnali) → niente
+    # numeri inventati. La firma include l'ultimo snapshot conto, così la cache si
+    # invalida quando i dati (anche il P/L flottante) cambiano.
+    digest = await metrics.build_digest(symbol)
+    context = digest["text"]
+    context_sig = digest["sig"]
+    recent_count = digest["recent_count"]
 
     # Domande comuni → riassunto condiviso precalcolato, 0 quota LLM.
     # (solo per la vista globale: il riassunto precalcolato non è per-simbolo)
