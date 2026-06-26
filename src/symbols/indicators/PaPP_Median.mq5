@@ -3,7 +3,7 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.00"
+#property version   "2.01"
 #property description "PaPP Median - Mediana 7 MA (3g-1y)"
 #property description "Calcolo ancorato a D1 = linea uguale su ogni timeframe"
 #property indicator_chart_window
@@ -196,6 +196,7 @@ void RefreshMetricCache()
    // Storia delle 4 metriche su finestra CLWIN + percentile corrente
    double cA[],vA[],aA[],oA[],v7[7],r[];
    int cc=0,vc=0,ac=0,oc=0,c7;
+   double velSigned=0.0, accSigned=0.0;   // valore CON segno della barra corrente (direzione pannello/export)
    ArrayResize(cA,win); ArrayResize(vA,win); ArrayResize(aA,win); ArrayResize(oA,win);
    ArrayResize(r,NVOL);
 
@@ -209,12 +210,12 @@ void RefreshMetricCache()
          double md=MedArr(v_cl,c_cl);
          if(md>0){ double ds=0; for(int m=0;m<c_cl;m++) ds+=MathAbs(v_cl[m]-md)/md*100.0; cA[cc++]=ds/c_cl; }
         }
-      // Velocity
+      // Velocity. vA = magnitudine (per il percentile); velSigned = valore CON segno della barra corrente.
       c7=0; for(int m=0;m<7;m++){ double a=g_d1.cols[j][m],b=g_d1.cols[j+KSLOPE][m]; if(IsVal(a)&&IsVal(b)) v7[c7++]=(a-b)/b*100.0; }
-      vA[vc++]=MathAbs(MedArr(v7,c7));
-      // Acceleration
+      { double vm=MedArr(v7,c7); if(vc==0) velSigned=vm; vA[vc++]=MathAbs(vm); }
+      // Acceleration. aA = magnitudine; accSigned = valore CON segno della barra corrente.
       c7=0; for(int m=0;m<7;m++){ double a=g_d1.cols[j][m],b=g_d1.cols[j+KSLOPE][m],d=g_d1.cols[j+2*KSLOPE][m]; if(IsVal(a)&&IsVal(b)&&IsVal(d)) v7[c7++]=(a-2.0*b+d)/d*100.0; }
-      aA[ac++]=MathAbs(MedArr(v7,c7));
+      { double am=MedArr(v7,c7); if(ac==0) accSigned=am; aA[ac++]=MathAbs(am); }
       // Volatility
       c7=0;
       for(int m=0;m<7;m++)
@@ -231,7 +232,7 @@ void RefreshMetricCache()
       oA[oc++]=MedArr(v7,c7);
      }
 
-   g_cache.cluCur=cA[0]; g_cache.velCur=vA[0]; g_cache.accCur=aA[0]; g_cache.volCur=oA[0];
+   g_cache.cluCur=cA[0]; g_cache.velCur=velSigned; g_cache.accCur=accSigned; g_cache.volCur=oA[0];
    g_cache.cluPct=PctlOf(cA,cc,g_cache.cluCur);
    g_cache.velPct=PctlOf(vA,vc,MathAbs(g_cache.velCur));
    g_cache.accPct=PctlOf(aA,ac,MathAbs(g_cache.accCur));

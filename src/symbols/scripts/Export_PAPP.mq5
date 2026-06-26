@@ -311,7 +311,7 @@ void OnStart()
             double a=d1MA[d1Idx][m], b=d1MA[d1Idx+KSLOPE][m];
             if(IsPriceOk(a)&&IsPriceOk(b)&&b>0) v7b[v7c++]=(a-b)/b*100.0;
          }
-         if(v7c>0) vel=MathAbs(MedArr(v7b,v7c));
+         if(v7c>0) vel=MedArr(v7b,v7c);          // CON segno (allineato a indicatore v2.01: + salita, - discesa)
 
          v7c=0;
          for(int m=0;m<7;m++)
@@ -319,7 +319,7 @@ void OnStart()
             double a=d1MA[d1Idx][m], b=d1MA[d1Idx+KSLOPE][m], d=d1MA[d1Idx+2*KSLOPE][m];
             if(IsPriceOk(a)&&IsPriceOk(b)&&IsPriceOk(d)&&d>0) v7b[v7c++]=(a-2.0*b+d)/d*100.0;
          }
-         if(v7c>0) acc=MathAbs(MedArr(v7b,v7c));
+         if(v7c>0) acc=MedArr(v7b,v7c);          // CON segno (allineato a indicatore v2.01)
 
          v7c=0;
          for(int m=0;m<7;m++)
