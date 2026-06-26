@@ -18,6 +18,7 @@ class Signal(Base):
     __tablename__ = "signals"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     t: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    user_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)  # multi-tenant
     symbol: Mapped[str | None] = mapped_column(String(20), index=True, nullable=True)
     action: Mapped[str] = mapped_column(String(20), index=True)
     pattern: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -72,6 +73,13 @@ class LicenseKey(Base):
     key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     used_by_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    # --- campi per l'EA (binding al conto + enforcement abbonamento) ---
+    bound_account: Mapped[str | None] = mapped_column(String(40), nullable=True)   # n° conto MT5 a cui è legata
+    bound_broker: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    plan: Mapped[str] = mapped_column(String(20), default="pro")                   # starter|pro|elite
+    active: Mapped[bool] = mapped_column(Boolean, default=True)                    # abbonamento attivo
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)   # scadenza (None=illimitata)
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)    # ultimo ping dell'EA
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -79,6 +87,7 @@ class MarketSnapshot(Base):
     __tablename__ = "market_snapshots"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     t: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    user_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
     bid: Mapped[float | None] = mapped_column(Float, nullable=True)
     ask: Mapped[float | None] = mapped_column(Float, nullable=True)
     spread_pts: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -102,6 +111,7 @@ class AccountSnapshot(Base):
     __tablename__ = "account_snapshots"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     t: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    user_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
     symbol: Mapped[str | None] = mapped_column(String(20), index=True, nullable=True)
     balance: Mapped[float | None] = mapped_column(Float, nullable=True)
     equity: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -179,6 +189,28 @@ engine = create_async_engine(DATABASE_URL, pool_size=5, max_overflow=10)
 AsyncSession = async_sessionmaker(engine, expire_on_commit=False)
 
 
+# Migrazioni idempotenti: aggiungono le colonne nuove a tabelle già esistenti
+# (create_all crea solo le tabelle mancanti, non altera quelle presenti).
+_MIGRATIONS = [
+    "ALTER TABLE signals ADD COLUMN IF NOT EXISTS user_id INTEGER",
+    "ALTER TABLE account_snapshots ADD COLUMN IF NOT EXISTS user_id INTEGER",
+    "ALTER TABLE market_snapshots ADD COLUMN IF NOT EXISTS user_id INTEGER",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS bound_account VARCHAR(40)",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS bound_broker VARCHAR(80)",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS plan VARCHAR(20) DEFAULT 'pro'",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP",
+    "CREATE INDEX IF NOT EXISTS ix_signals_user_id ON signals (user_id)",
+]
+
+
 async def init_db():
+    from sqlalchemy import text
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        for stmt in _MIGRATIONS:
+            try:
+                await conn.execute(text(stmt))
+            except Exception:
+                pass

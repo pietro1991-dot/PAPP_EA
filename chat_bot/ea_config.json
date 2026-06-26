@@ -1,0 +1,32 @@
+{
+  "_comment": "Configurazione strategia centralizzata. Modifica qui per governare TUTTI gli EA dei clienti: l'EA scarica questo a /api/ea/config. 'enabled' = kill-switch per simbolo; 'risk' = rischio % per trade; 'patterns' = pattern attivi (entry,dir,exit,sl,slpips,tp,trail). dir: 1=BUY 2=SELL. linee: 0=Median,3,7,14,30,121,182,365.",
+  "default": { "enabled": true, "risk": 10 },
+  "symbols": {
+    "EURUSD": {
+      "enabled": true,
+      "risk": 12,
+      "patterns": [
+        { "entry": 30,  "dir": 2, "exit": 0, "sl": 365, "slpips": 0, "tp": 150, "trail": 0 },
+        { "entry": 121, "dir": 1, "exit": 0, "sl": 365, "slpips": 0, "tp": 150, "trail": 0 },
+        { "entry": 365, "dir": 2, "exit": 0, "sl": 121, "slpips": 0, "tp": 120, "trail": 0 },
+        { "entry": 7,   "dir": 2, "exit": 0, "sl": 365, "slpips": 0, "tp": 120, "trail": 0 },
+        { "entry": 30,  "dir": 1, "exit": 0, "sl": 365, "slpips": 0, "tp": 150, "trail": 0 },
+        { "entry": 14,  "dir": 1, "exit": 0, "sl": 365, "slpips": 0, "tp": 150, "trail": 0 }
+      ]
+    },
+    "GBPUSD": {
+      "enabled": true,
+      "risk": 10,
+      "patterns": [
+        { "entry": 182, "dir": 2, "exit": 3,  "sl": 121, "slpips": 0,   "tp": 0, "trail": 0 },
+        { "entry": 365, "dir": 2, "exit": 7,  "sl": 0,   "slpips": 500, "tp": 0, "trail": 0 },
+        { "entry": 121, "dir": 1, "exit": 30, "sl": 0,   "slpips": 500, "tp": 0, "trail": 0 }
+      ]
+    },
+    "USDCHF": {
+      "enabled": true,
+      "risk": 10,
+      "patterns": []
+    }
+  }
+}

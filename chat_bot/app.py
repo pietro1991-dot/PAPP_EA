@@ -5,11 +5,11 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 
-from sqlalchemy import select, desc, delete, extract, case, func as sa_func
+from sqlalchemy import select, desc, delete, extract, case, or_, func as sa_func
 
 from db import (
     init_db,
@@ -24,6 +24,7 @@ from db import (
     PushSubscription,
     BacktestTrade,
     MarketFeature,
+    LicenseKey,
 )
 from mt5_bridge import LogTailer
 import llm_worker
@@ -34,9 +35,39 @@ import notifications
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("papp")
 
-clients: set[WebSocket] = set()
+# WebSocket connessi: mappa ws -> user_id (None se non identificato). Serve per
+# inviare ogni segnale SOLO ai socket del cliente a cui appartiene (multi-tenant).
+clients: dict[WebSocket, int | None] = {}
+
+# Utente "proprietario" (il tuo conto, via bridge locale). Se impostato, i dati del
+# bridge vengono taggati con questo id e i clienti vedono SOLO i propri dati (vera
+# isolazione). Se non impostato → modalità demo: i dati senza user_id sono condivisi.
+def _owner_id():
+    v = os.getenv("EA_OWNER_USER_ID", "").strip()
+    return int(v) if v.isdigit() else None
+
 
 SUMMARY_REFRESH_MIN = int(os.getenv("SUMMARY_REFRESH_MIN", "30"))
+
+EA_CONFIG_FILE = os.getenv("EA_CONFIG_FILE", os.path.join(os.path.dirname(__file__), "ea_config.json"))
+
+
+def _load_ea_config():
+    """Configurazione strategia centralizzata (modificabile senza riavvio)."""
+    try:
+        with open(EA_CONFIG_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"default": {"enabled": True, "risk": 10}, "symbols": {}}
+
+
+def _scope(q, col, user: User):
+    """Filtra una query per tenant: ogni utente vede i propri dati. L'owner (e la
+    modalità demo senza owner) vede anche i dati condivisi (user_id NULL)."""
+    oid = _owner_id()
+    if oid is None or user.id == oid:
+        return q.where(or_(col == user.id, col.is_(None)))
+    return q.where(col == user.id)
 
 # Domande "comuni" servite dal riassunto condiviso precalcolato (0 quota LLM).
 COMMON_KEYWORDS = (
@@ -127,11 +158,33 @@ async def _latest_summary(kind: str = "perf_today"):
     return row.content if row else None
 
 
-async def on_signal(data: dict):
+async def _broadcast(payload: dict, user_id: int | None):
+    """Invia il payload via WS solo ai socket del tenant giusto (o a tutti se il
+    dato è condiviso / in modalità demo)."""
+    oid = _owner_id()
+    dead = []
+    for ws, uid in list(clients.items()):
+        visible = (uid == user_id) or (
+            user_id is None and (oid is None or uid == oid)
+        )
+        if not visible:
+            continue
+        try:
+            await ws.send_json(payload)
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        clients.pop(ws, None)
+
+
+async def process_event(data: dict, user_id: int | None = None):
+    """Ingestione di un evento dell'EA (da bridge locale o da /api/ea/ingest),
+    taggato con il tenant `user_id`. Gestisce account, market e segnali."""
     if data.get("action") == "account":
         async with AsyncSession() as session:
             session.add(AccountSnapshot(
                 t=data.get("t"),
+                user_id=user_id,
                 symbol=data.get("symbol"),
                 balance=data.get("balance"),
                 equity=data.get("equity"),
@@ -150,6 +203,7 @@ async def on_signal(data: dict):
         async with AsyncSession() as session:
             snap = MarketSnapshot(
                 t=data.get("t"),
+                user_id=user_id,
                 symbol=data.get("symbol") or "EURUSD",
                 bid=data.get("bid"),
                 ask=data.get("ask"),
@@ -162,6 +216,7 @@ async def on_signal(data: dict):
     async with AsyncSession() as session:
         sig = Signal(
             t=data.get("t"),
+            user_id=user_id,
             symbol=data.get("symbol"),
             action=data.get("action", ""),
             pattern=data.get("pattern"),
@@ -193,14 +248,8 @@ async def on_signal(data: dict):
         "exit_price": sig.exit_price,
         "pnl_pt": sig.pnl_pt,
     }
-    dead = set()
-    for ws in clients:
-        try:
-            await ws.send_json(payload)
-        except Exception:
-            dead.add(ws)
-    clients.difference_update(dead)
-    log.info("Signal #%d: %s p%d %s", sig.id, sig.action, sig.pattern or 0, sig.dir or "")
+    await _broadcast(payload, user_id)
+    log.info("Signal #%d (u=%s): %s p%d %s", sig.id, user_id, sig.action, sig.pattern or 0, sig.dir or "")
 
     # Notifica push (apertura/chiusura ordine). Esteso facilmente ad altri eventi.
     if sig.action in ("open", "close"):
@@ -225,6 +274,39 @@ async def on_signal(data: dict):
         asyncio.create_task(
             notifications.dispatch(title, body or "Nuovo evento sull'EA", tag=f"sig{sig.id}")
         )
+
+
+async def on_signal(data: dict):
+    """Callback del bridge locale: i dati del log locale = conto del proprietario."""
+    await process_event(data, _owner_id())
+
+
+# ---------------------------------------------------------------------------
+# API per l'EA dei clienti (autenticate dalla license key, non dal cookie).
+# validate = licenza+binding conto+enforcement; ingest = telemetria multi-tenant;
+# config = strategia centralizzata. L'EA parla in JSON in ingresso e riceve
+# key=value in uscita (facile da parsare in MQL5, senza JSON parser).
+# ---------------------------------------------------------------------------
+def _kv(d: dict) -> str:
+    return "\n".join(f"{k}={'' if v is None else v}" for k, v in d.items()) + "\n"
+
+
+async def _resolve_license(key: str):
+    """Ritorna (LicenseKey, motivo_errore). Valida stato/scadenza."""
+    key = (key or "").strip()
+    if not key:
+        return None, "no_key"
+    async with AsyncSession() as session:
+        lk = (await session.execute(select(LicenseKey).where(LicenseKey.key == key))).scalar_one_or_none()
+    if not lk:
+        return None, "invalid"
+    if lk.revoked:
+        return lk, "revoked"
+    if lk.active is False:
+        return lk, "inactive"
+    if lk.expires_at is not None and lk.expires_at < datetime.utcnow():
+        return lk, "expired"
+    return lk, ""
 
 
 @asynccontextmanager
@@ -274,6 +356,89 @@ async def service_worker():
 @app.get("/favicon.ico")
 async def favicon():
     return FileResponse("static/favicon-32.png", media_type="image/png")
+
+
+@app.post("/api/ea/validate")
+async def ea_validate(request: Request):
+    """L'EA valida la licenza all'avvio e periodicamente. Lega la key al conto
+    (primo uso) e ritorna stato + kill-switch/rischio dalla config centrale."""
+    body = await request.json()
+    account = str(body.get("account") or "").strip()
+    broker = (body.get("broker") or "")[:80]
+    symbol = (body.get("symbol") or "").upper()
+    lk, err = await _resolve_license(body.get("key"))
+    if err:
+        return PlainTextResponse(_kv({"ok": 0, "reason": err}))
+    if not account:
+        return PlainTextResponse(_kv({"ok": 0, "reason": "no_account"}))
+    async with AsyncSession() as session:
+        lk = await session.get(LicenseKey, lk.id)
+        if lk.bound_account and lk.bound_account != account:
+            return PlainTextResponse(_kv({"ok": 0, "reason": "bound_other_account"}))
+        if not lk.bound_account:
+            lk.bound_account = account
+            lk.bound_broker = broker
+        lk.last_seen = datetime.utcnow()
+        plan = lk.plan or "pro"
+        await session.commit()
+    cfg = _load_ea_config()
+    dft = cfg.get("default", {})
+    sym_cfg = (cfg.get("symbols") or {}).get(symbol) or dft
+    enabled = 1 if sym_cfg.get("enabled", True) else 0
+    risk = sym_cfg.get("risk", dft.get("risk", 10))
+    return PlainTextResponse(_kv({"ok": 1, "plan": plan, "enabled": enabled, "risk": risk, "reason": ""}))
+
+
+@app.post("/api/ea/ingest")
+async def ea_ingest(request: Request):
+    """Telemetria multi-tenant: l'EA invia gli eventi (open/close/skip/account/
+    market); vengono salvati taggati con l'utente della licenza."""
+    body = await request.json()
+    lk, err = await _resolve_license(body.get("key"))
+    if err:
+        return PlainTextResponse(_kv({"ok": 0, "reason": err}))
+    uid = lk.used_by_user_id
+    events = body.get("events")
+    if events is None:
+        ev = {k: v for k, v in body.items() if k != "key"}
+        events = [ev] if ev.get("action") else []
+    count = 0
+    for ev in events:
+        t = ev.get("t")
+        if isinstance(t, (int, float)):
+            try:
+                ev["t"] = datetime.fromtimestamp(t)
+            except Exception:
+                ev["t"] = datetime.utcnow()
+        elif t is None:
+            ev["t"] = datetime.utcnow()
+        try:
+            await process_event(ev, uid)
+            count += 1
+        except Exception:
+            log.exception("ingest evento fallito")
+    return PlainTextResponse(_kv({"ok": 1, "count": count}))
+
+
+@app.get("/api/ea/config")
+async def ea_config(key: str = "", symbol: str = ""):
+    """Configurazione strategia centralizzata per simbolo (kill-switch, rischio,
+    pattern attivi in formato compatto entry:dir:exit:sl:slpips:tp:trail)."""
+    lk, err = await _resolve_license(key)
+    if err:
+        return PlainTextResponse(_kv({"ok": 0, "reason": err}))
+    cfg = _load_ea_config()
+    dft = cfg.get("default", {})
+    sym_cfg = (cfg.get("symbols") or {}).get(symbol.upper()) or dft
+    enabled = 1 if sym_cfg.get("enabled", True) else 0
+    risk = sym_cfg.get("risk", dft.get("risk", 10))
+    pats = sym_cfg.get("patterns") or []
+    patline = ",".join(
+        f"{p.get('entry',0)}:{p.get('dir',0)}:{p.get('exit',0)}:{p.get('sl',0)}:"
+        f"{p.get('slpips',0)}:{p.get('tp',0)}:{p.get('trail',0)}"
+        for p in pats
+    )
+    return PlainTextResponse(_kv({"ok": 1, "enabled": enabled, "risk": risk, "npat": len(pats), "patterns": patline}))
 
 
 @app.post("/api/register")
@@ -341,7 +506,7 @@ async def get_signals(
             q = q.where(Signal.action == action)
         if symbol:
             q = q.where(Signal.symbol == symbol)
-        q = q.limit(limit)
+        q = _scope(q, Signal.user_id, user).limit(limit)
         rows = (await session.execute(q)).scalars().all()
     return [
         {
@@ -366,7 +531,9 @@ async def get_signals(
 @app.get("/api/market")
 async def get_market(user: User = Depends(auth.current_user)):
     async with AsyncSession() as session:
-        q = select(MarketSnapshot).order_by(desc(MarketSnapshot.id)).limit(1)
+        q = _scope(select(MarketSnapshot), MarketSnapshot.user_id, user).order_by(
+            desc(MarketSnapshot.id)
+        ).limit(1)
         row = (await session.execute(q)).scalar_one_or_none()
     if not row:
         return {"bid": None, "ask": None, "spread_pts": None}
@@ -383,11 +550,8 @@ async def get_market(user: User = Depends(auth.current_user)):
 async def get_symbols(user: User = Depends(auth.current_user)):
     """Elenco dei simboli presenti nei segnali (per le tab di navigazione)."""
     async with AsyncSession() as session:
-        rows = (
-            await session.execute(
-                select(Signal.symbol).where(Signal.symbol.isnot(None)).distinct()
-            )
-        ).scalars().all()
+        q = _scope(select(Signal.symbol).where(Signal.symbol.isnot(None)), Signal.user_id, user)
+        rows = (await session.execute(q.distinct())).scalars().all()
     return sorted(s for s in rows if s)
 
 
@@ -645,7 +809,8 @@ async def get_account(user: User = Depends(auth.current_user)):
     async with AsyncSession() as session:
         rows = (
             await session.execute(
-                select(AccountSnapshot).order_by(desc(AccountSnapshot.id)).limit(200)
+                _scope(select(AccountSnapshot), AccountSnapshot.user_id, user)
+                .order_by(desc(AccountSnapshot.id)).limit(200)
             )
         ).scalars().all()
     if not rows:
@@ -676,6 +841,7 @@ async def get_account(user: User = Depends(auth.current_user)):
 @app.get("/api/stats")
 async def get_stats(symbol: str = "", user: User = Depends(auth.current_user)):
     def _scoped(q):
+        q = _scope(q, Signal.user_id, user)
         return q.where(Signal.symbol == symbol) if symbol else q
 
     async with AsyncSession() as session:
@@ -790,9 +956,9 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
     # (conto, performance per simbolo/pattern, periodo, ultimi segnali) → niente
     # numeri inventati. La firma include l'ultimo snapshot conto, così la cache si
     # invalida quando i dati (anche il P/L flottante) cambiano.
-    digest = await metrics.build_digest(symbol)
+    digest = await metrics.build_digest(symbol, user.id, _owner_id())
     context = digest["text"]
-    context_sig = digest["sig"] + ":" + lang  # la cache distingue per lingua
+    context_sig = digest["sig"] + ":" + lang  # la cache distingue per utente e lingua
     recent_count = digest["recent_count"]
 
     # Domande comuni → riassunto condiviso precalcolato, 0 quota LLM.
@@ -839,15 +1005,16 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
 @app.websocket("/ws")
 async def websocket(ws: WebSocket):
     token = ws.cookies.get(auth.COOKIE_NAME)
-    if not token or not auth.verify_session_token(token):
+    uid = auth.verify_session_token(token) if token else None
+    if not uid:
         await ws.close(code=1008)  # policy violation
         return
     await ws.accept()
-    clients.add(ws)
+    clients[ws] = uid
     try:
         while True:
             await ws.receive_text()
     except WebSocketDisconnect:
         pass
     finally:
-        clients.discard(ws)
+        clients.pop(ws, None)

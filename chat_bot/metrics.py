@@ -12,9 +12,19 @@ Sezioni del digest:
 """
 from datetime import datetime, timedelta
 
-from sqlalchemy import select, func, desc, case, extract
+from sqlalchemy import select, func, desc, case, extract, or_
 
 from db import AsyncSession, Signal, AccountSnapshot, BacktestTrade, MarketFeature
+
+
+def _scope_user(q, col, user_id, owner_id):
+    """Filtra per tenant i dati di conto/segnali. user_id None = vista globale
+    (riassunto condiviso). Owner e modalità demo vedono anche i dati condivisi."""
+    if user_id is None:
+        return q
+    if owner_id is None or user_id == owner_id:
+        return q.where(or_(col == user_id, col.is_(None)))
+    return q.where(col == user_id)
 
 
 async def _market_block(session, symbol: str) -> list[str]:
@@ -97,11 +107,15 @@ def _pnl(v):
     return float(v) if v is not None else 0.0
 
 
-async def build_digest(symbol: str = "") -> dict:
+async def build_digest(symbol: str = "", user_id: int | None = None, owner_id: int | None = None) -> dict:
     """Ritorna {text, sig, recent_count}. `sig` è la firma per la cache: cambia
-    quando arriva un nuovo segnale o un nuovo snapshot conto (dati freschi)."""
+    quando arriva un nuovo segnale o un nuovo snapshot conto (dati freschi) ed è
+    distinta per utente (no cache condivisa tra tenant diversi)."""
     sym = symbol or None
     parts: list[str] = []
+
+    def scope_sig(q):
+        return _scope_user(q, Signal.user_id, user_id, owner_id)
 
     async with AsyncSession() as session:
         last_sig = (await session.execute(select(func.max(Signal.id)))).scalar() or 0
@@ -110,7 +124,8 @@ async def build_digest(symbol: str = "") -> dict:
         # ---------- STATO CONTO ----------
         acc_rows = (
             await session.execute(
-                select(AccountSnapshot).order_by(desc(AccountSnapshot.id)).limit(300)
+                _scope_user(select(AccountSnapshot), AccountSnapshot.user_id, user_id, owner_id)
+                .order_by(desc(AccountSnapshot.id)).limit(300)
             )
         ).scalars().all()
         parts.append("=== STATO CONTO ===")
@@ -147,6 +162,7 @@ async def build_digest(symbol: str = "") -> dict:
         )
         if sym:
             q = q.where(Signal.symbol == sym)
+        q = scope_sig(q)
         rows = (await session.execute(q.group_by(Signal.symbol))).all()
         parts.append("\n=== PERFORMANCE PER SIMBOLO (operazioni chiuse) ===")
         if rows and any(r[1] for r in rows):
@@ -179,6 +195,7 @@ async def build_digest(symbol: str = "") -> dict:
         )
         if sym:
             qp = qp.where(Signal.symbol == sym)
+        qp = scope_sig(qp)
         prows = (
             await session.execute(
                 qp.group_by(Signal.symbol, Signal.pattern).order_by(Signal.symbol, Signal.pattern)
@@ -203,7 +220,7 @@ async def build_digest(symbol: str = "") -> dict:
             ).where(Signal.action == "close", Signal.t >= since)
             if sym:
                 qq = qq.where(Signal.symbol == sym)
-            return (await session.execute(qq)).first()
+            return (await session.execute(scope_sig(qq))).first()
 
         td = await period(day0)
         wk = await period(week0)
@@ -217,6 +234,7 @@ async def build_digest(symbol: str = "") -> dict:
         qr = select(Signal).order_by(desc(Signal.id))
         if sym:
             qr = qr.where(Signal.symbol == sym)
+        qr = scope_sig(qr)
         recent = (await session.execute(qr.limit(12))).scalars().all()
         parts.append("\n=== ULTIMI SEGNALI ===")
         if recent:
@@ -286,6 +304,6 @@ async def build_digest(symbol: str = "") -> dict:
 
     return {
         "text": "\n".join(parts),
-        "sig": f"{symbol or 'all'}:s{last_sig}:a{last_acc}",
+        "sig": f"u{user_id if user_id is not None else 'all'}:{symbol or 'all'}:s{last_sig}:a{last_acc}",
         "recent_count": len(recent),
     }
