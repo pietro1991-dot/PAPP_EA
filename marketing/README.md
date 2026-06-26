@@ -45,6 +45,7 @@ risponde alle domande di mercato — in italiano, inglese, francese, spagnolo.
 | [09_KPI_BUDGET_PIPELINE.md](09_KPI_BUDGET_PIPELINE.md) | Numeri: budget, KPI, funnel math, calendario |
 | [10_COMPLIANCE_DISCLAIMER.md](10_COMPLIANCE_DISCLAIMER.md) | Regole legali, disclaimer, claim ammessi |
 | [11_MODELLO_BUSINESS.md](11_MODELLO_BUSINESS.md) | **Analisi di tutti i modelli + scelta: SaaS ibrido abbonamento-first** |
+| [12_DELIVERY_ONBOARDING.md](12_DELIVERY_ONBOARDING.md) | **Come PHAI gira sui conti dei clienti: delivery, licenza, telemetria, onboarding** |
 
 ## Come usare questa cartella
 1. Parti da **strategia** e **avatar** (capisci a chi e perché).
