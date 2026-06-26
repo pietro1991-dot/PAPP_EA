@@ -21,11 +21,13 @@ from db import (
     DailySummary,
     AccountSnapshot,
     Conversation,
+    PushSubscription,
 )
 from mt5_bridge import LogTailer
 import llm_worker
 import auth
 import metrics
+import notifications
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("papp")
@@ -198,6 +200,30 @@ async def on_signal(data: dict):
     clients.difference_update(dead)
     log.info("Signal #%d: %s p%d %s", sig.id, sig.action, sig.pattern or 0, sig.dir or "")
 
+    # Notifica push (apertura/chiusura ordine). Esteso facilmente ad altri eventi.
+    if sig.action in ("open", "close"):
+        sym = sig.symbol or ""
+        pat = f"P{sig.pattern}" if sig.pattern is not None else ""
+        dirs = sig.dir or ""
+        if sig.action == "open":
+            title = f"🟢 Ordine aperto — {sym} {pat} {dirs}".strip()
+            body = ""
+            if sig.entry:
+                body += f"Entrata @{sig.entry:.5f}. "
+            if sig.reason:
+                body += sig.reason
+        else:
+            neg = sig.pnl_pt is not None and sig.pnl_pt < 0
+            title = f"{'🔴' if neg else '🟢'} Ordine chiuso — {sym} {pat} {dirs}".strip()
+            body = ""
+            if sig.pnl_pt is not None:
+                body += f"PnL {sig.pnl_pt:+.1f}pt. "
+            if sig.reason:
+                body += sig.reason
+        asyncio.create_task(
+            notifications.dispatch(title, body or "Nuovo evento sull'EA", tag=f"sig{sig.id}")
+        )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -361,6 +387,54 @@ async def get_symbols(user: User = Depends(auth.current_user)):
             )
         ).scalars().all()
     return sorted(s for s in rows if s)
+
+
+@app.get("/api/push/key")
+async def push_key(user: User = Depends(auth.current_user)):
+    return {"key": os.getenv("VAPID_PUBLIC_KEY", "")}
+
+
+@app.post("/api/push/subscribe")
+async def push_subscribe(request: Request, user: User = Depends(auth.current_user)):
+    body = await request.json()
+    endpoint = body.get("endpoint")
+    keys = body.get("keys") or {}
+    if not endpoint or not keys.get("p256dh") or not keys.get("auth"):
+        return JSONResponse({"error": "Iscrizione non valida"}, status_code=400)
+    async with AsyncSession() as session:
+        existing = (
+            await session.execute(
+                select(PushSubscription).where(PushSubscription.endpoint == endpoint)
+            )
+        ).scalar_one_or_none()
+        if existing:
+            existing.user_id = user.id
+            existing.p256dh = keys["p256dh"]
+            existing.auth = keys["auth"]
+        else:
+            session.add(
+                PushSubscription(
+                    user_id=user.id,
+                    endpoint=endpoint,
+                    p256dh=keys["p256dh"],
+                    auth=keys["auth"],
+                )
+            )
+        await session.commit()
+    return {"ok": True}
+
+
+@app.post("/api/push/unsubscribe")
+async def push_unsubscribe(request: Request, user: User = Depends(auth.current_user)):
+    body = await request.json()
+    endpoint = body.get("endpoint")
+    if endpoint:
+        async with AsyncSession() as session:
+            await session.execute(
+                delete(PushSubscription).where(PushSubscription.endpoint == endpoint)
+            )
+            await session.commit()
+    return {"ok": True}
 
 
 @app.get("/api/account")

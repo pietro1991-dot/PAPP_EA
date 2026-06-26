@@ -1,7 +1,7 @@
 /* Service Worker PAPP EA — offline shell + cache statica.
    Regole: /api e /ws sempre dalla rete (dati live), statici cache-first,
    navigazione network-first con fallback offline. */
-const CACHE = 'papp-ea-v1';
+const CACHE = 'papp-ea-v3';
 const ASSETS = [
   '/static/icon-192.png',
   '/static/icon-512.png',
@@ -52,4 +52,34 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(fetch(req).catch(() => caches.match('/static/offline.html')));
     return;
   }
+});
+
+/* ---------- Notifiche push ---------- */
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) {}
+  const title = d.title || 'PAPP EA';
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: d.body || '',
+      tag: d.tag || 'papp',
+      icon: '/static/icon-192.png',
+      badge: '/static/icon-192.png',
+      vibrate: [80, 40, 80],
+      data: { url: d.url || '/' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ('focus' in c) return c.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
 });
