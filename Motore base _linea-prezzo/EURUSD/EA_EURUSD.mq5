@@ -16,15 +16,15 @@
 input group "======  GENERALE / RISCHIO  ======"
 input string  InpIndicatorName = "PaPP_Median.ex5";
 
-input double  InpRiskPct       = 1.0;           // Rischio % per trade
+input double  InpRiskPct       = 10.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input double  InpMaxLot        = 1.0;           // Lotto massimo assoluto - tetto di sicurezza (0=usa broker)
-input int     InpMaxSpread     = 50;            // Spread massimo in punti (0=disabilita)
+input int     InpMaxSpread     = 0;            // Spread massimo in punti (0=disabilita)
 input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
 input double  InpFallbackRiskPips = 100.0;      // Risk distance in pips quando il pattern non ha SL (per sizing)
 input bool    InpDynamicSL     = true;          // true=SL trascina sulla linea MA ogni D1; false=SL statico all'entry
-input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
-input int     InpMaxPerPattern = 1;             // Max posizioni per pattern (0=illimitato)
+input int     InpMaxPos        = 0;            // Max posizioni totali (0=illimitato)
+input int     InpMaxPerPattern = 0;             // Max posizioni per pattern (0=illimitato)
 input int     InpMagic         = 20260623;
 input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuoto=disabilita)
 input int     InpMarketInterval = 300;           // Intervallo market snapshot secondi (0=disabilita)
