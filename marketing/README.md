@@ -46,6 +46,7 @@ risponde alle domande di mercato — in italiano, inglese, francese, spagnolo.
 | [10_COMPLIANCE_DISCLAIMER.md](10_COMPLIANCE_DISCLAIMER.md) | Regole legali, disclaimer, claim ammessi |
 | [11_MODELLO_BUSINESS.md](11_MODELLO_BUSINESS.md) | **Analisi di tutti i modelli + scelta: SaaS ibrido abbonamento-first** |
 | [12_DELIVERY_ONBOARDING.md](12_DELIVERY_ONBOARDING.md) | **Come PHAI gira sui conti dei clienti: delivery, licenza, telemetria, onboarding** |
+| [13_SCALABILITA_HOSTING.md](13_SCALABILITA_HOSTING.md) | **Scalabilità: VPS MetaTrader (PC spento), controllo centrale, perché non costruire VPS** |
 
 ## Come usare questa cartella
 1. Parti da **strategia** e **avatar** (capisci a chi e perché).
