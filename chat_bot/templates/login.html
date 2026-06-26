@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>PAPP EA — Accesso</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0d0f14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PAPP EA">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/static/icon-192.png">
 <style>
 :root{--bg:#0d0f14;--panel:#161922;--border:#262b36;--text:#e6e8ec;--muted:#8a909c;--accent:#4fc3f7;--red:#f87171}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -71,6 +79,7 @@ async function submitForm(){
   }catch(e){err.textContent='Errore di rete';btn.disabled=false;}
 }
 ['password','license'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')submitForm()}));
+if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}
 </script>
 </body>
 </html>
