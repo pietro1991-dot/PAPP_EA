@@ -946,6 +946,37 @@ def main():
               "per costi realistici (lo swap pesa sui pattern a lunga tenuta).")
     print("  NOTA: Sharpe = PER-TRADE (avg/sd), non annualizzato. Per annualizzare "
           "moltiplica per sqrt(trade/anno).")
+
+    # ============================================================
+    # LEGENDA / METODOLOGIA — rende il report leggibile da solo
+    # ============================================================
+    print_section("LEGENDA E METODOLOGIA")
+    print("  Entrata: sempre un CROSSOVER su D1 reali (il prezzo taglia una linea MA/Mediana).")
+    print("  Le analisi differiscono solo nel modo di USCIRE dal trade:")
+    print("    ANALISI 1  exit = primo crossover OPPOSTO su una linea QUALSIASI")
+    print("    ANALISI 2  exit = crossover di una linea SPECIFICA (opposta)")
+    print("    ANALISI 3  exit = SL dinamico su una linea + TP fisso (griglia SL x TP)")
+    print("  Costi: spread + commissione sottratti a ogni trade; swap per barra tenuta.")
+    print("  Unita': PUNTI (1 pip = 10 punti su simboli a 5 decimali).")
+    print("")
+    print("  COLONNE:")
+    print("    Trades   numero di operazioni del pattern")
+    print("    Win%     percentuale di trade chiusi in profitto")
+    print("    AvgPts   profitto medio per trade (punti)")
+    print("    Sharpe   profitto medio / deviazione standard, PER-TRADE (CV<10% -> azzerato)")
+    print("    ProfitF  profitti lordi / perdite lorde   (>1 = sistema in attivo)")
+    print("    TotPnl   profitto totale del pattern (punti)")
+    print("    AvgBars  durata media del trade (barre D1)")
+    print("    MaxDD    massima perdita picco->minimo sull'equity (portafoglio 1 pos/volta)")
+    print("    Ret/DD   TotPnl / MaxDD   (piu' alto = meglio per unita' di rischio)")
+    print("    Expo%    frazione di tempo a mercato")
+    print("")
+    print("  VALIDAZIONE: i pattern trovati sul TRAINING (<= split) sono ri-testati sul")
+    print("    TEST (> split). Train_Sh/Test_Sh = Sharpe nei due periodi.")
+    print("  SELEZIONE ROBUSTA: tiene SOLO i pattern positivi su TRAIN *e* TEST (difesa")
+    print("    dall'overfitting). Punteggio = min(Sharpe penalizzato train, test).")
+    print("  --robust: variante walk-forward a N finestre; ROBUSTO = positivo in TUTTE.")
+
     if not test_rows:
         print("\n  " + "!"*72)
         print("  !! IN-SAMPLE AL 100%: nessun test set. I 'migliori' pattern sono")

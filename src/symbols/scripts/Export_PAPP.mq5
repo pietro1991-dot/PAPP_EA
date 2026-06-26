@@ -3,10 +3,10 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.03"
+#property version   "2.04"
 #property description "Esporta D1-anchor MA + tutte le metriche PaPP in CSV"
 #property description "Crossover calcolati su D1 reali, non su valori interpolati"
-#property description "v2.03: sorgente UNICA = buffer iCustom. Crossover/cluster/vel/acc/vol"
+#property description "v2.04: sorgente UNICA = buffer iCustom. Crossover/cluster/vel/acc/vol"
 #property description "       derivati dalle stesse MA scritte nelle colonne (no iMA paralleli)."
 #property script_show_inputs
 
@@ -44,6 +44,16 @@ double MedArr(double &src[],int c)
 }
 
 //+------------------------------------------------------------------+
+// Percentile di 'cur' nell'array (frazione di valori <= cur). Allineato
+// all'indicatore (PctlOf): per vel/acc va passato |cur| (array in magnitudine).
+double PctlOf(double &arr[],int cc,double cur)
+{
+   if(cc<=0) return 0.5;
+   int b=0; for(int k=0;k<cc;k++) if(arr[k]<=cur) b++;
+   return (double)b/cc;
+}
+
+//+------------------------------------------------------------------+
 void OnStart()
 {
    // IMPORTANTE: stessi parametri dell'EA (EA_Pattern OnInit) per ottenere
@@ -65,7 +75,7 @@ void OnStart()
    datetime g_startTime = StringToTime(InpStartDate);
    datetime g_endTime   = StringToTime(InpEndDate)+86399;
 
-   Print(StringFormat("Export PAPP v2.03 | %s -> %s | file=%s | chart bars=%d | D1 bars=%d",
+   Print(StringFormat("Export PAPP v2.04 | %s -> %s | file=%s | chart bars=%d | D1 bars=%d",
        TimeToString(g_startTime),TimeToString(g_endTime),InpFileName,
        Bars(_Symbol,_Period),Bars(_Symbol,ANCHOR_TF)));
 
@@ -181,11 +191,12 @@ void OnStart()
        "orderScore","s14_30","s7_30",
        "longBelow","longAbove",
        "cluster%","vel%","acc%","vol%",
+       "cluPct","velPct","accPct","volPct",
        "crossMA365","crossMA182","crossMA121","crossMA30","crossMA14","crossMA7","crossMA3","crossMed",
        "MA3_7","MA7_14","MA14_30","MA30_121","MA121_182","MA182_365");
 
    int written=0, total = sStart-sEnd+1;
-   Comment(StringFormat("Export PAPP v2.03: 0/%d barre...",total));
+   Comment(StringFormat("Export PAPP v2.04: 0/%d barre...",total));
 
    // --- Loop principale ---
    int prevD1Cur = -1;
@@ -193,7 +204,7 @@ void OnStart()
    for(int s=sStart;s>=sEnd;s--)
    {
        if(!IsPriceOk(bM[s]) || !IsPriceOk(c[s])) continue;
-       if((written%5000)==0) Comment(StringFormat("Export PAPP v2.03: %d/%d barre...",written,total));
+       if((written%5000)==0) Comment(StringFormat("Export PAPP v2.04: %d/%d barre...",written,total));
 
       double med=bM[s], v365=b365[s], v182=b182[s], v121=b121[s];
       double v30=b30[s], v14=b14[s], v7=b7[s], v3=b3[s];
@@ -285,59 +296,56 @@ void OnStart()
       }
       prevD1Cur = d1Cur;
 
-      // Metriche D1: cluster, vel, acc, vol
+      // Metriche D1: cluster, vel, acc, vol = valore della barra CORRENTE
+      // + percentile sulla finestra CLWIN (252 barre D1). Coerente con l'indicatore:
+      // il valore e' quello di oggi, la finestra serve al percentile (non a fare media).
       double clu=0,vel=0,acc=0,vol=0;
+      double cluP=0.5,velP=0.5,accP=0.5,volP=0.5;
       int d1Idx = iBarShift(_Symbol,ANCHOR_TF,t[s],false);
       if(d1ok && d1Idx>=0 && d1Idx+CLWIN+KSLOPE+NVOL<d1Bars)
       {
-         double ca[252]; int cc=0;
+         double caA[252], veA[252], acA[252], voA[252];   // finestre: cluster, |vel|, |acc|, vol
+         int caC=0, veC=0, acC=0, voC=0;
          for(int j=d1Idx;j<d1Idx+CLWIN && j<d1Bars;j++)
          {
+            double v7b[7]; int v7c;
+            // --- Cluster alla barra j ---
             double vv[7]; int cv=0;
             for(int m=0;m<7;m++) { double x=d1MA[j][m]; if(IsPriceOk(x)) vv[cv++]=x; }
             if(cv>=2)
             {
                double md=MedArr(vv,cv);
-               if(md>0) { double ds=0; for(int n=0;n<cv;n++) ds+=MathAbs(vv[n]-md)/md*100.0; if(cc<252) ca[cc++]=ds/cv; }
+               if(md>0)
+               {
+                  double ds=0; for(int n=0;n<cv;n++) ds+=MathAbs(vv[n]-md)/md*100.0;
+                  double cval=ds/cv;
+                  if(caC<252) caA[caC++]=cval;
+                  if(j==d1Idx) clu=cval;          // barra corrente
+               }
             }
-         }
-         // cluster% = dispersione MEDIA delle MA sulla finestra CLWIN (252 barre D1),
-         // non solo la barra corrente (prima usava ca[0], buttando via la finestra).
-         if(cc>0) { double sm=0; for(int q=0;q<cc;q++) sm+=ca[q]; clu=sm/cc; }
-
-         double v7b[7]; int v7c=0;
-         for(int m=0;m<7;m++)
-         {
-            double a=d1MA[d1Idx][m], b=d1MA[d1Idx+KSLOPE][m];
-            if(IsPriceOk(a)&&IsPriceOk(b)&&b>0) v7b[v7c++]=(a-b)/b*100.0;
-         }
-         if(v7c>0) vel=MedArr(v7b,v7c);          // CON segno (allineato a indicatore v2.01: + salita, - discesa)
-
-         v7c=0;
-         for(int m=0;m<7;m++)
-         {
-            double a=d1MA[d1Idx][m], b=d1MA[d1Idx+KSLOPE][m], d=d1MA[d1Idx+2*KSLOPE][m];
-            if(IsPriceOk(a)&&IsPriceOk(b)&&IsPriceOk(d)&&d>0) v7b[v7c++]=(a-2.0*b+d)/d*100.0;
-         }
-         if(v7c>0) acc=MedArr(v7b,v7c);          // CON segno (allineato a indicatore v2.01)
-
-         v7c=0;
-         for(int m=0;m<7;m++)
-         {
-            double rr[NVOL]; int rc=0;
-            for(int t2=d1Idx;t2<d1Idx+NVOL && t2+1<d1Bars;t2++)
+            // --- Velocity alla barra j ---
+            v7c=0;
+            for(int m=0;m<7;m++) { double a=d1MA[j][m], b=d1MA[j+KSLOPE][m]; if(IsPriceOk(a)&&IsPriceOk(b)&&b>0) v7b[v7c++]=(a-b)/b*100.0; }
+            if(v7c>0) { double vv2=MedArr(v7b,v7c); if(veC<252) veA[veC++]=MathAbs(vv2); if(j==d1Idx) vel=vv2; }
+            // --- Acceleration alla barra j ---
+            v7c=0;
+            for(int m=0;m<7;m++) { double a=d1MA[j][m], b=d1MA[j+KSLOPE][m], d=d1MA[j+2*KSLOPE][m]; if(IsPriceOk(a)&&IsPriceOk(b)&&IsPriceOk(d)&&d>0) v7b[v7c++]=(a-2.0*b+d)/d*100.0; }
+            if(v7c>0) { double av2=MedArr(v7b,v7c); if(acC<252) acA[acC++]=MathAbs(av2); if(j==d1Idx) acc=av2; }
+            // --- Volatility alla barra j ---
+            v7c=0;
+            for(int m=0;m<7;m++)
             {
-               double a=d1MA[t2][m], b2=d1MA[t2+1][m];
-               if(IsPriceOk(a)&&IsPriceOk(b2)&&b2>0) rr[rc++]=(a-b2)/b2*100.0;
+               double rr[NVOL]; int rc=0;
+               for(int t2=j;t2<j+NVOL && t2+1<d1Bars;t2++) { double a=d1MA[t2][m], b2=d1MA[t2+1][m]; if(IsPriceOk(a)&&IsPriceOk(b2)&&b2>0) rr[rc++]=(a-b2)/b2*100.0; }
+               if(rc>=2) { double mn=0; for(int q=0;q<rc;q++) mn+=rr[q]; mn/=rc; double s2=0; for(int q=0;q<rc;q++) { double dd=rr[q]-mn; s2+=dd*dd; } v7b[v7c++]=MathSqrt(s2/(rc-1)); }
             }
-            if(rc>=2)
-            {
-               double mn=0; for(int q=0;q<rc;q++) mn+=rr[q]; mn/=rc;
-               double s2=0; for(int q=0;q<rc;q++) { double dd=rr[q]-mn; s2+=dd*dd; }
-               v7b[v7c++]=MathSqrt(s2/(rc-1));
-            }
+            if(v7c>0) { double ov2=MedArr(v7b,v7c); if(voC<252) voA[voC++]=ov2; if(j==d1Idx) vol=ov2; }
          }
-         if(v7c>0) vol=MedArr(v7b,v7c);
+         // Percentili: vel/acc sulla MAGNITUDINE (come l'indicatore), cluster/vol sul valore.
+         cluP=PctlOf(caA,caC,clu);
+         velP=PctlOf(veA,veC,MathAbs(vel));
+         accP=PctlOf(acA,acC,MathAbs(acc));
+         volP=PctlOf(voA,voC,vol);
       }
 
       FileWrite(fh,
@@ -358,6 +366,8 @@ void OnStart()
           longBelow,longAbove,
           DoubleToString(clu,4),DoubleToString(vel,4),
           DoubleToString(acc,4),DoubleToString(vol,4),
+          DoubleToString(cluP,3),DoubleToString(velP,3),
+          DoubleToString(accP,3),DoubleToString(volP,3),
           crossMA365,crossMA182,crossMA121,crossMA30,
           crossMA14,crossMA7,crossMA3,crossMed,
           v3>v7?1:0, v7>v14?1:0, v14>v30?1:0,
@@ -368,7 +378,7 @@ void OnStart()
 
    FileClose(fh);
    Comment(StringFormat("EXPORT COMPLETATO: %s | %d righe",InpFileName,written));
-   Print(StringFormat(">>> EXPORT COMPLETATO v2.03: %s | %d righe",InpFileName,written));
+   Print(StringFormat(">>> EXPORT COMPLETATO v2.04: %s | %d righe",InpFileName,written));
 
    IndicatorRelease(g_ind);
   
