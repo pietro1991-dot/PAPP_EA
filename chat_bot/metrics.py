@@ -14,7 +14,83 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import select, func, desc, case, extract
 
-from db import AsyncSession, Signal, AccountSnapshot, BacktestTrade
+from db import AsyncSession, Signal, AccountSnapshot, BacktestTrade, MarketFeature
+
+
+async def _market_block(session, symbol: str) -> list[str]:
+    """Stato di mercato per un simbolo: ultima barra + confronto con la storia."""
+    last = (
+        await session.execute(
+            select(MarketFeature)
+            .where(MarketFeature.symbol == symbol)
+            .order_by(desc(MarketFeature.t))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if not last:
+        return []
+    avgs = (
+        await session.execute(
+            select(
+                func.avg(MarketFeature.volatility),
+                func.avg(MarketFeature.cluster),
+                func.avg(MarketFeature.velocity),
+                func.avg(MarketFeature.accel),
+            ).where(MarketFeature.symbol == symbol)
+        )
+    ).first()
+    total = (
+        await session.execute(
+            select(func.count(MarketFeature.id)).where(MarketFeature.symbol == symbol)
+        )
+    ).scalar() or 1
+
+    async def pct(col, val):
+        if val is None:
+            return None
+        c = (
+            await session.execute(
+                select(func.count(MarketFeature.id)).where(
+                    MarketFeature.symbol == symbol, col <= val
+                )
+            )
+        ).scalar() or 0
+        return c / total * 100
+
+    def lvl(p):
+        if p is None:
+            return ""
+        return "alto" if p >= 70 else "basso" if p <= 30 else "nella media"
+
+    lines = [f"{symbol} (ultima barra {last.t.date() if last.t else '?'}): close {last.close:.5f}" if last.close else symbol]
+    pos = []
+    if last.d_ma30 is not None:
+        pos.append(("sopra" if last.d_ma30 > 0 else "sotto") + " MA30")
+    if last.d_ma365 is not None:
+        pos.append(("sopra" if last.d_ma365 > 0 else "sotto") + " MA365")
+    if pos:
+        lines.append("  Prezzo: " + ", ".join(pos))
+    if last.volatility is not None:
+        vp = await pct(MarketFeature.volatility, last.volatility)
+        lines.append(
+            f"  Volatilità {last.volatility:.2f} (media storica {float(avgs[0] or 0):.2f}, "
+            f"{vp:.0f}° percentile → {lvl(vp)})"
+        )
+    if last.cluster is not None:
+        cp = await pct(MarketFeature.cluster, last.cluster)
+        lines.append(
+            f"  Cluster {last.cluster:.2f} (media {float(avgs[1] or 0):.2f}, {cp:.0f}° perc → {lvl(cp)})"
+        )
+    extra = []
+    if last.velocity is not None:
+        extra.append(f"Velocità {last.velocity:.2f}")
+    if last.accel is not None:
+        extra.append(f"Accelerazione {last.accel:.2f}")
+    if last.order_score is not None:
+        extra.append(f"OrderScore {last.order_score:.1f}")
+    if extra:
+        lines.append("  " + " · ".join(extra))
+    return lines
 
 
 def _pnl(v):
@@ -194,6 +270,19 @@ async def build_digest(symbol: str = "") -> dict:
             for y, c, ptt, ww in yr:
                 wry = (ww or 0) / c * 100 if c else 0
                 parts.append(f"  {int(y)}: {c} trade, win {wry:.0f}%, PnL {float(ptt):+.1f}pt")
+
+        # ---------- STATO MERCATO (feature indicatore) ----------
+        feat_syms = (
+            await session.execute(
+                select(MarketFeature.symbol).where(MarketFeature.symbol.isnot(None)).distinct()
+            )
+        ).scalars().all()
+        feat_syms = sorted(s for s in feat_syms if s)
+        if feat_syms:
+            parts.append("\n=== STATO MERCATO (feature indicatore) ===")
+            targets = [sym] if sym and sym in feat_syms else feat_syms
+            for s in targets:
+                parts += await _market_block(session, s)
 
     return {
         "text": "\n".join(parts),

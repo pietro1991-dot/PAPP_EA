@@ -115,6 +115,26 @@ class AccountSnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class MarketFeature(Base):
+    """Feature di mercato per barra D1 (dall'export PAPP_Export.csv). Usate per le
+    domande di mercato complesse: regime di volatilità/cluster, posizione vs MA, ecc."""
+    __tablename__ = "market_features"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    symbol: Mapped[str | None] = mapped_column(String(20), index=True, nullable=True)
+    t: Mapped[datetime | None] = mapped_column(DateTime, index=True, nullable=True)
+    close: Mapped[float | None] = mapped_column(Float, nullable=True)
+    d_med: Mapped[float | None] = mapped_column(Float, nullable=True)     # distanza % dalla Median
+    d_ma30: Mapped[float | None] = mapped_column(Float, nullable=True)    # distanza % da MA30
+    d_ma365: Mapped[float | None] = mapped_column(Float, nullable=True)   # distanza % da MA365
+    cluster: Mapped[float | None] = mapped_column(Float, nullable=True)   # cluPct
+    velocity: Mapped[float | None] = mapped_column(Float, nullable=True)  # velPct
+    accel: Mapped[float | None] = mapped_column(Float, nullable=True)     # accPct
+    volatility: Mapped[float | None] = mapped_column(Float, nullable=True)  # volPct
+    order_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    spread: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class BacktestTrade(Base):
     __tablename__ = "backtest_trades"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
