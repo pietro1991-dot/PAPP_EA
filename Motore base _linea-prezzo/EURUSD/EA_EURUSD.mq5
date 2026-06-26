@@ -30,6 +30,11 @@ input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuo
 input int     InpMarketInterval = 300;           // Intervallo market snapshot secondi (0=disabilita)
 input bool    InpLog           = true;
 
+input group "======  PHAI SERVER (licenza + telemetria)  ======"
+input bool    InpUseServer  = false;                  // Attiva licenza + invio dati al server PHAI
+input string  InpLicenseKey = "";                     // License key PHAI (dal tuo account)
+input string  InpServerUrl  = "https://app.phai.io";  // URL server PHAI (autorizzalo in Strumenti>Opzioni>EA)
+
 // TUTTI i pattern validati out-of-sample (train <=2020, test >2020).
 // Due famiglie affiancate:
 //  - P1-P6: ANALISI 3 (SL su linea + TP fisso) - win ~60%, drawdown contenuto.
@@ -150,6 +155,8 @@ datetime g_lastD1Today;
 bool     g_ready;
 int      g_logHandle = -1;
 datetime g_lastMarketLog;
+bool     g_licensed     = true;   // se server OFF, opera con gli input locali
+datetime g_lastValidate = 0;
 
 CTrade        g_trade;
 CPositionInfo g_pos;
@@ -434,6 +441,7 @@ void LogDecision(string action, int pi, string dir, string reason,
    FileSeek(g_logHandle, 0, SEEK_END);
    FileWriteString(g_logHandle, json);
    FileFlush(g_logHandle);
+   PhaiSend(json);
 }
 
 //+------------------------------------------------------------------+
@@ -449,6 +457,7 @@ void LogMarketSnapshot()
    FileSeek(g_logHandle, 0, SEEK_END);
    FileWriteString(g_logHandle, json);
    FileFlush(g_logHandle);
+   PhaiSend(json);
 }
 
 //+------------------------------------------------------------------+
@@ -477,6 +486,67 @@ void LogAccountSnapshot()
    FileSeek(g_logHandle, 0, SEEK_END);
    FileWriteString(g_logHandle, json);
    FileFlush(g_logHandle);
+   PhaiSend(json);
+}
+
+//+------------------------------------------------------------------+
+// === PHAI SERVER: licenza + telemetria via WebRequest ===
+// L'EA invia gli eventi (open/close/skip/account/market) e valida la licenza.
+// In ingresso parla JSON; le risposte sono key=value (facili da parsare).
+string PhaiEsc(string s){ StringReplace(s,"\\","\\\\"); StringReplace(s,"\"","\\\""); return s; }
+
+string PhaiHttpPost(string path, string body)
+{
+   if(!InpUseServer || MQLInfoInteger(MQL_TESTER)) return "";   // niente WebRequest nel tester
+   char post[]; StringToCharArray(body, post, 0, WHOLE_ARRAY, CP_UTF8);
+   int sz = ArraySize(post); if(sz > 0 && post[sz-1] == 0) ArrayResize(post, sz-1);  // togli il null finale
+   char result[]; string rh; ResetLastError();
+   int code = WebRequest("POST", InpServerUrl + path, "Content-Type: application/json\r\n",
+                         3000, post, result, rh);
+   if(code == -1)
+   {
+      Print("PHAI: WebRequest fallita (err ", GetLastError(), "). Autorizza ", InpServerUrl,
+            " in Strumenti > Opzioni > Expert Advisors > WebRequest.");
+      return "";
+   }
+   return CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
+}
+
+string PhaiKv(string resp, string key)
+{
+   string lines[]; int n = StringSplit(resp, '\n', lines);
+   for(int i = 0; i < n; i++)
+   {
+      string ln = lines[i]; StringReplace(ln, "\r", "");
+      int p = StringFind(ln, "=");
+      if(p > 0 && StringSubstr(ln, 0, p) == key) return StringSubstr(ln, p+1);
+   }
+   return "";
+}
+
+void PhaiSend(string jsonline)   // inietta la license key nell'evento e lo invia
+{
+   if(!InpUseServer || StringLen(InpLicenseKey) == 0 || StringLen(jsonline) < 2) return;
+   string body = "{\"key\":\"" + PhaiEsc(InpLicenseKey) + "\"," + StringSubstr(jsonline, 1);
+   PhaiHttpPost("/api/ea/ingest", body);
+}
+
+bool PhaiValidate()              // valida licenza+conto; aggiorna g_licensed (+ kill-switch server)
+{
+   g_lastValidate = TimeCurrent();
+   if(!InpUseServer) { g_licensed = true; return true; }
+   string body = "{\"key\":\"" + PhaiEsc(InpLicenseKey) + "\",\"account\":\"" +
+      IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + "\",\"broker\":\"" +
+      PhaiEsc(AccountInfoString(ACCOUNT_COMPANY)) + "\",\"symbol\":\"" + _Symbol + "\"}";
+   string resp = PhaiHttpPost("/api/ea/validate", body);
+   if(resp == "") { Print("PHAI: server non raggiungibile, mantengo lo stato licenza precedente."); return g_licensed; }
+   bool ok      = (PhaiKv(resp, "ok") == "1");
+   bool enabled = (PhaiKv(resp, "enabled") != "0");
+   g_licensed = ok && enabled;
+   if(!ok)           Print("PHAI: LICENZA NON VALIDA (", PhaiKv(resp,"reason"), "). Nessuna nuova operazione.");
+   else if(!enabled) Print("PHAI: strategia disattivata dal server per ", _Symbol, ". Nessuna nuova operazione.");
+   else              Print("PHAI: licenza OK (piano ", PhaiKv(resp,"plan"), ", rischio ", PhaiKv(resp,"risk"), "%).");
+   return g_licensed;
 }
 
 //+------------------------------------------------------------------+
@@ -783,6 +853,12 @@ int OnInit()
       Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%dpip minSL=%dpip maxPos=%d maxPerPatt=%d patterns=%d",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
          InpMagic, InpRiskPct, InpMaxLot, InpMaxSpreadPips, InpMinSLDistPips, InpMaxPos, InpMaxPerPattern, g_numPatterns));
+
+   if(InpUseServer)
+   {
+      if(StringLen(InpLicenseKey) == 0) Print("PHAI: InpUseServer attivo ma License key vuota.");
+      PhaiValidate();   // lega la key al conto e verifica l'abbonamento all'avvio
+   }
    return INIT_SUCCEEDED;
 }
 
@@ -930,6 +1006,15 @@ void OnTick()
    if(InpMaxPos > 0 && PositionsTotal() >= InpMaxPos)
    {
       if(InpLog) Print("   Max posizioni raggiunto (", InpMaxPos, ") - nessuna nuova entrata");
+      SavePosSnapshot();
+      return;
+   }
+
+   // Licenza/strategia dal server: re-valida ogni 6h e blocca nuove entrate se non valida.
+   if(InpUseServer && TimeCurrent() - g_lastValidate > 21600) PhaiValidate();
+   if(InpUseServer && !g_licensed)
+   {
+      if(InpLog) Print("PHAI: licenza/strategia non attiva — niente nuove entrate (le posizioni aperte restano gestite).");
       SavePosSnapshot();
       return;
    }
