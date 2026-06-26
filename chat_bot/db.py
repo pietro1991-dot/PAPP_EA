@@ -34,10 +34,20 @@ class Signal(Base):
     )
 
 
+class Conversation(Base):
+    __tablename__ = "conversations"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
+    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class ChatHistory(Base):
     __tablename__ = "chat_history"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
+    conversation_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
     question: Mapped[str] = mapped_column(Text)
     answer: Mapped[str] = mapped_column(Text)
     context: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -76,6 +86,23 @@ class MarketSnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now()
     )
+
+
+class AccountSnapshot(Base):
+    __tablename__ = "account_snapshots"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    t: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    symbol: Mapped[str | None] = mapped_column(String(20), index=True, nullable=True)
+    balance: Mapped[float | None] = mapped_column(Float, nullable=True)
+    equity: Mapped[float | None] = mapped_column(Float, nullable=True)
+    margin: Mapped[float | None] = mapped_column(Float, nullable=True)
+    free_margin: Mapped[float | None] = mapped_column(Float, nullable=True)
+    margin_level: Mapped[float | None] = mapped_column(Float, nullable=True)
+    profit: Mapped[float | None] = mapped_column(Float, nullable=True)       # P/L flottante conto
+    sym_profit: Mapped[float | None] = mapped_column(Float, nullable=True)   # P/L flottante simbolo
+    sym_pct: Mapped[float | None] = mapped_column(Float, nullable=True)      # % su balance
+    sym_open: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class LlmCache(Base):

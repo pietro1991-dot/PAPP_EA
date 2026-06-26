@@ -15,6 +15,9 @@ async def main():
             text("ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS user_id INTEGER")
         )
         await conn.execute(
+            text("ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS conversation_id INTEGER")
+        )
+        await conn.execute(
             text("ALTER TABLE signals ADD COLUMN IF NOT EXISTS symbol VARCHAR(20)")
         )
         await conn.execute(

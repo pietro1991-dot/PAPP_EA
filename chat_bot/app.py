@@ -7,7 +7,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select, desc, func as sa_func
+from datetime import datetime
+
+from sqlalchemy import select, desc, delete, func as sa_func
 
 from db import (
     init_db,
@@ -17,6 +19,8 @@ from db import (
     MarketSnapshot,
     User,
     DailySummary,
+    AccountSnapshot,
+    Conversation,
 )
 from mt5_bridge import LogTailer
 import llm_worker
@@ -119,6 +123,24 @@ async def _latest_summary(kind: str = "perf_today"):
 
 
 async def on_signal(data: dict):
+    if data.get("action") == "account":
+        async with AsyncSession() as session:
+            session.add(AccountSnapshot(
+                t=data.get("t"),
+                symbol=data.get("symbol"),
+                balance=data.get("balance"),
+                equity=data.get("equity"),
+                margin=data.get("margin"),
+                free_margin=data.get("free_margin"),
+                margin_level=data.get("margin_level"),
+                profit=data.get("profit"),
+                sym_profit=data.get("sym_profit"),
+                sym_pct=data.get("sym_pct"),
+                sym_open=data.get("sym_open"),
+            ))
+            await session.commit()
+        return
+
     if data.get("action") == "market":
         async with AsyncSession() as session:
             snap = MarketSnapshot(
@@ -320,6 +342,41 @@ async def get_symbols(user: User = Depends(auth.current_user)):
     return sorted(s for s in rows if s)
 
 
+@app.get("/api/account")
+async def get_account(user: User = Depends(auth.current_user)):
+    """Stato del conto (balance/equity/margine come MetaTrader) + P/L flottante e
+    profitto % per ciascun simbolo (dall'ultimo snapshot di ogni EA)."""
+    async with AsyncSession() as session:
+        rows = (
+            await session.execute(
+                select(AccountSnapshot).order_by(desc(AccountSnapshot.id)).limit(200)
+            )
+        ).scalars().all()
+    if not rows:
+        return {"available": False, "symbols": []}
+    latest = rows[0]  # più recente in assoluto → dati conto account-wide
+    per = {}
+    for r in rows:
+        if r.symbol and r.symbol not in per:
+            per[r.symbol] = {
+                "symbol": r.symbol,
+                "profit": r.sym_profit,
+                "pct": r.sym_pct,
+                "open": r.sym_open,
+            }
+    return {
+        "available": True,
+        "t": latest.t.isoformat() if latest.t else None,
+        "balance": latest.balance,
+        "equity": latest.equity,
+        "margin": latest.margin,
+        "free_margin": latest.free_margin,
+        "margin_level": latest.margin_level,
+        "profit": latest.profit,
+        "symbols": sorted(per.values(), key=lambda x: x["symbol"]),
+    }
+
+
 @app.get("/api/stats")
 async def get_stats(symbol: str = "", user: User = Depends(auth.current_user)):
     def _scoped(q):
@@ -354,11 +411,79 @@ async def get_stats(symbol: str = "", user: User = Depends(auth.current_user)):
     }
 
 
+@app.post("/api/conversations")
+async def create_conversation(user: User = Depends(auth.current_user)):
+    async with AsyncSession() as session:
+        conv = Conversation(user_id=user.id, title="Nuova conversazione")
+        session.add(conv)
+        await session.commit()
+        await session.refresh(conv)
+    return {"id": conv.id, "title": conv.title}
+
+
+@app.get("/api/conversations")
+async def list_conversations(user: User = Depends(auth.current_user)):
+    async with AsyncSession() as session:
+        rows = (
+            await session.execute(
+                select(Conversation)
+                .where(Conversation.user_id == user.id)
+                .order_by(desc(Conversation.updated_at))
+                .limit(100)
+            )
+        ).scalars().all()
+    return [
+        {
+            "id": c.id,
+            "title": c.title or "Conversazione",
+            "updated_at": c.updated_at.isoformat() if c.updated_at else None,
+        }
+        for c in rows
+    ]
+
+
+@app.get("/api/conversations/{conv_id}/messages")
+async def conversation_messages(conv_id: int, user: User = Depends(auth.current_user)):
+    async with AsyncSession() as session:
+        conv = await session.get(Conversation, conv_id)
+        if not conv or conv.user_id != user.id:
+            return JSONResponse({"error": "Conversazione non trovata"}, status_code=404)
+        rows = (
+            await session.execute(
+                select(ChatHistory)
+                .where(ChatHistory.conversation_id == conv_id)
+                .order_by(ChatHistory.id)
+            )
+        ).scalars().all()
+    return {
+        "id": conv_id,
+        "title": conv.title or "Conversazione",
+        "messages": [
+            {"q": r.question, "a": r.answer, "t": r.created_at.isoformat() if r.created_at else None}
+            for r in rows
+        ],
+    }
+
+
+@app.delete("/api/conversations/{conv_id}")
+async def delete_conversation(conv_id: int, user: User = Depends(auth.current_user)):
+    async with AsyncSession() as session:
+        conv = await session.get(Conversation, conv_id)
+        if conv and conv.user_id == user.id:
+            await session.execute(
+                delete(ChatHistory).where(ChatHistory.conversation_id == conv_id)
+            )
+            await session.delete(conv)
+            await session.commit()
+    return {"ok": True}
+
+
 @app.post("/api/chat")
 async def chat(request: Request, user: User = Depends(auth.current_user)):
     body = await request.json()
     question = body.get("question", "").strip()
     symbol = (body.get("symbol") or "").strip()
+    conversation_id = body.get("conversation_id")
     if not question:
         return JSONResponse({"error": "Domanda vuota"}, status_code=400)
 
@@ -386,11 +511,18 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
         async with AsyncSession() as session:
             ch = ChatHistory(
                 user_id=user.id,
+                conversation_id=conversation_id,
                 question=question,
                 answer=full,
-                context={"signals_count": recent_count, "source": "summary" if precomputed else "llm"},
+                context={"signals_count": recent_count, "source": "summary" if precomputed else "llm", "symbol": symbol or None},
             )
             session.add(ch)
+            if conversation_id:
+                conv = await session.get(Conversation, conversation_id)
+                if conv and conv.user_id == user.id:
+                    conv.updated_at = datetime.utcnow()
+                    if not conv.title or conv.title == "Nuova conversazione":
+                        conv.title = question[:80]
             await session.commit()
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
