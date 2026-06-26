@@ -145,6 +145,30 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
   border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(105%);
   transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;box-shadow:-14px 0 44px rgba(0,0,0,.5)}
 .drawer.open{transform:none}
+.drawer.left{right:auto;left:0;border-left:none;border-right:1px solid var(--border);transform:translateX(-105%);box-shadow:14px 0 44px rgba(0,0,0,.5)}
+.drawer.left.open{transform:none}
+.hdr-btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:8px;border:1px solid var(--border);background:#1a2236;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;transition:.15s}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* Storico */
+.st-body{flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch}
+.st-tot{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.st-tot .c{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.st-tot .l{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.st-tot .v{font-size:18px;font-weight:700;margin-top:3px}
+.acc-row{border:1px solid var(--border);border-radius:10px;margin-bottom:6px;overflow:hidden;background:var(--panel2)}
+.acc-head{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer}
+.acc-head:hover{background:#222c44}
+.acc-head .yr{font-weight:700;font-size:15px;min-width:54px}
+.acc-head .meta{font-size:11px;color:var(--muted);flex:1}
+.acc-head .pnl{font-weight:700;font-size:14px}
+.acc-sub{padding:0 8px 8px}
+.mn-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px}
+.mn-row:hover{background:#222c44}
+.mn-row .nm{min-width:74px;color:var(--text);font-weight:600}
+.mn-row .mt{flex:1;font-size:11px;color:var(--muted)}
+.tr-row{padding:6px 10px;font-size:11.5px;color:#aeb4c0;border-top:1px solid var(--border)}
+.tr-row .pp{font-weight:700}
+.pos{color:var(--green)} .neg{color:var(--red)}
 .drawer-head{display:flex;align-items:center;gap:10px;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top));border-bottom:1px solid var(--border)}
 .drawer-title{flex:1;font-weight:700;font-size:15px}
 .drawer-title .scope{color:var(--accent);font-weight:600}
@@ -565,6 +589,67 @@ async function deleteConversation(id){
   await fetch('/api/conversations/'+id,{method:'DELETE'});
   if(currentConvId===id){currentConvId=null;chatMsg.innerHTML=WELCOME;}
   loadConversations();
+}
+
+/* ---------- Storico backtest (drawer) ---------- */
+const stDrawer=$('st-drawer'), stOverlay=$('st-overlay');
+const MONTHS=['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+function openStorico(){stDrawer.classList.add('open');stOverlay.classList.add('open');loadStorico();}
+function closeStorico(){stDrawer.classList.remove('open');stOverlay.classList.remove('open');}
+stOverlay.onclick=closeStorico; $('st-close').onclick=closeStorico;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&stDrawer.classList.contains('open'))closeStorico();});
+function sgn(v){return (v>=0?'+':'')+v;}
+function btQuery(extra){return (activeSymbol?('symbol='+encodeURIComponent(activeSymbol)+(extra?'&':'')):'')+(extra||'');}
+async function loadStorico(){
+  $('st-scope').textContent=activeSymbol?('· '+activeSymbol):'';
+  const body=$('st-body'); body.innerHTML='<div class="hist-empty">Carico…</div>';
+  const r=await fetch('/api/backtest/overview'+(activeSymbol?('?symbol='+encodeURIComponent(activeSymbol)):'')); if(r.status===401){location.href='/';return;}
+  const d=await r.json(); body.innerHTML='';
+  if(!d.available){body.innerHTML='<div class="hist-empty">Nessun dato di backtest ancora.<br>Lancia il tester su MT5, poi importa i CSV con <b>import_backtests.py</b>.</div>';return;}
+  const t=d.totals, tot=document.createElement('div'); tot.className='st-tot';
+  tot.innerHTML=`<div class="c"><div class="l">Trade</div><div class="v">${t.trades}</div></div>`+
+    `<div class="c"><div class="l">Win rate</div><div class="v">${t.winrate}%</div></div>`+
+    `<div class="c"><div class="l">PnL punti</div><div class="v ${t.pnl_pt>=0?'pos':'neg'}">${sgn(t.pnl_pt)}</div></div>`+
+    `<div class="c"><div class="l">PnL valuta</div><div class="v ${t.pnl_money>=0?'pos':'neg'}">${sgn(t.pnl_money)}</div></div>`;
+  body.appendChild(tot);
+  d.by_year.forEach(y=>body.appendChild(yearRow(y)));
+}
+function yearRow(y){
+  const row=document.createElement('div'); row.className='acc-row';
+  const head=document.createElement('div'); head.className='acc-head';
+  head.innerHTML=`<span class="yr">${y.year}</span><span class="meta">${y.trades} trade · win ${y.winrate}%</span><span class="pnl ${y.pnl_pt>=0?'pos':'neg'}">${sgn(y.pnl_pt)}pt</span>`;
+  row.appendChild(head);
+  const sub=document.createElement('div'); sub.className='acc-sub'; sub.hidden=true; row.appendChild(sub);
+  head.onclick=async()=>{
+    if(!sub.hidden){sub.hidden=true;return;} sub.hidden=false;
+    if(sub.dataset.loaded)return;
+    const d=await (await fetch('/api/backtest/year?'+btQuery('year='+y.year))).json();
+    d.by_month.forEach(m=>sub.appendChild(monthRow(y.year,m)));
+    sub.dataset.loaded='1';
+  };
+  return row;
+}
+function monthRow(year,m){
+  const wrap=document.createElement('div');
+  const row=document.createElement('div'); row.className='mn-row';
+  row.innerHTML=`<span class="nm">${MONTHS[m.month]}</span><span class="mt">${m.trades} trade · win ${m.winrate}%</span><span class="pnl ${m.pnl_pt>=0?'pos':'neg'}">${sgn(m.pnl_pt)}pt</span>`;
+  wrap.appendChild(row);
+  const tr=document.createElement('div'); tr.hidden=true; wrap.appendChild(tr);
+  row.onclick=async()=>{
+    if(!tr.hidden){tr.hidden=true;return;} tr.hidden=false;
+    if(tr.dataset.loaded)return;
+    const trades=await (await fetch('/api/backtest/trades?'+btQuery('year='+year+'&month='+m.month))).json();
+    trades.forEach(t=>{
+      const d=document.createElement('div'); d.className='tr-row';
+      const dt=t.exit_time?t.exit_time.slice(0,10):'?';
+      d.textContent=`${dt} · ${t.symbol} P${t.pattern} ${t.dir} · `;
+      const pp=document.createElement('span'); pp.className='pp '+(t.pnl_pt>=0?'pos':'neg'); pp.textContent=sgn(t.pnl_pt)+'pt';
+      d.appendChild(pp); d.appendChild(document.createTextNode(' · '+(t.reason||'')));
+      tr.appendChild(d);
+    });
+    tr.dataset.loaded='1';
+  };
+  return wrap;
 }
 
 /* ---------- Markdown (sicuro) ---------- */

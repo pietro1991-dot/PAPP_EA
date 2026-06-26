@@ -2,3 +2,5 @@ __pycache__/
 *.log
 .env
 chat_bot/vapid_private.pem
+backtests/*.csv
+backtests/ANALISI_*.md
