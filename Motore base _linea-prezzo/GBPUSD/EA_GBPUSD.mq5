@@ -162,15 +162,15 @@ void LogBrokerCloses()
       {
          bool tpHit = (p.type == (int)POSITION_TYPE_BUY && tk.bid >= p.tp) ||
                       (p.type == (int)POSITION_TYPE_SELL && tk.ask <= p.tp);
-         if(tpHit) reason = "TP target hit";
+         if(tpHit) reason = "R|tp";
       }
       if(reason == "" && p.sl > 0.0)
       {
          bool slHit = (p.type == (int)POSITION_TYPE_BUY && tk.bid <= p.sl) ||
                       (p.type == (int)POSITION_TYPE_SELL && tk.ask >= p.sl);
-         if(slHit) reason = "SL stop hit";
+         if(slHit) reason = "R|sl";
       }
-      if(reason == "") reason = "Stop out / forced close";
+      if(reason == "") reason = "R|stopout";
 
       if(InpLog)
          Print(">>> BROKER CLOSE [", p.pattern, "] ", reason, " pnl=", DoubleToString(pnlPt,1), "pt #", t);
@@ -214,13 +214,12 @@ string DirStr(int dir)
 string PatternSetupStr(int pi)
 {
    Pattern p = g_patterns[pi];
-   string s = "Ingresso: cross " + MAPeriodStr(p.entry) + " " + DirStr(p.dir) + " | Uscita:";
-   bool any = false;
-   if(p.exit > 0)        { s += " cross " + MAPeriodStr(p.exit); any = true; }
-   if(p.slLine > 0)      { s += (any ? "," : "") + " SL " + MAPeriodStr(p.slLine) + " dinamico"; any = true; }
-   else if(p.slPips > 0) { s += (any ? "," : "") + " SL " + IntegerToString(p.slPips) + "pip"; any = true; }
-   if(p.tpPt > 0)        { s += (any ? "," : "") + " TP " + IntegerToString(p.tpPt) + "pt"; any = true; }
-   if(!any) s += " gestione manuale";
+   // Codice neutro (tradotto dalla UI): e=entry, d=dir, x=exit, sl=linea SL, sp=SL pip, tp=punti
+   string s = "SETUP|e:" + IntegerToString(p.entry) + "|d:" + IntegerToString(p.dir);
+   if(p.exit > 0)        s += "|x:" + IntegerToString(p.exit);
+   if(p.slLine > 0)      s += "|sl:" + IntegerToString(p.slLine);
+   else if(p.slPips > 0) s += "|sp:" + IntegerToString(p.slPips);
+   if(p.tpPt > 0)        s += "|tp:" + IntegerToString(p.tpPt);
    return s;
 }
 
@@ -462,7 +461,7 @@ void OpenPatternTrade(int pi)
       if(cnt >= InpMaxPerPattern)
       {
          if(InpLog) Print("   Pattern ", pi, " ha gia' ", cnt, " posizioni (max ", InpMaxPerPattern, ") - salto");
-         LogDecision("skip", pi, DirStr(p.dir), "Limite per-pattern raggiunto");
+         LogDecision("skip", pi, DirStr(p.dir), "R|skip_perpat");
          return;
       }
    }
@@ -471,7 +470,7 @@ void OpenPatternTrade(int pi)
    MqlTick tk;
    if(!SymbolInfoTick(_Symbol, tk)) return;
    double spreadPts = (tk.ask - tk.bid) / _Point;
-   if(InpMaxSpread > 0 && spreadPts > InpMaxSpread) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt > ", InpMaxSpread, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "Spread troppo alto"); return; }
+   if(InpMaxSpread > 0 && spreadPts > InpMaxSpread) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt > ", InpMaxSpread, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "R|skip_spread"); return; }
 
    double pt     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double pipSize = pt * 10.0;
@@ -498,7 +497,7 @@ void OpenPatternTrade(int pi)
       {
          if(InpLog) Print("   Pattern ", pi, " SKIPPED: SL line ", MAPeriodStr(p.slLine),
             " non piazzabile (lato sbagliato o lettura fallita)");
-         LogDecision("skip", pi, DirStr(p.dir), "SL non piazzabile: " + MAPeriodStr(p.slLine) + " lato sbagliato");
+         LogDecision("skip", pi, DirStr(p.dir), "R|skip_slunplace:" + IntegerToString(p.slLine));
          return;
       }
       riskDist = MathAbs(entry - sl);
@@ -529,7 +528,7 @@ void OpenPatternTrade(int pi)
    {
       if(InpLog) Print("   Pattern ", pi, " SKIPPED: riskDist troppo piccolo (",
          DoubleToString(riskDist/pt, 1), "pt < ", InpMinSLDistPts, "pt)");
-      LogDecision("skip", pi, DirStr(p.dir), "riskDist troppo piccolo");
+      LogDecision("skip", pi, DirStr(p.dir), "R|skip_riskdist");
       return;
    }
 
@@ -578,7 +577,7 @@ void CheckPatternExits()
             Print("   DEBUG ExitCheck: P", pi, " ", (posType==POSITION_TYPE_BUY?"BUY":"SELL"),
                " exit=MA", p.exit, " cross=", exitCross, " need=", needExit,
                (exitCross==needExit?" -> CLOSE":" -> NO"));
-         if(exitCross == needExit) { shouldClose = true; reason = "EXIT " + MAPeriodStr(p.exit) + " cross"; }
+         if(exitCross == needExit) { shouldClose = true; reason = "R|exit:" + IntegerToString(p.exit); }
       }
 
       // SL gestito da UpdateDynamicSL() (trailing dinamico sulla linea, broker-side)
@@ -659,7 +658,7 @@ void UpdateDynamicSL()
          double pnlPt  = buy ? (exitPr - entryPr) / _Point : (entryPr - exitPr) / _Point;
          if(g_trade.PositionClose(ticket))
          {
-            LogDecision("close", pi, dirStr, "SL dinamico " + MAPeriodStr(p.slLine) + " toccato",
+            LogDecision("close", pi, dirStr, "R|sldyn:" + IntegerToString(p.slLine),
                         entryPr, 0, 0, 0, exitPr, pnlPt);
             if(InpLog) Print(">>> CHIUSO [", pi, "] SL dinamico ", MAPeriodStr(p.slLine),
                              " pnl=", DoubleToString(pnlPt,1), "pt #", ticket);

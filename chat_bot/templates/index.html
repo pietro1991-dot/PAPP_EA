@@ -384,9 +384,48 @@ function setLang(l){
   chatInput.placeholder=activeSymbol?(ASK_ON[lang]+' '+activeSymbol+'…'):t('chat_ph');
   if(currentConvId===null) chatMsg.innerHTML=welcomeHtml();
   updatePLCard&&updatePLCard();
+  loadRecent&&loadRecent();  // ritraduce i segnali già mostrati
   if(stDrawer&&stDrawer.classList.contains('open'))loadStorico();
   if(mkDrawer&&mkDrawer.classList.contains('open'))loadMercato();
   if($('history-view')&&!$('history-view').hidden)loadConversations();
+}
+
+/* traduzione dei codici neutri dei segnali (SETUP|… e R|…) scritti dall'EA */
+const SIG_I18N={
+ it:{entry:'Ingresso',exit:'Uscita',dyn:'dinamico',trail:'+trail',manual:'gestione manuale',r_tp:'TP raggiunto',r_sl:'SL colpito',r_stopout:'Chiusura forzata',r_exit:'Uscita su cross',r_sldyn:'SL dinamico toccato',skip_perpat:'Limite per-pattern raggiunto',skip_spread:'Spread troppo alto',skip_slunplace:'SL non piazzabile',skip_riskdist:'Distanza di rischio troppo piccola'},
+ en:{entry:'Entry',exit:'Exit',dyn:'dynamic',trail:'+trail',manual:'manual management',r_tp:'TP hit',r_sl:'SL hit',r_stopout:'Forced close',r_exit:'Exit on cross',r_sldyn:'Dynamic SL hit',skip_perpat:'Per-pattern limit reached',skip_spread:'Spread too high',skip_slunplace:'SL not placeable',skip_riskdist:'Risk distance too small'},
+ fr:{entry:'Entrée',exit:'Sortie',dyn:'dynamique',trail:'+trail',manual:'gestion manuelle',r_tp:'TP atteint',r_sl:'SL touché',r_stopout:'Clôture forcée',r_exit:'Sortie au cross',r_sldyn:'SL dynamique touché',skip_perpat:'Limite par pattern atteinte',skip_spread:'Spread trop élevé',skip_slunplace:'SL non plaçable',skip_riskdist:'Distance de risque trop faible'},
+ es:{entry:'Entrada',exit:'Salida',dyn:'dinámico',trail:'+trail',manual:'gestión manual',r_tp:'TP alcanzado',r_sl:'SL alcanzado',r_stopout:'Cierre forzado',r_exit:'Salida en cross',r_sldyn:'SL dinámico alcanzado',skip_perpat:'Límite por patrón alcanzado',skip_spread:'Spread demasiado alto',skip_slunplace:'SL no colocable',skip_riskdist:'Distancia de riesgo muy pequeña'}
+};
+function ts(k){return (SIG_I18N[lang]&&SIG_I18N[lang][k])||SIG_I18N.it[k]||k;}
+function maName(n){n=parseInt(n,10);return isNaN(n)?'?':(n===0?'Median':'MA'+n);}
+function dirName(d){return (d==1||d==='1')?'BUY':'SELL';}
+function reasonLines(reason){
+  if(!reason) return [];
+  if(reason.indexOf('SETUP|')===0){
+    const kv={}; reason.slice(6).split('|').forEach(p=>{const i=p.indexOf(':');kv[p.slice(0,i)]=p.slice(i+1);});
+    const out=[];
+    if(kv.x) out.push('cross '+maName(kv.x)+(kv.tr?' '+ts('trail'):''));
+    if(kv.sl) out.push('SL '+maName(kv.sl)+' '+ts('dyn'));
+    else if(kv.sp) out.push('SL '+kv.sp+'pip');
+    if(kv.tp) out.push('TP '+kv.tp+'pt');
+    return [
+      {label:ts('entry'), text:'cross '+maName(kv.e)+' '+dirName(kv.d)},
+      {label:ts('exit'), text: out.length?out.join(', '):ts('manual')}
+    ];
+  }
+  if(reason.indexOf('R|')===0){
+    const c=reason.slice(2), i=c.indexOf(':'), code=i<0?c:c.slice(0,i), param=i<0?'':c.slice(i+1);
+    let txt;
+    if(code==='tp')txt=ts('r_tp'); else if(code==='sl')txt=ts('r_sl'); else if(code==='stopout')txt=ts('r_stopout');
+    else if(code==='exit')txt=ts('r_exit')+' '+maName(param);
+    else if(code==='sldyn')txt=ts('r_sldyn')+' ('+maName(param)+')';
+    else if(code==='skip_perpat')txt=ts('skip_perpat'); else if(code==='skip_spread')txt=ts('skip_spread');
+    else if(code==='skip_slunplace')txt=ts('skip_slunplace')+' ('+maName(param)+')'; else if(code==='skip_riskdist')txt=ts('skip_riskdist');
+    else txt=code;
+    return [{label:null, text:txt}];
+  }
+  return reason.split('|').map(s=>({label:null,text:s.trim()})).filter(x=>x.text);  // legacy italiano
 }
 
 const chatMsg=$('chat-messages'), chatInput=$('chat-input'), chatBtn=$('chat-btn'), signalList=$('signal-list');
@@ -501,13 +540,12 @@ function renderSignal(d){
   // Riga "perché e come": all'apertura il setup (ingresso + piano d'uscita),
   // alla chiusura il motivo d'uscita, allo skip la causa. Sempre visibile.
   if(d.reason){
-    d.reason.split('|').map(s=>s.trim()).filter(Boolean).forEach(part=>{
+    reasonLines(d.reason).forEach(ln=>{
       const sd=document.createElement('div'); sd.className='sig-setup';
-      const m=part.match(/^([^:]{2,14}):\s*(.*)$/);
-      if(m){
-        const lab=document.createElement('span'); lab.className='lab'; lab.textContent=m[1]+': ';
-        sd.appendChild(lab); sd.appendChild(document.createTextNode(m[2]));
-      } else sd.textContent=part;
+      if(ln.label){
+        const lab=document.createElement('span'); lab.className='lab'; lab.textContent=ln.label+': ';
+        sd.appendChild(lab); sd.appendChild(document.createTextNode(ln.text));
+      } else sd.textContent=ln.text;
       main.appendChild(sd);
     });
   }
