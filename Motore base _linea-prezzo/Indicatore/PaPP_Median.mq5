@@ -3,7 +3,7 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.01"
+#property version   "2.02"
 #property description "PaPP Median - Mediana 7 MA (3g-1y)"
 #property description "Calcolo ancorato a D1 = linea uguale su ogni timeframe"
 #property indicator_chart_window
@@ -40,6 +40,7 @@ int   gDays[7];
 color gCol[7] = {clrDodgerBlue,clrDeepSkyBlue,clrTurquoise,clrLimeGreen,clrOrange,clrTomato,clrRed};
 int   hMA[7];
 int   gMAPeriods[7];   // periodo effettivo in barre D1 (puo' crescere quando la history si completa)
+bool  g_synced=false;  // true quando i periodi MA si sono stabilizzati (warm-up finito): stop alle ricreazioni
 
 string _pfx  = "PM_";
 string _pfx2 = "PME_";
@@ -276,18 +277,29 @@ double Interp(double vStart,double vEnd,double frac)
 // Risolve il caso "chart appena aperto": all'init la history puo' essere
 // incompleta -> periodo troppo corto, qui lo si corregge appena cresce.
 // Ritorna true se almeno un handle e' stato ricreato (forza full reload).
+// IMPORTANTE: ricrea gli handle SOLO in crescita (la history si completa) e SOLO
+// durante il warm-up. TimeToBars conta le barre in una finestra di calendario mobile,
+// che oscilla di +-1 (weekend/festivi): senza questi vincoli l'handle veniva ricreato
+// ad ogni barra -> BarsCalculated<=0 sullo stesso tick -> "MA not ready" perenne dal 2016
+// -> l'indicatore restava muto e l'EA smetteva di tradare. (fix del bug history-jitter)
 bool SyncMAHandles()
   {
+   if(g_synced) return false;                       // warm-up gia' completato: nessuna ricreazione
    bool changed=false;
+   bool allReady=true;
    for(int i=0;i<7;i++)
      {
       int want = TimeToBars(gDays[i]);
-      if(want==gMAPeriods[i]) continue;
-      int h = iMA(_Symbol,ANCHOR_TF,want,0,MODE_SMA,PRICE_CLOSE);
-      if(h==INVALID_HANDLE) continue;              // riprova al prossimo tick
-      if(hMA[i]!=INVALID_HANDLE) IndicatorRelease(hMA[i]);
-      hMA[i]=h; gMAPeriods[i]=want; changed=true;
+      if(want>gMAPeriods[i])                         // solo crescita: mai accorciare per lo sfarfallio +-1
+        {
+         int h = iMA(_Symbol,ANCHOR_TF,want,0,MODE_SMA,PRICE_CLOSE);
+         if(h==INVALID_HANDLE) { allReady=false; continue; }   // riprova al prossimo tick
+         if(hMA[i]!=INVALID_HANDLE) IndicatorRelease(hMA[i]);
+         hMA[i]=h; gMAPeriods[i]=want; changed=true;
+        }
+      if(BarsCalculated(hMA[i])<gMAPeriods[i]) allReady=false;
      }
+   if(allReady && !changed) g_synced=true;           // periodi stabili e handle pronti: stop definitivo
    return changed;
   }
 

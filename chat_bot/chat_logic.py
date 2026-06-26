@@ -132,3 +132,60 @@ async def ask(
     except Exception:
         log.exception("Errore nella chiamata all'API Zen")
         return None
+
+
+async def ask_stream(
+    question: str,
+    context: Optional[str] = None,
+    model: Optional[str] = None,
+    timeout: Optional[float] = None,
+    lang: str = "it",
+):
+    """Come ask() ma in streaming: yield i pezzi di testo (delta) man mano che arrivano.
+    Su errore non produce nulla (il worker decide il fallback)."""
+    key = _api_key()
+    if not key:
+        log.error("OPENCODE_API_KEY mancante: impossibile interrogare l'LLM")
+        return
+
+    model = model or ZEN_MODEL
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": _system_content(lang)},
+            {"role": "user", "content": build_user_message(question, context)},
+        ],
+        "max_tokens": LLM_MAX_TOKENS,
+        "stream": True,
+    }
+    if LLM_REASONING_EFFORT and "deepseek" in model:
+        payload["reasoning_effort"] = LLM_REASONING_EFFORT
+    try:
+        async with httpx.AsyncClient(timeout=timeout or LLM_TIMEOUT) as client:
+            async with client.stream(
+                "POST",
+                f"{ZEN_BASE_URL}/chat/completions",
+                headers={"Authorization": f"Bearer {key}"},
+                json=payload,
+            ) as r:
+                if r.status_code != 200:
+                    body = await r.aread()
+                    log.warning("Zen API HTTP %s (stream): %s", r.status_code, body[:200])
+                    return
+                async for line in r.aiter_lines():
+                    line = line.strip()
+                    if not line or not line.startswith("data:"):
+                        continue
+                    chunk = line[5:].strip()
+                    if chunk == "[DONE]":
+                        break
+                    try:
+                        obj = json.loads(chunk)
+                        delta = obj["choices"][0].get("delta", {}).get("content")
+                        if delta:
+                            yield delta
+                    except Exception:
+                        continue
+    except Exception:
+        log.exception("Errore nello streaming dall'API Zen")
+        return

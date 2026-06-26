@@ -776,14 +776,18 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
         precomputed = await _latest_summary("perf_today")
 
     async def event_stream():
+        # Risposta precalcolata/cache → un solo evento {"text": ...}.
+        # Risposta LLM → streaming: tanti eventi {"delta": pezzo} man mano che arrivano.
+        # Ogni evento è un JSON: preserva newline e caratteri speciali nel framing SSE.
         if precomputed is not None:
             full = precomputed
+            yield "data: " + json.dumps({"text": full}) + "\n\n"
         else:
-            full = await llm_worker.submit(question, context, context_sig, user.id, lang)
-        # Risposta inviata come singolo evento JSON: preserva newline e caratteri
-        # speciali, che con "data: {full}" romperebbero il framing SSE (le righe
-        # successive alla prima venivano scartate dal client).
-        yield "data: " + json.dumps({"text": full}) + "\n\n"
+            parts = []
+            async for chunk in llm_worker.submit_stream(question, context, context_sig, user.id, lang):
+                parts.append(chunk)
+                yield "data: " + json.dumps({"delta": chunk}) + "\n\n"
+            full = "".join(parts)
         yield "data: __DONE__\n\n"
 
         async with AsyncSession() as session:

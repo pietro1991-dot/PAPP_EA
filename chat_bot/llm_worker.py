@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 
 from db import AsyncSession, LlmCache
-from chat_logic import ask
+from chat_logic import ask, ask_stream
 
 log = logging.getLogger("papp.llm")
 
@@ -43,8 +43,9 @@ class _Job:
     question: str
     context: str
     key: str
-    future: asyncio.Future
+    future: "asyncio.Future | None" = None
     lang: str = "it"
+    stream_q: "asyncio.Queue | None" = None   # se valorizzata → job in streaming
 
 
 class TokenBucket:
@@ -181,15 +182,104 @@ async def submit(
             _user_inflight.discard(user_id)
 
 
+async def submit_stream(
+    question: str,
+    context: str,
+    context_sig: str | None,
+    user_id: int | None = None,
+    lang: str = "it",
+):
+    """Come submit() ma in streaming: async-generator che produce i pezzi (delta) della
+    risposta man mano. Mantiene cache, fairness per-utente, coda e rate-limit globale.
+    Cache-hit / BUSY / RATE → un singolo chunk (testo completo)."""
+    key = _cache_key(question, context_sig)
+
+    # 1) Cache: hit = un solo chunk col testo completo.
+    hit = _lru_get(key)
+    if hit is None:
+        hit = await _db_get(key)
+        if hit is not None:
+            _lru_put(key, hit)
+    if hit is not None:
+        yield hit
+        return
+
+    # 2) Fairness per-utente.
+    if user_id is not None:
+        if user_id in _user_inflight:
+            yield BUSY
+            return
+        bucket = _user_buckets.setdefault(user_id, TokenBucket(LLM_USER_RPM))
+        if not bucket.try_acquire():
+            yield RATE
+            return
+        _user_inflight.add(user_id)
+
+    # 3) Accoda un job di streaming e drena la sua coda fino al sentinel None.
+    try:
+        q: asyncio.Queue = asyncio.Queue()
+        await _queue.put(_Job(question=question, context=context, key=key, lang=lang, stream_q=q))
+        while True:
+            chunk = await q.get()
+            if chunk is None:
+                break
+            yield chunk
+    finally:
+        if user_id is not None:
+            _user_inflight.discard(user_id)
+
+
+async def _handle_stream_job(job: _Job):
+    """Eseguito dal worker: streamma dall'LLM nella coda del job, accumula la risposta
+    completa per la cache, e chiude con un sentinel None."""
+    q = job.stream_q
+    # un'altra richiesta identica potrebbe aver popolato la cache nel frattempo
+    hit = _lru_get(job.key)
+    if hit is not None:
+        await q.put(hit)
+        await q.put(None)
+        return
+
+    full = ""
+    try:
+        await _bucket.acquire()
+        async for delta in ask_stream(job.question, job.context, timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang):
+            if delta:
+                full += delta
+                await q.put(delta)
+        # Niente output (es. free tier vuoto o errore): prova il modello di riserva (non-stream).
+        if not full and LLM_FALLBACK_MODEL:
+            log.warning("Stream primario vuoto, provo il fallback %s", LLM_FALLBACK_MODEL)
+            await _bucket.acquire()
+            ans = await ask(job.question, job.context, model=LLM_FALLBACK_MODEL, lang=job.lang)
+            if ans:
+                full = ans
+                await q.put(ans)
+        if full:
+            _lru_put(job.key, full)
+            await _db_put(job.key, job.question, full)
+        else:
+            await q.put(FALLBACK)
+    except Exception:
+        log.exception("Errore nel worker LLM (stream)")
+        if not full:
+            await q.put(FALLBACK)
+    finally:
+        await q.put(None)   # sentinel: fine stream
+
+
 async def _worker():
     log.info("LLM worker avviato (LLM_RPM=%d, CACHE_MAX=%d)", LLM_RPM, CACHE_MAX)
     while True:
         job = await _queue.get()
         try:
+            if job.stream_q is not None:        # job in streaming: gestione dedicata
+                await _handle_stream_job(job)
+                continue
             # un'altra richiesta identica potrebbe aver popolato la cache nel frattempo
             hit = _lru_get(job.key)
             if hit is not None:
-                if not job.future.done():
+                if job.future and not job.future.done():
                     job.future.set_result(hit)
                 continue
 
