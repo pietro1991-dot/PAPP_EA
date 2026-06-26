@@ -23,6 +23,7 @@ from db import (
     Conversation,
     PushSubscription,
     BacktestTrade,
+    MarketFeature,
 )
 from mt5_bridge import LogTailer
 import llm_worker
@@ -482,6 +483,85 @@ async def backtest_trades(
         }
         for r in rows
     ]
+
+
+@app.get("/api/market-state")
+async def market_state(symbol: str = "", user: User = Depends(auth.current_user)):
+    """Stato di mercato corrente di un simbolo: ultima barra, posizione vs MA, e
+    per ogni feature valore/media/percentile/livello. Per la tab Mercato."""
+    async with AsyncSession() as session:
+        syms = (
+            await session.execute(
+                select(MarketFeature.symbol).where(MarketFeature.symbol.isnot(None)).distinct()
+            )
+        ).scalars().all()
+        syms = sorted(s for s in syms if s)
+        if not syms:
+            return {"available": False, "symbols": []}
+        sym = symbol if symbol in syms else syms[0]
+        last = (
+            await session.execute(
+                select(MarketFeature).where(MarketFeature.symbol == sym)
+                .order_by(desc(MarketFeature.t)).limit(1)
+            )
+        ).scalar_one_or_none()
+        if not last:
+            return {"available": False, "symbols": syms}
+        total = (
+            await session.execute(
+                select(sa_func.count(MarketFeature.id)).where(MarketFeature.symbol == sym)
+            )
+        ).scalar() or 1
+
+        async def stat(col, val):
+            if val is None:
+                return None
+            avg = (
+                await session.execute(
+                    select(sa_func.avg(col)).where(MarketFeature.symbol == sym)
+                )
+            ).scalar()
+            cnt = (
+                await session.execute(
+                    select(sa_func.count(MarketFeature.id)).where(
+                        MarketFeature.symbol == sym, col <= val
+                    )
+                )
+            ).scalar() or 0
+            pct = round(cnt / total * 100)
+            return {
+                "value": round(float(val), 2),
+                "avg": round(float(avg or 0), 2),
+                "pct": pct,
+                "level": "alto" if pct >= 70 else "basso" if pct <= 30 else "media",
+            }
+
+        feats = []
+        for name, col, val in [
+            ("Volatilità", MarketFeature.volatility, last.volatility),
+            ("Cluster", MarketFeature.cluster, last.cluster),
+            ("Velocità", MarketFeature.velocity, last.velocity),
+            ("Accelerazione", MarketFeature.accel, last.accel),
+            ("OrderScore", MarketFeature.order_score, last.order_score),
+        ]:
+            s = await stat(col, val)
+            if s:
+                feats.append({"name": name, **s})
+
+        price_vs = []
+        for ma, d in [("MA30", last.d_ma30), ("MA365", last.d_ma365), ("Median", last.d_med)]:
+            if d is not None:
+                price_vs.append({"ma": ma, "pos": "sopra" if d > 0 else "sotto", "dist": round(float(d), 2)})
+
+    return {
+        "available": True,
+        "symbols": syms,
+        "symbol": sym,
+        "t": last.t.date().isoformat() if last.t else None,
+        "close": last.close,
+        "price_vs": price_vs,
+        "features": feats,
+    }
 
 
 @app.get("/api/push/key")

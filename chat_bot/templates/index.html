@@ -169,6 +169,23 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .tr-row{padding:6px 10px;font-size:11.5px;color:#aeb4c0;border-top:1px solid var(--border)}
 .tr-row .pp{font-weight:700}
 .pos{color:var(--green)} .neg{color:var(--red)}
+/* Stato mercato */
+.mk-head{margin-bottom:10px}
+.mk-sym{font-size:20px;font-weight:800;letter-spacing:1px}
+.mk-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.mk-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.mk-chip{font-size:11px;font-weight:600;padding:4px 9px;border-radius:7px;border:1px solid var(--border)}
+.mk-chip.pos{color:var(--green);background:rgba(61,220,151,.10)}
+.mk-chip.neg{color:var(--red);background:rgba(241,112,123,.10)}
+.mk-table{width:100%;border-collapse:collapse;font-size:13px}
+.mk-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--border)}
+.mk-table td{padding:9px 8px;border-bottom:1px solid var(--border)}
+.mk-table td.v{font-weight:700}
+.mk-table td.mu{color:var(--muted)}
+.lvl{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap}
+.lvl.alto{color:var(--accent);background:rgba(203,166,92,.14)}
+.lvl.basso{color:#5ab0ff;background:rgba(90,176,255,.12)}
+.lvl.media{color:var(--muted);background:#1a2236}
 .drawer-head{display:flex;align-items:center;gap:10px;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top));border-bottom:1px solid var(--border)}
 .drawer-title{flex:1;font-weight:700;font-size:15px}
 .drawer-title .scope{color:var(--accent);font-weight:600}
@@ -229,6 +246,10 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 <header>
   <div class="brand"><img src="/static/logo-mark.png" class="brand-mark" alt="PHAI"><span class="brand-name">PHAI<i>TRADING</i></span></div>
   <div class="tabs" id="tabs"></div>
+  <button class="hdr-btn" id="mercato-btn" onclick="openMercato()" title="Stato mercato">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+    Mercato
+  </button>
   <button class="hdr-btn" id="storico-btn" onclick="openStorico()" title="Storico backtest">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="7"/><line x1="18" y1="20" x2="18" y2="10"/></svg>
     Storico
@@ -307,6 +328,18 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
     </button>
   </div>
   <div class="st-body" id="st-body"></div>
+</aside>
+
+<!-- Drawer Stato mercato -->
+<div class="drawer-overlay" id="mk-overlay"></div>
+<aside class="drawer left" id="mk-drawer">
+  <div class="drawer-head">
+    <div class="drawer-title">Stato mercato <span class="scope" id="mk-scope"></span></div>
+    <button class="icon-btn" id="mk-close" title="Chiudi">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="st-body" id="mk-body"></div>
 </aside>
 
 <script>
@@ -650,6 +683,40 @@ function monthRow(year,m){
     tr.dataset.loaded='1';
   };
   return wrap;
+}
+
+/* ---------- Stato mercato (drawer) ---------- */
+const mkDrawer=$('mk-drawer'), mkOverlay=$('mk-overlay');
+function openMercato(){mkDrawer.classList.add('open');mkOverlay.classList.add('open');loadMercato();}
+function closeMercato(){mkDrawer.classList.remove('open');mkOverlay.classList.remove('open');}
+mkOverlay.onclick=closeMercato; $('mk-close').onclick=closeMercato;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mkDrawer.classList.contains('open'))closeMercato();});
+async function loadMercato(){
+  $('mk-scope').textContent=activeSymbol?('· '+activeSymbol):'';
+  const body=$('mk-body'); body.innerHTML='<div class="hist-empty">Carico…</div>';
+  const r=await fetch('/api/market-state'+(activeSymbol?('?symbol='+encodeURIComponent(activeSymbol)):'')); if(r.status===401){location.href='/';return;}
+  const d=await r.json(); body.innerHTML='';
+  if(!d.available){body.innerHTML='<div class="hist-empty">Nessuna feature di mercato.<br>Importa l\'export con <b>import_features.py</b>.</div>';return;}
+  const hd=document.createElement('div'); hd.className='mk-head';
+  const sym=document.createElement('div'); sym.className='mk-sym'; sym.textContent=d.symbol;
+  const sub=document.createElement('div'); sub.className='mk-sub'; sub.textContent=`ultima barra ${d.t} · close ${d.close}`;
+  hd.appendChild(sym); hd.appendChild(sub); body.appendChild(hd);
+  const chips=document.createElement('div'); chips.className='mk-chips';
+  d.price_vs.forEach(p=>{const c=document.createElement('span'); c.className='mk-chip '+(p.pos==='sopra'?'pos':'neg'); c.textContent=`${p.pos} ${p.ma} (${p.dist>=0?'+':''}${p.dist}%)`; chips.appendChild(c);});
+  body.appendChild(chips);
+  const tbl=document.createElement('table'); tbl.className='mk-table';
+  tbl.innerHTML='<thead><tr><th>Feature</th><th>Attuale</th><th>Media</th><th>Percentile</th></tr></thead>';
+  const tb=document.createElement('tbody');
+  d.features.forEach(f=>{
+    const tr=document.createElement('tr');
+    const td=(c,t)=>{const e=document.createElement('td');if(c)e.className=c;e.textContent=t;return e;};
+    tr.appendChild(td('',f.name));
+    tr.appendChild(td('v',f.value));
+    tr.appendChild(td('mu',f.avg));
+    const last=document.createElement('td'); const lvl=document.createElement('span'); lvl.className='lvl '+f.level; lvl.textContent=`${f.pct}° · ${f.level}`; last.appendChild(lvl); tr.appendChild(last);
+    tb.appendChild(tr);
+  });
+  tbl.appendChild(tb); body.appendChild(tbl);
 }
 
 /* ---------- Markdown (sicuro) ---------- */
