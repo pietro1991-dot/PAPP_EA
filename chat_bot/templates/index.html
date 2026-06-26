@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>PAPP EA — Monitor</title>
 <style>
 :root{
@@ -11,15 +11,17 @@
   --green:#34d399; --red:#f87171;
 }
 *{margin:0;padding:0;box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%}
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;-webkit-text-size-adjust:100%}
+.messages,.signal-list,.tabs{-webkit-overflow-scrolling:touch}
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:#2c3340;border-radius:5px}
 ::-webkit-scrollbar-thumb:hover{background:#3a4250}
 ::-webkit-scrollbar-track{background:transparent}
 
 /* ---------- Header ---------- */
-header{background:linear-gradient(180deg,#12151d,#0f1219);border-bottom:1px solid var(--border);padding:0 18px;display:flex;align-items:center;gap:18px;height:54px;flex-shrink:0}
+header{background:linear-gradient(180deg,#12151d,#0f1219);border-bottom:1px solid var(--border);padding:0 18px;padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right));display:flex;align-items:center;gap:18px;height:54px;flex-shrink:0}
 .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;letter-spacing:.2px}
 .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 .brand span{color:var(--accent)}
@@ -35,18 +37,25 @@ header{background:linear-gradient(180deg,#12151d,#0f1219);border-bottom:1px soli
 .user .logout:hover{text-decoration:underline}
 
 /* ---------- Stat cards ---------- */
-.cards{display:flex;gap:12px;padding:14px 18px;flex-shrink:0}
+.cards{display:flex;gap:12px;padding:14px 18px 0;flex-shrink:0}
+.cards.stats-row{padding-top:10px;padding-bottom:4px}
 .card{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 16px;min-width:0}
-.card-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px}
-.card-val{font-size:24px;font-weight:700;line-height:1}
+.cards.account .card{background:linear-gradient(180deg,#191d27,#15181f)}
+.card.sm{padding:9px 14px}
+.card-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-val{font-size:23px;font-weight:700;line-height:1}
+.card.sm .card-val{font-size:19px}
 .card-val.pos{color:var(--green)} .card-val.neg{color:var(--red)}
-.card .accent{color:var(--accent)}
+.card-val.accent{color:var(--accent)}
+.tab .pct{font-size:11px;font-weight:700;opacity:.95}
+.tab .pct.pos{color:var(--green)} .tab .pct.neg{color:var(--red)}
+.tab.active .pct.pos,.tab.active .pct.neg{color:#0a0d12}
 
 /* ---------- Layout ---------- */
 .container{display:flex;flex:1;gap:14px;padding:0 18px 16px;overflow:hidden}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
 .chat-panel{flex:1}
-.signals-panel{width:400px;flex-shrink:0}
+.signals-panel{flex:1}
 .panel-head{padding:13px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
 .panel-head .scope{color:var(--accent)}
 .live{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--green);text-transform:none;letter-spacing:0}
@@ -72,7 +81,7 @@ header{background:linear-gradient(180deg,#12151d,#0f1219);border-bottom:1px soli
 .typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
 .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
-.input-bar{display:flex;padding:12px;gap:10px;border-top:1px solid var(--border)}
+.input-bar{display:flex;padding:12px;padding-bottom:max(12px,env(safe-area-inset-bottom));gap:10px;border-top:1px solid var(--border)}
 .input-bar input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:#11141b;color:var(--text);font-size:14px;outline:none;transition:.15s}
 .input-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,195,247,.12)}
 .input-bar button{padding:12px 22px;border-radius:10px;border:none;background:var(--accent);color:#0a0d12;font-weight:700;cursor:pointer;font-size:14px;transition:.15s}
@@ -100,11 +109,73 @@ header{background:linear-gradient(180deg,#12151d,#0f1219);border-bottom:1px soli
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#565d6a;gap:10px;text-align:center;padding:30px}
 .empty svg{opacity:.4}
 
-@media(max-width:880px){
-  .container{flex-direction:column;overflow:auto}
-  .signals-panel{width:100%;height:300px}
-  .chat-panel{min-height:340px}
-  .cards{flex-wrap:wrap}.card{min-width:calc(50% - 6px)}
+/* ===== Pulsante fluttuante (FAB) ===== */
+.fab{position:fixed;right:24px;bottom:24px;right:max(24px,env(safe-area-inset-right));bottom:max(24px,env(safe-area-inset-bottom));
+  width:60px;height:60px;border-radius:50%;border:none;background:var(--accent);color:#0a0d12;cursor:pointer;
+  box-shadow:0 10px 28px rgba(79,195,247,.45);z-index:30;display:flex;align-items:center;justify-content:center;transition:.2s}
+.fab:hover{transform:scale(1.06)}
+.fab.hidden{opacity:0;pointer-events:none;transform:scale(.7)}
+
+/* ===== Drawer chat ===== */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:.25s;z-index:40}
+.drawer-overlay.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;height:100dvh;width:440px;max-width:100vw;background:var(--panel);
+  border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(105%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;box-shadow:-14px 0 44px rgba(0,0,0,.5)}
+.drawer.open{transform:none}
+.drawer-head{display:flex;align-items:center;gap:10px;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top));border-bottom:1px solid var(--border)}
+.drawer-title{flex:1;font-weight:700;font-size:15px}
+.drawer-title .scope{color:var(--accent);font-weight:600}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:#1a1e27;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
+.icon-btn:hover{background:#222734;color:var(--text)}
+.icon-btn.primary{background:var(--accent);border-color:var(--accent);color:#0a0d12}
+/* cronologia */
+.history{flex:1;overflow-y:auto;padding:8px;-webkit-overflow-scrolling:touch}
+.hist-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;cursor:pointer;transition:.12s}
+.hist-item:hover{background:var(--panel2)}
+.hist-main{flex:1;min-width:0}
+.hist-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-date{font-size:11px;color:var(--muted);margin-top:2px}
+.hist-del{background:none;border:none;color:#566;cursor:pointer;font-size:15px;padding:4px;flex-shrink:0;border-radius:6px}
+.hist-del:hover{color:var(--red);background:rgba(248,113,113,.12)}
+.hist-empty{color:#565d6a;text-align:center;padding:40px 20px;font-size:13px}
+
+/* ===== Tablet landscape ===== */
+@media(max-width:1024px){
+  .signals-panel{width:330px}
+  .cards.account .card-val{font-size:20px}
+}
+/* ===== Tablet portrait & phone: impila, il body scorre ===== */
+@media(max-width:860px){
+  body{height:auto;min-height:100dvh;overflow-y:auto}
+  header{position:sticky;top:0;z-index:20}
+  .container{flex-direction:column;overflow:visible;height:auto;gap:12px}
+  .panel{height:auto}
+  .chat-panel{min-height:56dvh}
+  .signals-panel{width:100%}
+  .signal-list{max-height:62dvh}
+  .cards{flex-wrap:wrap}
+  .cards.account .card{flex:1 1 calc(33.333% - 8px)}
+  .cards.stats-row .card{flex:1 1 calc(50% - 6px)}
+  .input-bar input{font-size:16px}      /* >=16px: evita lo zoom automatico iOS */
+  .tab{padding:9px 15px}                 /* target touch piu' ampi */
+}
+/* ===== Phone ===== */
+@media(max-width:560px){
+  header{flex-wrap:wrap;height:auto;gap:9px;padding:9px 12px}
+  .brand{font-size:15px}
+  .tabs{order:3;flex-basis:100%}
+  .user{margin-left:auto}
+  .user .email{display:none}
+  .cards{padding:12px 12px 0;gap:8px}
+  .cards.stats-row{padding-top:8px}
+  .cards.account .card{flex:1 1 calc(50% - 4px)}
+  .card-val{font-size:20px}
+  .card.sm .card-val{font-size:17px}
+  .container{padding:0 12px 12px}
+  .msg{max-width:92%}
+  .signal-list{max-height:none}
+  .input-bar button{padding:12px 16px}
 }
 </style>
 </head>
@@ -118,22 +189,21 @@ header{background:linear-gradient(180deg,#12151d,#0f1219);border-bottom:1px soli
   </div>
 </header>
 
-<div class="cards">
-  <div class="card"><div class="card-label">Aperte</div><div class="card-val accent" id="stat-open">0</div></div>
-  <div class="card"><div class="card-label">Chiuse</div><div class="card-val" id="stat-close">0</div></div>
-  <div class="card"><div class="card-label">Skip</div><div class="card-val" id="stat-skip">0</div></div>
-  <div class="card"><div class="card-label">PnL (punti)</div><div class="card-val" id="stat-pnl">0</div></div>
+<div class="cards account">
+  <div class="card"><div class="card-label">Balance</div><div class="card-val" id="acc-balance">—</div></div>
+  <div class="card"><div class="card-label">Equity</div><div class="card-val" id="acc-equity">—</div></div>
+  <div class="card"><div class="card-label">Margine libero</div><div class="card-val" id="acc-free">—</div></div>
+  <div class="card"><div class="card-label">Livello margine</div><div class="card-val" id="acc-level">—</div></div>
+  <div class="card"><div class="card-label" id="acc-pl-label">P/L flottante</div><div class="card-val" id="acc-pl">—</div></div>
+</div>
+<div class="cards stats-row">
+  <div class="card sm"><div class="card-label">Aperte</div><div class="card-val accent" id="stat-open">0</div></div>
+  <div class="card sm"><div class="card-label">Chiuse</div><div class="card-val" id="stat-close">0</div></div>
+  <div class="card sm"><div class="card-label">Skip</div><div class="card-val" id="stat-skip">0</div></div>
+  <div class="card sm"><div class="card-label">PnL chiuse (punti)</div><div class="card-val" id="stat-pnl">0</div></div>
 </div>
 
 <div class="container">
-  <div class="panel chat-panel">
-    <div class="panel-head">Assistente <span class="scope" id="chat-scope"></span></div>
-    <div class="messages" id="chat-messages"></div>
-    <div class="input-bar">
-      <input type="text" id="chat-input" placeholder="Chiedi qualcosa sull'EA…" autocomplete="off"/>
-      <button id="chat-btn">Invia</button>
-    </div>
-  </div>
   <div class="panel signals-panel">
     <div class="panel-head">Segnali <span class="scope" id="sig-scope">· Tutti</span>
       <span class="live"><span class="pulse"></span>LIVE</span>
@@ -142,12 +212,44 @@ header{background:linear-gradient(180deg,#12151d,#0f1219);border-bottom:1px soli
   </div>
 </div>
 
+<!-- Pulsante fluttuante per aprire l'assistente -->
+<button class="fab" id="fab" aria-label="Apri assistente">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+</button>
+
+<!-- Drawer chat con cronologia -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <button class="icon-btn" id="hist-btn" title="Cronologia">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="drawer-title">Assistente <span class="scope" id="chat-scope"></span></div>
+    <button class="icon-btn primary" id="new-btn" title="Nuova chat">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <button class="icon-btn" id="close-btn" title="Chiudi">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="messages" id="chat-messages"></div>
+  <div class="history" id="history-view" hidden></div>
+  <div class="input-bar" id="chat-inputbar">
+    <input type="text" id="chat-input" placeholder="Chiedi qualcosa sull'EA…" autocomplete="off"/>
+    <button id="chat-btn">Invia</button>
+  </div>
+</aside>
+
 <script>
 const $=id=>document.getElementById(id);
 const chatMsg=$('chat-messages'), chatInput=$('chat-input'), chatBtn=$('chat-btn'), signalList=$('signal-list');
 let activeSymbol='';            // '' = tutti
 let knownSymbols=[];
+let accountData={symbols:[]};
 let ws=null;
+
+function fmtMoney(v){return v==null?'—':Number(v).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtPct(v){return (v>=0?'+':'')+Number(v).toFixed(2)+'%';}
 
 // colore stabile per simbolo: palette curata per indice, distinta e leggibile su scuro
 const SYM_PALETTE=['#4fc3f7','#a78bfa','#fbbf24','#34d399','#f472b6','#fb923c','#38bdf8','#c084fc'];
@@ -177,6 +279,10 @@ function renderTabs(){
     const t=document.createElement('div'); t.className='tab'+(val===activeSymbol?' active':'');
     if(val){const d=document.createElement('span');d.className='tdot';d.style.color=symColor(val);t.appendChild(d);}
     t.appendChild(document.createTextNode(label));
+    if(val){
+      const s=(accountData.symbols||[]).find(x=>x.symbol===val);
+      if(s && s.pct!=null){const p=document.createElement('span');p.className='pct '+(s.pct>=0?'pos':'neg');p.textContent=fmtPct(s.pct);t.appendChild(p);}
+    }
     t.onclick=()=>setSymbol(val); tabs.appendChild(t);
   };
   mk('Tutti','');
@@ -188,7 +294,36 @@ function setSymbol(sym){
   $('sig-scope').textContent='· '+label;
   $('chat-scope').textContent=sym?('· '+sym):'';
   chatInput.placeholder=sym?`Chiedi su ${sym}…`:"Chiedi qualcosa sull'EA…";
-  loadRecent(); refreshStats();
+  loadRecent(); refreshStats(); updatePLCard();
+}
+
+/* ---------- Conto (balance/equity/margine) + P/L per simbolo ---------- */
+async function refreshAccount(){
+  const r=await fetch('/api/account'); if(r.status===401){location.href='/';return;}
+  const a=await r.json(); accountData=a;
+  if(!a.available){
+    ['acc-balance','acc-equity','acc-free','acc-level','acc-pl'].forEach(id=>{$(id).textContent='—';$(id).className='card-val';});
+  }else{
+    $('acc-balance').textContent=fmtMoney(a.balance);
+    $('acc-equity').textContent=fmtMoney(a.equity);
+    $('acc-free').textContent=fmtMoney(a.free_margin);
+    $('acc-level').textContent=a.margin_level!=null?(Number(a.margin_level).toFixed(0)+'%'):'—';
+    updatePLCard();
+  }
+  renderTabs();
+}
+function updatePLCard(){
+  const pl=$('acc-pl'), lab=$('acc-pl-label'); if(!pl) return;
+  if(activeSymbol){
+    const s=(accountData.symbols||[]).find(x=>x.symbol===activeSymbol);
+    lab.textContent='P/L '+activeSymbol;
+    if(s && s.profit!=null){pl.textContent=fmtMoney(s.profit)+'  ('+fmtPct(s.pct||0)+')';pl.className='card-val '+(s.profit>=0?'pos':'neg');}
+    else{pl.textContent='—';pl.className='card-val';}
+  }else{
+    lab.textContent='P/L flottante';
+    const v=accountData.profit;
+    pl.textContent=v==null?'—':fmtMoney(v); pl.className='card-val '+(v>0?'pos':v<0?'neg':'');
+  }
 }
 
 /* ---------- Stats ---------- */
@@ -284,7 +419,8 @@ chatBtn.onclick=async()=>{
   addUserMsg(q);
   const bot=addBotMsg(); bot.innerHTML='<span class="who">PAPP Assistant</span><span class="typing"><i></i><i></i><i></i></span>';
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,symbol:activeSymbol})});
+    const convId=await ensureConversation();
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,symbol:activeSymbol,conversation_id:convId})});
     const reader=r.body.getReader(); const dec=new TextDecoder(); let text='';
     while(true){
       const {done,value}=await reader.read(); if(done)break;
@@ -303,6 +439,51 @@ chatBtn.onclick=async()=>{
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')chatBtn.click()});
 function addUserMsg(t){const d=document.createElement('div');d.className='msg user';d.textContent=t;chatMsg.appendChild(d);chatMsg.scrollTop=chatMsg.scrollHeight;}
 function addBotMsg(){const d=document.createElement('div');d.className='msg bot';chatMsg.appendChild(d);chatMsg.scrollTop=chatMsg.scrollHeight;return d;}
+
+/* ---------- Drawer chat + conversazioni ---------- */
+const drawer=$('drawer'), overlay=$('drawer-overlay'), fab=$('fab');
+const WELCOME='<div class="msg bot"><span class="who">PAPP Assistant</span>Ciao! Chiedimi pattern, segnali e performance dell\'EA. Usa <b>+</b> per una nuova conversazione e <b>☰</b> per la cronologia.</div>';
+let currentConvId=null;
+function openChat(){drawer.classList.add('open');overlay.classList.add('open');fab.classList.add('hidden');showChatView();setTimeout(()=>chatInput.focus(),220);}
+function closeChat(){drawer.classList.remove('open');overlay.classList.remove('open');fab.classList.remove('hidden');}
+function showChatView(){$('history-view').hidden=true;$('chat-messages').hidden=false;$('chat-inputbar').style.display='';}
+function showHistoryView(){$('chat-messages').hidden=true;$('chat-inputbar').style.display='none';$('history-view').hidden=false;loadConversations();}
+fab.onclick=openChat; overlay.onclick=closeChat; $('close-btn').onclick=closeChat;
+$('hist-btn').onclick=()=>{$('history-view').hidden?showHistoryView():showChatView();};
+$('new-btn').onclick=()=>{currentConvId=null;chatMsg.innerHTML=WELCOME;showChatView();chatInput.focus();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawer.classList.contains('open'))closeChat();});
+function fmtDateTime(iso){if(!iso)return'';const d=new Date(/[zZ+]/.test(iso)?iso:iso+'Z');return isNaN(d)?'':d.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+async function ensureConversation(){
+  if(currentConvId)return currentConvId;
+  const r=await fetch('/api/conversations',{method:'POST'}); const d=await r.json(); currentConvId=d.id; return currentConvId;
+}
+async function loadConversations(){
+  const r=await fetch('/api/conversations'); if(r.status===401){location.href='/';return;}
+  const list=await r.json(); const hv=$('history-view'); hv.innerHTML='';
+  if(!list.length){hv.innerHTML='<div class="hist-empty">Nessuna conversazione salvata.<br>Inizia a chattare per crearne una.</div>';return;}
+  list.forEach(c=>{
+    const it=document.createElement('div');it.className='hist-item';
+    const main=document.createElement('div');main.className='hist-main';
+    const ti=document.createElement('div');ti.className='hist-title';ti.textContent=c.title;
+    const dt=document.createElement('div');dt.className='hist-date';dt.textContent=fmtDateTime(c.updated_at);
+    main.appendChild(ti);main.appendChild(dt);it.appendChild(main);
+    const del=document.createElement('button');del.className='hist-del';del.title='Elimina';del.textContent='🗑';
+    del.onclick=ev=>{ev.stopPropagation();deleteConversation(c.id);};
+    it.appendChild(del); it.onclick=()=>openConversation(c.id); hv.appendChild(it);
+  });
+}
+async function openConversation(id){
+  const r=await fetch('/api/conversations/'+id+'/messages'); if(!r.ok)return;
+  const d=await r.json(); currentConvId=id; chatMsg.innerHTML='';
+  if(!d.messages.length)chatMsg.innerHTML=WELCOME;
+  d.messages.forEach(m=>{addUserMsg(m.q);const b=addBotMsg();b.innerHTML='<span class="who">PAPP Assistant</span>'+renderMarkdown(m.a);});
+  showChatView();
+}
+async function deleteConversation(id){
+  await fetch('/api/conversations/'+id,{method:'DELETE'});
+  if(currentConvId===id){currentConvId=null;chatMsg.innerHTML=WELCOME;}
+  loadConversations();
+}
 
 /* ---------- Markdown (sicuro) ---------- */
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -330,9 +511,10 @@ async function loadUser(){
   const r=await fetch('/api/me'); if(r.status===401){location.href='/';return;}
   const d=await r.json(); $('user-email').textContent=d.email||'';
 }
-chatMsg.innerHTML='<div class="msg bot"><span class="who">PAPP Assistant</span>Ciao! Chiedimi pattern, segnali e performance dell\'EA. Usa le tab in alto per filtrare per simbolo.</div>';
-loadUser(); loadSymbols(); connectWS(); loadRecent(); refreshStats();
+chatMsg.innerHTML=WELCOME;
+loadUser(); loadSymbols(); connectWS(); loadRecent(); refreshStats(); refreshAccount();
 setInterval(refreshStats,10000);
+setInterval(refreshAccount,10000);
 </script>
 </body>
 </html>

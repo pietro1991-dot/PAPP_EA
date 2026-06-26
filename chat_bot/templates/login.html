@@ -2,15 +2,17 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>PAPP EA — Accesso</title>
 <style>
 :root{--bg:#0d0f14;--panel:#161922;--border:#262b36;--text:#e6e8ec;--muted:#8a909c;--accent:#4fc3f7;--red:#f87171}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:
   radial-gradient(900px 500px at 50% -10%,rgba(79,195,247,.10),transparent),var(--bg);
-  color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:32px 30px;width:360px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  color:var(--text);min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;
+  padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:32px 30px;width:min(360px,100%);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+@media(max-width:420px){.card{padding:26px 20px}}
 .brand{display:flex;align-items:center;justify-content:center;gap:9px;font-weight:700;font-size:20px;margin-bottom:4px}
 .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
 .brand b{color:var(--accent)}
@@ -18,7 +20,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:
 .tabs{display:flex;background:#11141b;border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px}
 .tab{flex:1;padding:9px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-radius:7px;transition:.15s}
 .tab.active{background:var(--accent);color:#0a0d12}
-input{width:100%;padding:12px 14px;margin-bottom:11px;border-radius:10px;border:1px solid var(--border);background:#11141b;color:var(--text);font-size:14px;outline:none;transition:.15s}
+input{width:100%;padding:12px 14px;margin-bottom:11px;border-radius:10px;border:1px solid var(--border);background:#11141b;color:var(--text);font-size:16px;outline:none;transition:.15s}
 input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,195,247,.12)}
 button{width:100%;padding:13px;border-radius:10px;border:none;background:var(--accent);color:#0a0d12;font-weight:700;cursor:pointer;font-size:15px;transition:.15s;margin-top:3px}
 button:hover{filter:brightness(1.08)}button:disabled{opacity:.5;cursor:not-allowed}
