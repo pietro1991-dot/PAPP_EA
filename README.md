@@ -1,53 +1,80 @@
-# PAPP_EA — Sistema multi-simbolo
+# PAPP_EA — Sistema di trading multi-simbolo (motore base linea-prezzo)
 
-Sistema di trading basato su crossover di MA ancorate al D1 (indicatore `PaPP_Median`).
-Organizzato per **scalare a più simboli**: il codice è condiviso, i pattern e i dati sono per-simbolo.
+Sistema basato su **crossover di medie mobili ancorate al giornaliero (D1)**, prodotte
+dall'indicatore `PaPP_Median`. Il codice (indicatore, export, miner) è **condiviso**; i
+**pattern validati** e i **dati** sono per-simbolo, con una **copia dell'EA per simbolo**.
+
+> **Motore base linea-prezzo**: gli EA entrano/escono solo su **crossover prezzo-linea**
+> (il prezzo che taglia una media o la mediana) e usano stop su linea o a distanza fissa.
+> I pattern **linea-linea** (due medie che si incrociano tra loro) restano calcolati dal
+> miner ma **nessun EA li trada**.
 
 ## Struttura cartelle
 
 ```
 PAPP_EA/
-├── src/                    ← CODICE CONDIVISO (uguale per ogni simbolo)
-│   ├── indicators/         PaPP_Median.mq5 (+.ex5), PaPP_Projection.mq5
-│   ├── scripts/            Export_PAPP.mq5 (+.ex5)  → esporta il CSV
-│   └── analysis/           pattern_mining.py        → trova/valida i pattern
+├── Motore base _linea-prezzo/        ← IL SISTEMA ATTUALE
+│   ├── Indicatore/                     codice e doc CONDIVISI
+│   │   ├── PaPP_Median.mq5 (+.ex5)       indicatore (7 MA + mediana, ancorato D1)
+│   │   ├── INDICATORE_PaPP_Median.md     → come funziona l'indicatore
+│   │   ├── Export_PAPP.mq5 (+.ex5)       script: esporta il CSV per il miner
+│   │   ├── EXPORT_PAPP.md                → come funziona l'export
+│   │   ├── pattern_mining.py             miner: trova e valida i pattern
+│   │   └── MINER_pattern_mining.md       → come funziona il miner
+│   │
+│   ├── EURUSD/   EA_EURUSD.mq5 (+.ex5) · PAPP_Export.csv · OHLC · analisi_oos.txt
+│   ├── GBPUSD/   EA_GBPUSD.mq5 (+.ex5) · PAPP_Export_GBPUSD.csv · analisi_oos.txt · _TODO.md
+│   └── USDCHF/   EA_USDCHF.mq5 (+.ex5) · PAPP_Export_USDCHF.csv · analisi_oos.txt · _TODO.md
 │
-├── symbols/                ← SPECIFICO PER SIMBOLO (un EA per simbolo)
-│   └── EURUSD/
-│       ├── EA_EURUSD.mq5 (+.ex5)   EA coi pattern validati per EURUSD
-│       ├── PAPP_Export.csv          dati esportati (D1)
-│       └── analisi_oos.txt          output del miner (walk-forward)
-│   └── <NUOVO_SIMBOLO>/    ← stessa struttura per ogni nuovo grafico
-│
-├── chat_bot/               ← assistant FastAPI/PostgreSQL (legge il log EA)
-├── docs/                   DOCUMENTAZIONE.md, MAPPA_FILE.md
-└── Legacy/                 vecchi EA/script (archivio)
+├── chat_bot/      assistant FastAPI/PostgreSQL (legge il log dell'EA)
+├── docs/          DOCUMENTAZIONE.md (completa), MAPPA_FILE.md (dove vivono i file generati)
+├── trading/       asset di branding
+└── Legacy/        vecchi EA, script, dati e indicatori non più usati (archivio)
 ```
 
-**Principio:** indicatore, script di export e miner sono **identici** per ogni simbolo
-(stanno in `src/`). Ciò che cambia per simbolo — i dati e soprattutto i **pattern validati** —
-sta in `symbols/<SIMBOLO>/`, con una **copia dell'EA per simbolo** (i pattern sono input
-hard-coded nei default di quel file).
+## La pipeline in 4 passi
 
-## Aggiungere un nuovo simbolo (es. GBPUSD)
+```
+Indicatore  →  Export  →  Miner  →  EA
+(7 MA + mediana    (CSV per       (trova/valida    (trada i pattern
+ ancorate D1)       barra)         i pattern OOS)    validati per simbolo)
+```
 
-1. **Esporta i dati**: apri `src/scripts/Export_PAPP.mq5` su un grafico **GBPUSD D1** in MT5
-   (genera `PAPP_Export.csv` in `MQL5/Files`). Copialo in `symbols/GBPUSD/PAPP_Export.csv`.
-2. **Trova/valida i pattern** (walk-forward + costi):
+1. **Indicatore** `PaPP_Median`: calcola 7 medie + la loro mediana, tutto su D1.
+2. **Export** `Export_PAPP`: salva una riga per barra (prezzi, medie, crossover, metriche) in CSV.
+3. **Miner** `pattern_mining.py`: prova le combinazioni di entrata/uscita, le valida su
+   train+test (anti-overfitting), e produce `analisi_oos.txt`.
+4. **EA** del simbolo: ha nei default i pattern validati e li trada.
+
+Dettagli in [Motore base _linea-prezzo/Indicatore/](Motore%20base%20_linea-prezzo/Indicatore/)
+(tre documenti: indicatore, export, miner).
+
+## Aggiungere un nuovo simbolo (es. AUDUSD)
+
+1. **Esporta i dati**: esegui `Export_PAPP` su un grafico **AUDUSD D1** in MT5
+   (genera `PAPP_Export.csv` in `MQL5/Files`). Copialo in una nuova cartella
+   `Motore base _linea-prezzo/AUDUSD/`.
+2. **Trova e valida i pattern**:
    ```
-   cd symbols/GBPUSD
-   python3 ../../src/analysis/pattern_mining.py PAPP_Export.csv \
+   cd "Motore base _linea-prezzo/AUDUSD"
+   python3 "../Indicatore/pattern_mining.py" PAPP_Export.csv \
            --spread=15 --commission=7 --split-date=2020.01.01 --output=analisi_oos.txt
    ```
-   Tieni solo i pattern **positivi out-of-sample** (colonna TEST).
-3. **Crea l'EA del simbolo**: copia `symbols/EURUSD/EA_EURUSD.mq5` →
-   `symbols/GBPUSD/EA_GBPUSD.mq5` e imposta nei default i pattern validati per GBPUSD.
-4. **Compila e backtesta** in MT5 sul grafico GBPUSD.
+   Tieni solo i pattern **positivi out-of-sample** (sezione SELEZIONE ROBUSTA).
+3. **Crea l'EA**: copia un `EA_*.mq5` esistente → `EA_AUDUSD.mq5` e imposta nei default
+   i pattern validati per AUDUSD.
+4. **Compila e backtesta** in MT5 sul grafico AUDUSD.
 
-> ⚠️ **Nota manutenzione**: avendo una copia EA per simbolo, una correzione alla *logica*
-> dell'EA va propagata a tutte le copie `symbols/*/EA_*.mq5`. I pattern invece restano
-> indipendenti per simbolo.
+> ⚠️ **Manutenzione**: avendo una copia EA per simbolo, una correzione alla *logica* va
+> propagata a tutte le copie `EA_*.mq5`. I pattern invece restano indipendenti per simbolo.
 
-## Stato EURUSD (riferimento)
-EA v2.08 — 10 pattern validati OOS: 6 con SL+TP (P1–P6) + 4 a incrocio MA121 con TP cap 1500 (P7–P10).
-Dettagli in [docs/DOCUMENTAZIONE.md](docs/DOCUMENTAZIONE.md). Percorsi file generati in [docs/MAPPA_FILE.md](docs/MAPPA_FILE.md).
+## Stato dei simboli
+
+| Simbolo | EA | Motore | Pattern |
+|---|---|---|---|
+| EURUSD | EA_EURUSD | base | SL=MA365 + TP stretto (validati OOS) |
+| GBPUSD | EA_GBPUSD | base | SELL su cross + disaster stop |
+| USDCHF | EA_USDCHF | base | SELL→crossMA182 + TP, BUY, GRID |
+
+Tutti e tre a **motore base** (solo prezzo-linea). Dettagli e analisi in `analisi_oos.txt`
+e `_TODO.md` di ciascun simbolo.

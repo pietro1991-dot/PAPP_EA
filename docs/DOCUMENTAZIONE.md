@@ -2,7 +2,7 @@
 
 ## Indice
 
-0. [⭐ STATO CORRENTE (v2.05) — leggi prima](#-stato-corrente-v205--giugno-2026--leggi-prima)
+0. [⭐ STATO CORRENTE — leggi prima](#-stato-corrente--leggi-prima)
 1. [Visione d&#39;Insieme](#1-visione-dinsieme)
 2. [Pipeline dei Dati](#2-pipeline-dei-dati)
 3. [Il Dataset: PAPP_Export.csv](#3-il-dataset-papp_exportcsv)
@@ -20,13 +20,24 @@
 
 ---
 
-## ⭐ STATO CORRENTE (v2.05 — giugno 2026) — LEGGI PRIMA
+## ⭐ STATO CORRENTE — LEGGI PRIMA
 
-> Questa sezione è la **fonte autorevole** sullo stato attuale. Le sezioni 5–10 più sotto
-> descrivono l'**esplorazione storica** (config a 10 pattern exit-cross e metodologia
-> pre-correzione) e vanno lette come contesto, non come configurazione attiva.
+> **Struttura attuale**: tutto il sistema vive in `Motore base _linea-prezzo/`. Dentro:
+> `Indicatore/` (indicatore + export + miner, ognuno con la sua doc) e **una cartella per
+> simbolo** (`EURUSD/`, `GBPUSD/`, `USDCHF/`) con EA, dati e `analisi_oos.txt`.
+>
+> Per **come funzionano** i singoli componenti, i riferimenti aggiornati sono i tre documenti
+> in `Motore base _linea-prezzo/Indicatore/`:
+> `INDICATORE_PaPP_Median.md`, `EXPORT_PAPP.md`, `MINER_pattern_mining.md`.
+> Questo file resta la documentazione **tecnica del sistema** (le 3 analisi, architettura EA,
+> risk management, limitazioni). Le sezioni 5–10 descrivono l'esplorazione storica: vanno
+> lette come contesto, la configurazione attiva è nei default di ogni EA.
 
-### A. Correzioni di metodologia al pattern miner
+> **Motore base linea-prezzo**: tutti gli EA entrano/escono solo su crossover **prezzo-linea**
+> (il prezzo che taglia una media o la mediana); i pattern **linea-linea** (due medie che si
+> incrociano) sono calcolati dal miner ma **nessun EA li trada**.
+
+### A. Correzioni di metodologia al pattern miner (valide tuttora)
 
 Erano presenti bias che gonfiavano i risultati. Corretti in `pattern_mining.py`:
 
@@ -34,64 +45,59 @@ Erano presenti bias che gonfiavano i risultati. Corretti in `pattern_mining.py`:
 | --- | --- | --- |
 | **Sharpe** | annualizzato `×√252` su trade sporadici → gonfiato ~15× | **Sharpe per-trade** (`avg/sd`) |
 | **Look-ahead SL** | usava la MA della stessa barra di cui testava high/low | usa la MA della **barra precedente** (`rows[j-1]`) |
-| **Sharpe finto** | `99` quando varianza nulla (TP minuscoli) | `0` (non inquina la classifica) |
+| **Sharpe finto** | valore enorme con varianza quasi nulla (TP minuscoli) | `0` (CV<10% → azzerato) |
 | **Censoring** | trade non risolti scartati (non contati come perdite) | chiusura **TIMEOUT** mark-to-market |
 | **Costi** | solo spread | `--commission` e `--swap` per barra |
 
-Nuovo comando di riferimento (walk-forward + costi):
+Comando di riferimento (walk-forward + costi):
 ```
-python3 pattern_mining.py PAPP_Export.csv --spread=15 --commission=7 \
-        --split-date=2020.01.01 --output=analisi_corretta_oos.txt
+python3 "../Indicatore/pattern_mining.py" PAPP_Export.csv --spread=15 --commission=7 \
+        --split-date=2020.01.01 --output=analisi_oos.txt
 ```
-Output corretto in **`Analisi/analisi_corretta_oos.txt`** (il vecchio `analisi_completa.txt`
-è in-sample con i bias → obsoleto).
 
-**Effetto:** i numeri spettacolari erano artefatti. Es. `MA121 SELL SL=MA365 TP=80`
-passa da Sharpe 16.3 a **0.64**. I pattern di Analisi 1/2 (cross-exit, senza SL/TP)
-**crollano out-of-sample** (win 50%→35%, Sharpe→negativo) ed sono stati **scartati**.
+**Effetto:** i numeri spettacolari erano artefatti. I pattern cross-exit puri (Analisi 1/2,
+senza SL/TP) spesso **crollano out-of-sample** → vanno tenuti solo quelli della **SELEZIONE
+ROBUSTA** (positivi su train *e* test).
 
-### B. Configurazione EA attiva (v2.05) — solo pattern validati OOS
+### B. Configurazione: un EA per simbolo, tutti a motore base
 
-L'EA NON usa più i pattern exit-cross. Usa **6 pattern di Analisi 3** (entry cross + SL
-dinamico sulla linea + TP fisso), gli unici che reggono out-of-sample (train ≤2020, test >2020):
+Non c'è più un'unica configurazione: **ogni simbolo ha il suo EA** coi pattern validati OOS
+hard-coded nei default. In sintesi (i numeri esatti sono in ciascun `analisi_oos.txt`/`_TODO.md`):
 
-| # | Entry | Dir | SL | TP | OOS (test >2020) |
-| --- | --- | --- | --- | --- | --- |
-| P1 | MA30 | SELL | MA365 | 150 | Win95% PnL+5113 Sh1.96 |
-| P2 | MA121 | BUY | MA365 | 150 | Win89% PnL+2806 Sh1.07 |
-| P3 | MA365 | SELL | MA121 | 120 | Win89% PnL+1070 Sh0.38 |
-| P4 | MA7 | SELL | MA365 | 120 | Win93% PnL+4640 Sh0.24 |
-| P5 | MA30 | BUY | MA365 | 150 | Win90% PnL+2964 Sh0.23 |
-| P6 | MA14 | BUY | MA365 | 150 | Win94% PnL+5193 Sh0.17 |
-| P7–P10 | — | **OFF** | — | — | esclusi (deboli/negativi OOS) |
+| Simbolo | Idea dei pattern |
+| --- | --- |
+| **EURUSD** | entry cross + **SL=MA365 (linea) + TP stretto** (profilo alto-win) |
+| **GBPUSD** | SELL su **exit-cross** + **disaster stop a distanza fissa** (`InpPx_SLpips`) |
+| **USDCHF** | SELL → crossMA182 con **TP**, un BUY trend, un BUY GRID (SL=MA121+TP) |
 
-Tutti con `Exit=0` (nessun cross-exit: escono su SL/TP). ⚠️ Profilo **alto-win /
-perdita-rara-ma-grande** (SL=MA365 lontano): la gestione del rischio/sizing è ciò che conta.
+⚠️ Profilo **alto-win / perdita-rara-ma-grande** quando lo SL è lontano (MA365): sizing e
+gestione del rischio sono decisivi (vedi §11).
 
-### C. SL dinamico (allineato all'analisi)
+### C. Stop: su linea + a distanza fissa (entrambi prezzo-based)
 
-`UpdateDynamicSL()` (chiamata ad ogni nuova barra D1) replica `simulate_trade` del miner:
-trascina lo stop broker-side sul **valore corrente della linea MA** (shift 1 = barra chiusa,
-niente look-ahead); se la linea raggiunge il prezzo, chiude a mercato. Il TP resta broker-side fisso.
+- **SL su linea** (`InpPx_SL`): `UpdateDynamicSL()` trascina lo stop sul **valore corrente della
+  MA** (shift 1 = barra chiusa, niente look-ahead); se la linea raggiunge il prezzo, chiude.
+- **Disaster stop fisso** (`InpPx_SLpips`): stop a N pip fissi dall'entrata (taglia le code).
+- **TP fisso** (`InpPx_TP`) broker-side.
+- Sono **tutti prezzo vs linea o vs livello**: nessuno stop linea-linea.
 
-### D. Export coerente con l'EA (Export_PAPP.mq5 v2.02)
+### D. Export coerente con l'EA (Export_PAPP.mq5 v2.04)
 
-- `iCustom` ora con gli **stessi parametri dell'EA** (`Smooth=false`, `InpSignals=true` →
-  valori MA **raw a gradino**), identici in ogni timeframe e senza look-ahead.
-- `cluster%` ora media sull'intera finestra (prima usava solo la barra corrente).
+- `iCustom` con gli **stessi parametri dell'EA** (`Smooth=false`, `InpSignals=true` → valori MA
+  **raw a gradino**), identici in ogni timeframe e senza look-ahead.
+- `cluster%` = valore della **barra corrente**; `vel%`/`acc%` **con segno**; aggiunte le colonne
+  **percentile** `cluPct/velPct/accPct/volPct` (allineato all'indicatore v2.01).
 - ➡️ Rigenerare il CSV **solo su grafico D1** (o con `InpSignals=true`).
 
 ### E. Ambiente
 
-- **Un solo** prefisso MetaTrader: `~/.wine` (qui vivono storico 1978-2026, EA, indicatore,
-  log, export; i collegamenti desktop e il chat_bot puntano qui).
-- Il prefisso `~/.mt5` (vecchio progetto Mq5_All-in) è stato **eliminato**.
-- Mappa completa dei percorsi file in **`MAPPA_FILE.md`**.
+- **Un solo** prefisso MetaTrader: `~/.wine`. Mappa completa dei percorsi in **`MAPPA_FILE.md`**.
 
 ### F. Sizing configurabile
 
-Nuovo input `InpFallbackRiskPips` (default 100) sostituisce il valore hard-coded usato per il
-sizing quando un pattern non ha SL (raro, dato che ora tutti ce l'hanno).
+- `InpRiskPct` (% di rischio per trade) + `InpMaxLot` (tetto al lotto).
+- `InpFallbackRiskPips` = distanza di rischio usata per il sizing **quando un pattern non ha SL**
+  (es. i pattern a solo cross-exit/TP): va impostata vicino all'escursione avversa reale.
 
 ---
 
@@ -1024,40 +1030,33 @@ distanza dello SL, così la perdita per trade resta controllata nonostante lo SL
 
 ## Appendice C: Lista Completa dei File
 
-| File                           | Path                  | Descrizione                           |
-| ------------------------------ | --------------------- | ------------------------------------- |
-| `EA/EA_Pattern.mq5`          | `/MQL5/Experts/`    | EA multi-pattern v2.02                |
-| `Analisi/Export_PAPP.mq5`    | `/MQL5/Scripts/`    | Script esportazione CSV (legacy)      |
-| `Indicatori/PaPP_Median.ex5` | `/MQL5/Indicators/` | Indicatore personalizzato (compilato) |
-| `Analisi/pattern_mining.py`  | —                    | Script Python analisi pattern v3      |
-| `Analisi/PAPP_Export.csv`    | —                    | Dataset D1 EURUSD 4278 barre          |
-| `DOCUMENTAZIONE.md`          | —                    | Questo documento                      |
+| File | Path nel repo | Descrizione |
+| --- | --- | --- |
+| `PaPP_Median.mq5` (+.ex5) | `Motore base _linea-prezzo/Indicatore/` | indicatore (7 MA + mediana, D1) |
+| `Export_PAPP.mq5` (+.ex5) | `Motore base _linea-prezzo/Indicatore/` | script esportazione CSV |
+| `pattern_mining.py` | `Motore base _linea-prezzo/Indicatore/` | miner (analisi/validazione) |
+| `EA_<SIMBOLO>.mq5` (+.ex5) | `Motore base _linea-prezzo/<SIMBOLO>/` | EA coi pattern del simbolo |
+| `PAPP_Export*.csv` | `Motore base _linea-prezzo/<SIMBOLO>/` | dataset D1 del simbolo |
+| `analisi_oos.txt` | `Motore base _linea-prezzo/<SIMBOLO>/` | report del miner |
+| `INDICATORE_/EXPORT_/MINER_*.md` | `Motore base _linea-prezzo/Indicatore/` | doc per-componente |
+| `DOCUMENTAZIONE.md`, `MAPPA_FILE.md` | `docs/` | questo documento + mappa file |
 
 ## Appendice D: Sequenza Completa dei Comandi
 
-```JavaScript
-# 1. Esportare i dati (da MetaTrader 5)
-# Eseguire Export_PAPP.mq5 su EURUSD D1
-# Output: <CARTELLA_DATI>\MQL5\Files\PAPP_Export.csv
+```bash
+# 1. Esportare i dati (da MetaTrader 5): eseguire Export_PAPP su <SIMBOLO> D1
+#    Output: <DATI_MT5>\MQL5\Files\PAPP_Export.csv
 
-# 2. Copiare il CSV nella directory del progetto
-cp "/percorso/MT5/Files/PAPP_Export.csv" /home/pietro_giacobazzi/Desktop/PAPP_EA/Analisi/
+# 2. Copiare il CSV nella cartella del simbolo
+cp "<DATI_MT5>/MQL5/Files/PAPP_Export.csv" "Motore base _linea-prezzo/<SIMBOLO>/"
 
-# 3. Eseguire l'analisi completa
-cd Analisi && python3 pattern_mining.py PAPP_Export.csv --spread=15
+# 3. Analisi con walk-forward + costi (dalla cartella del simbolo)
+cd "Motore base _linea-prezzo/<SIMBOLO>"
+python3 "../Indicatore/pattern_mining.py" PAPP_Export.csv \
+        --spread=15 --commission=7 --split-date=2020.01.01 --output=analisi_oos.txt
 
-# 4. Con walk-forward validation
-python3 pattern_mining.py PAPP_Export.csv --spread=15 --train-pct=0.7
+# 4. Variante walk-forward a finestre multiple
+python3 "../Indicatore/pattern_mining.py" PAPP_Export.csv --robust --folds=5 --spread=15 --commission=7
 
-# 5. Con split su data specifica
-python3 pattern_mining.py PAPP_Export.csv --spread=15 --split-date=2020.01.01
-
-# 6. Copiare EA su MT5
-cp EA/EA_Pattern.mq5 "/percorso/MT5/MQL5/Experts/EA_Pattern.mq5"
-
-# 7. Copiare indicatore su MT5
-cp Indicatori/PaPP_Median.ex5 "/percorso/MT5/MQL5/Indicators/PaPP_Median.ex5"
-
-# 8. Compilare in MetaEditor (F7)
-# 9. Attaccare su chart EURUSD
+# 5. Copiare EA e indicatore su MT5, compilare in MetaEditor (F7), attaccare al grafico
 ```
