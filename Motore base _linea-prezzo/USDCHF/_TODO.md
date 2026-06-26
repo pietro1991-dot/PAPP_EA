@@ -5,9 +5,9 @@
        la pipeline D1; tenuto solo per eventuale analisi intraday.)
 - [x] **2. Valida i pattern**: `analisi_oos.txt` generato.
       ```
-      python3 ../analysis/pattern_mining.py PAPP_Export_USDCHF.csv \
+      python3 ../Indicatore/pattern_mining.py PAPP_Export_USDCHF.csv \
               --spread=15 --commission=7 --split-date=2020.01.01 --output=analisi_oos.txt
-      python3 ../analysis/pattern_mining.py PAPP_Export_USDCHF.csv \
+      python3 ../Indicatore/pattern_mining.py PAPP_Export_USDCHF.csv \
               --robust --folds=5 --spread=15 --commission=7
       ```
 - [x] **3. Crea `EA_USDCHF.mq5`** (MOTORE BASE, come EURUSD). 2 pattern, tutti ON.

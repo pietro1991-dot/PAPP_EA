@@ -1,7 +1,7 @@
 # Script di export dati `Export_PAPP` — come funziona
 
 > Documento di **solo funzionamento**: cosa fa lo script e cosa contiene il file che produce,
-> in parole semplici. Riferimento codice: [src/symbols/scripts/Export_PAPP.mq5](../src/symbols/scripts/Export_PAPP.mq5) (v2.04).
+> in parole semplici. Riferimento codice: [Export_PAPP.mq5](Export_PAPP.mq5) (v2.04).
 
 ---
 

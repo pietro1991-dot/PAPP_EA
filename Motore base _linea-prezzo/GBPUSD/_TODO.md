@@ -3,10 +3,10 @@
 - [x] **1. Esporta dati**: `PAPP_Export_GBPUSD.csv` presente (export da MT5 su grafico GBPUSD D1).
 - [x] **2. Valida i pattern** (walk-forward + costi): `analisi_oos.txt` generato.
       ```
-      python3 ../analysis/pattern_mining.py PAPP_Export_GBPUSD.csv \
+      python3 ../Indicatore/pattern_mining.py PAPP_Export_GBPUSD.csv \
               --spread=20 --commission=7 --split-date=2020.01.01 --output=analisi_oos.txt
       # walk-forward robusto:
-      python3 ../analysis/pattern_mining.py PAPP_Export_GBPUSD.csv \
+      python3 ../Indicatore/pattern_mining.py PAPP_Export_GBPUSD.csv \
               --robust --folds=5 --spread=20 --commission=7
       ```
 - [x] **3. Imposta i pattern** validati in `EA_GBPUSD.mq5` (MOTORE BASE, 3 pattern, tutti ON).

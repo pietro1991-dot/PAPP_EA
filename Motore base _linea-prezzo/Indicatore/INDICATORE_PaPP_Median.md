@@ -2,7 +2,7 @@
 
 > Documento di **solo funzionamento**: cosa calcola l'indicatore e cosa significa,
 > in parole semplici. Niente dettagli su colori, pannello o disegno.
-> Riferimento codice: [src/symbols/indicators/PaPP_Median.mq5](../src/symbols/indicators/PaPP_Median.mq5) (v2.01).
+> Riferimento codice: [PaPP_Median.mq5](PaPP_Median.mq5) (v2.01).
 
 ---
 

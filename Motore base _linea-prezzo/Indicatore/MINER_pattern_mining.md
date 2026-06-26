@@ -1,7 +1,7 @@
 # Miner `pattern_mining.py` — come funziona
 
 > Documento di **solo funzionamento**: cosa fa il miner, con quale metodo, e come leggerne il
-> risultato. Riferimento codice: [src/symbols/analysis/pattern_mining.py](../src/symbols/analysis/pattern_mining.py).
+> risultato. Riferimento codice: [pattern_mining.py](pattern_mining.py).
 
 ---
 
