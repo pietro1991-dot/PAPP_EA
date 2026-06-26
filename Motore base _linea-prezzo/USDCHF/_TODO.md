@@ -75,3 +75,8 @@ v2.12 - RIDUZIONE GIVE-BACK (dopo backtest: equity sale poi restituisce ~meta'):
 - ATTENZIONE RISCHIO: al 10% il conto era saltato nel 2010 (margin call). Per il backtest
   completo serve InpRiskPct basso (1-2%): l'edge sono pochi trend rari, devi sopravvivere
   alle lunghe magre per incassarli.
+
+v2.15 - FIX UNITA' TP: InpP1_TP (e P4-P7) da 500 a 5000.
+  Il TP nell'EA e' in PUNTI (tpPt*point), non in pip: 500 punti = 50 pip (10x troppo
+  stretto). Il tp_test era validato a 500 PIP -> servono 5000 punti. Il GRID P3 (TP=120
+  punti = 12 pip) e i TP di EURUSD erano gia' corretti. Da ri-backtestare USDCHF.

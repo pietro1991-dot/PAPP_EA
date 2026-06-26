@@ -9,7 +9,7 @@
 //  rischio/rendimento. NB: su USDCHF le uscite migliori sono LENTE (crossMA182).
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.14"
+#property version   "2.15"
 #property description "Multi-Pattern EA - USDCHF (motore BASE, pattern validati OOS)"
 #property description "Ogni pattern: On, Entry, Exit, SL, SLpips, TP, Direction."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 1=BUY, 2=SELL"
@@ -57,7 +57,7 @@ input int     InpP1_SL     = 0;
 input int     InpP1_SLpips = 0;
 input int     InpP1_TrailAct  = 0;   // trail OFF: il TP=500 lo supera (meglio validato)
 input int     InpP1_TrailGive = 0;
-input int     InpP1_TP     = 500;    // take profit 500pip: +OOS su 3/4 split, chiude e rientra
+input int     InpP1_TP     = 5000;   // TP in PUNTI: 5000 punti = 500 pip (validato OOS), chiude e rientra
 input int     InpP1_Dir    = 2;
 
 input group "==  P2 - MA182 BUY -> crossMA14 [BUY-trend, 5/5, Ret/DD 1.88, +20237]  =="
@@ -90,7 +90,7 @@ input int     InpP4_SL     = 0;
 input int     InpP4_SLpips = 0;
 input int     InpP4_TrailAct  = 0;
 input int     InpP4_TrailGive = 0;
-input int     InpP4_TP     = 500;
+input int     InpP4_TP     = 5000;  // 5000 punti = 500 pip
 input int     InpP4_Dir    = 2;
 
 input group "==  P5 - MA3 SELL -> crossMA182, TP=500 [variante SELL, 5/5]  =="
@@ -101,7 +101,7 @@ input int     InpP5_SL     = 0;
 input int     InpP5_SLpips = 0;
 input int     InpP5_TrailAct  = 0;
 input int     InpP5_TrailGive = 0;
-input int     InpP5_TP     = 500;
+input int     InpP5_TP     = 5000;  // 5000 punti = 500 pip
 input int     InpP5_Dir    = 2;
 
 input group "==  P6 - MA7 SELL -> crossMA182, TP=500 [variante SELL, 5/5]  =="
@@ -112,7 +112,7 @@ input int     InpP6_SL     = 0;
 input int     InpP6_SLpips = 0;
 input int     InpP6_TrailAct  = 0;
 input int     InpP6_TrailGive = 0;
-input int     InpP6_TP     = 500;
+input int     InpP6_TP     = 5000;  // 5000 punti = 500 pip
 input int     InpP6_Dir    = 2;
 
 input group "==  P7 - Median SELL -> crossMA182, TP=500 [variante SELL, Ret/DD 2.03]  =="
@@ -123,7 +123,7 @@ input int     InpP7_SL     = 0;
 input int     InpP7_SLpips = 0;
 input int     InpP7_TrailAct  = 0;
 input int     InpP7_TrailGive = 0;
-input int     InpP7_TP     = 500;
+input int     InpP7_TP     = 5000;  // 5000 punti = 500 pip
 input int     InpP7_Dir    = 2;
 
 input group "==  P8 - MA14 SELL -> crossMA30 [SELL exit veloce, Ret/DD 2.41]  =="
