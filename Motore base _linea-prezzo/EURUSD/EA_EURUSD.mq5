@@ -19,8 +19,8 @@ input string  InpIndicatorName = "PaPP_Median.ex5";
 input double  InpRiskPct       = 12.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input double  InpMaxLot        = 5.0;           // Lotto massimo assoluto - tetto di sicurezza (0=usa broker)
-input int     InpMaxSpread     = 0;            // Spread massimo in punti (0=disabilita)
-input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
+input int     InpMaxSpreadPips = 0;            // Spread massimo in PIP (0=disabilita)
+input int     InpMinSLDistPips = 5;            // Distanza SL minima in PIP
 input double  InpFallbackRiskPips = 500.0;      // Risk distance in pips quando il pattern non ha SL (sizing). 500 = rischio realistico trend senza stop -> lotto piccolo. 0 = disattiva i pattern senza SL
 input bool    InpDynamicSL     = true;          // true=SL trascina sulla linea MA ogni D1; false=SL statico all'entry
 input int     InpMaxPos        = 0;            // Max posizioni totali (0=illimitato)
@@ -37,88 +37,88 @@ input bool    InpLog           = true;
 //            molto alto ma drawdown grande, niente hard SL (gap risk).
 // Linee: 0=Med,3,7,14,30,121,182,365. Dir: 0=OFF, 1=BUY, 2=SELL.
 
-input group "==  PATTERN 1 - MA30 SELL, SL=MA365, TP=150  =="
+input group "==  PATTERN 1 - MA30 SELL, SL=MA365, TP=15pip  =="
 input bool    InpP1_On         = true;          // ATTIVA pattern 1
 input int     InpP1_Entry      = 30;            // Entry line (0=Med,3,7,14,30,121,182,365)
 input int     InpP1_Exit       = 0;             // Exit cross line (0=nessuno)
 input int     InpP1_SL         = 365;           // SL line (0=nessuno)
-input int     InpP1_TP         = 150;           // TP punti (0=nessuno)
+input int     InpP1_TP         = 15;            // TP in PIP (0=nessuno)
 input int     InpP1_Dir        = 2;             // 0=OFF, 1=BUY, 2=SELL
 
-input group "==  PATTERN 2 - MA121 BUY, SL=MA365, TP=150  =="
+input group "==  PATTERN 2 - MA121 BUY, SL=MA365, TP=15pip  =="
 input bool    InpP2_On         = true;          // ATTIVA pattern 2
 input int     InpP2_Entry      = 121;
 input int     InpP2_Exit       = 0;
 input int     InpP2_SL         = 365;
-input int     InpP2_TP         = 150;
+input int     InpP2_TP         = 15;            // TP in PIP
 input int     InpP2_Dir        = 1;
 
-input group "==  PATTERN 3 - MA365 SELL, SL=MA121, TP=120  =="
+input group "==  PATTERN 3 - MA365 SELL, SL=MA121, TP=12pip  =="
 input bool    InpP3_On         = true;          // ATTIVA pattern 3
 input int     InpP3_Entry      = 365;
 input int     InpP3_Exit       = 0;
 input int     InpP3_SL         = 121;
-input int     InpP3_TP         = 120;
+input int     InpP3_TP         = 12;            // TP in PIP
 input int     InpP3_Dir        = 2;
 
-input group "==  PATTERN 4 - MA7 SELL, SL=MA365, TP=120  =="
+input group "==  PATTERN 4 - MA7 SELL, SL=MA365, TP=12pip  =="
 input bool    InpP4_On         = true;          // ATTIVA pattern 4
 input int     InpP4_Entry      = 7;
 input int     InpP4_Exit       = 0;
 input int     InpP4_SL         = 365;
-input int     InpP4_TP         = 120;
+input int     InpP4_TP         = 12;            // TP in PIP
 input int     InpP4_Dir        = 2;
 
-input group "==  PATTERN 5 - MA30 BUY, SL=MA365, TP=150  =="
+input group "==  PATTERN 5 - MA30 BUY, SL=MA365, TP=15pip  =="
 input bool    InpP5_On         = true;          // ATTIVA pattern 5
 input int     InpP5_Entry      = 30;
 input int     InpP5_Exit       = 0;
 input int     InpP5_SL         = 365;
-input int     InpP5_TP         = 150;
+input int     InpP5_TP         = 15;            // TP in PIP
 input int     InpP5_Dir        = 1;
 
-input group "==  PATTERN 6 - MA14 BUY, SL=MA365, TP=150  =="
+input group "==  PATTERN 6 - MA14 BUY, SL=MA365, TP=15pip  =="
 input bool    InpP6_On         = true;          // ATTIVA pattern 6
 input int     InpP6_Entry      = 14;
 input int     InpP6_Exit       = 0;
 input int     InpP6_SL         = 365;
-input int     InpP6_TP         = 150;
+input int     InpP6_TP         = 15;            // TP in PIP
 input int     InpP6_Dir        = 1;
 
-// P7-P10: TP ampio (default 1500pt) come TETTO oltre all'uscita su incrocio MA121.
-// Chiude su MA121 cross OPPURE al TP, quel che viene prima. TP=1500 = compromesso
+// P7-P10: TP ampio (default 150pip) come TETTO oltre all'uscita su incrocio MA121.
+// Chiude su MA121 cross OPPURE al TP, quel che viene prima. TP=150pip = compromesso
 // (OOS ~+192k, win 64%); modificabile da input. Metti TP=0 per il trend-following puro.
 
-input group "==  PATTERN 7 - MA3 SELL -> cross MA121, TP cap 1500  =="
+input group "==  PATTERN 7 - MA3 SELL -> cross MA121, TP cap 150pip  =="
 input bool    InpP7_On         = false;          // ATTIVA pattern 7
 input int     InpP7_Entry      = 3;
 input int     InpP7_Exit       = 121;
 input int     InpP7_SL         = 0;
-input int     InpP7_TP         = 1500;
+input int     InpP7_TP         = 150;            // TP in PIP
 input int     InpP7_Dir        = 2;
 
-input group "==  PATTERN 8 - MA7 SELL -> cross MA121, TP cap 1500  =="
+input group "==  PATTERN 8 - MA7 SELL -> cross MA121, TP cap 150pip  =="
 input bool    InpP8_On         = false;          // ATTIVA pattern 8
 input int     InpP8_Entry      = 7;
 input int     InpP8_Exit       = 121;
 input int     InpP8_SL         = 0;
-input int     InpP8_TP         = 1500;
+input int     InpP8_TP         = 150;            // TP in PIP
 input int     InpP8_Dir        = 2;
 
-input group "==  PATTERN 9 - MA14 SELL -> cross MA121, TP cap 1500  =="
+input group "==  PATTERN 9 - MA14 SELL -> cross MA121, TP cap 150pip  =="
 input bool    InpP9_On         = false;          // ATTIVA pattern 9
 input int     InpP9_Entry      = 14;
 input int     InpP9_Exit       = 121;
 input int     InpP9_SL         = 0;
-input int     InpP9_TP         = 1500;
+input int     InpP9_TP         = 150;            // TP in PIP
 input int     InpP9_Dir        = 2;
 
-input group "==  PATTERN 10 - MA30 SELL -> cross MA121, TP cap 1500  =="
+input group "==  PATTERN 10 - MA30 SELL -> cross MA121, TP cap 150pip  =="
 input bool    InpP10_On        = false;          // ATTIVA pattern 10
 input int     InpP10_Entry     = 30;
 input int     InpP10_Exit      = 121;
 input int     InpP10_SL        = 0;
-input int     InpP10_TP        = 1500;
+input int     InpP10_TP        = 150;            // TP in PIP
 input int     InpP10_Dir       = 2;
 
 #define BUF_MEDIAN  0
@@ -261,7 +261,7 @@ string DirStr(int dir)
 string PatternSetupStr(int pi)
 {
    Pattern p = g_patterns[pi];
-   // Codice neutro (tradotto dalla UI): e=entry, d=dir(1/2), x=exit, sl=linea SL, tp=punti
+   // Codice neutro (tradotto dalla UI): e=entry, d=dir(1/2), x=exit, sl=linea SL, tp=pip
    string s = "SETUP|e:" + IntegerToString(p.entry) + "|d:" + IntegerToString(p.dir);
    if(p.exit > 0)   s += "|x:" + IntegerToString(p.exit);
    if(p.slLine > 0) s += "|sl:" + IntegerToString(p.slLine);
@@ -515,22 +515,23 @@ void OpenPatternTrade(int pi)
       }
    }
 
-   // Spread check
-   MqlTick tk;
-   if(!SymbolInfoTick(_Symbol, tk)) return;
-   double spreadPts = (tk.ask - tk.bid) / _Point;
-   if(InpMaxSpread > 0 && spreadPts > InpMaxSpread) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt > ", InpMaxSpread, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "R|skip_spread"); return; }
-
    double pt     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double pipSize = pt * 10.0;
+
+   // Spread check (in pip)
+   MqlTick tk;
+   if(!SymbolInfoTick(_Symbol, tk)) return;
+   double spreadPips = (tk.ask - tk.bid) / pipSize;
+   if(InpMaxSpreadPips > 0 && spreadPips > InpMaxSpreadPips) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPips,1), "pip > ", InpMaxSpreadPips, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "R|skip_spread"); return; }
+
    double entry  = (wantDir == 1) ? tk.ask : tk.bid;
 
    double sl = 0.0, tp = 0.0;
    double riskDist = 0.0;
 
-   // TP fisso
+   // TP fisso (in pip)
    if(p.tpPt > 0)
-      tp = (wantDir == 1) ? entry + p.tpPt * pt : entry - p.tpPt * pt;
+      tp = (wantDir == 1) ? entry + p.tpPt * pipSize : entry - p.tpPt * pipSize;
 
    // Hard SL broker-side
    bool slValid = false;
@@ -560,12 +561,12 @@ void OpenPatternTrade(int pi)
    if(riskDist <= 0.0)
       riskDist = InpFallbackRiskPips * pipSize;
 
-   // Protezione: distanza minima 50pt per evitare lotti enormi
-   double minDist = InpMinSLDistPts * pt;
+   // Protezione: distanza minima (pip) per evitare lotti enormi
+   double minDist = InpMinSLDistPips * pipSize;
    if(riskDist < minDist)
    {
       if(InpLog) Print("   Pattern ", pi, " SKIPPED: riskDist troppo piccolo (",
-         DoubleToString(riskDist/pt, 1), "pt < ", InpMinSLDistPts, "pt)");
+         DoubleToString(riskDist/pipSize, 1), "pip < ", InpMinSLDistPips, "pip)");
       LogDecision("skip", pi, DirStr(p.dir), "R|skip_riskdist");
       return;
    }
@@ -779,9 +780,9 @@ int OnInit()
    }
 
    if(InpLog)
-      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%d minSL=%dpt maxPos=%d maxPerPatt=%d patterns=%d",
+      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%dpip minSL=%dpip maxPos=%d maxPerPatt=%d patterns=%d",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
-         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpread, InpMinSLDistPts, InpMaxPos, InpMaxPerPattern, g_numPatterns));
+         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpreadPips, InpMinSLDistPips, InpMaxPos, InpMaxPerPattern, g_numPatterns));
    return INIT_SUCCEEDED;
 }
 

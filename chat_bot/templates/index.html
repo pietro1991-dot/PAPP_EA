@@ -168,6 +168,10 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .mn-row:hover{background:#222c44}
 .mn-row .nm{min-width:74px;color:var(--text);font-weight:600}
 .mn-row .mt{flex:1;font-size:11px;color:var(--muted)}
+.brk-lab{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);padding:9px 10px 3px;font-weight:700}
+.mn-row.sym{cursor:default;background:#1a2236}
+.mn-row.sym:hover{background:#1a2236}
+.mn-row.sym .nm{color:#6fb1ff}
 .tr-row{padding:6px 10px;font-size:11.5px;color:#aeb4c0;border-top:1px solid var(--border)}
 .tr-row .pp{font-weight:700}
 .pos{color:var(--green)} .neg{color:var(--red)}
@@ -727,20 +731,33 @@ async function loadStorico(){
   tot.innerHTML=`<div class="c"><div class="l">${t('trades')}</div><div class="v">${tt.trades}</div></div>`+
     `<div class="c"><div class="l">${t('winrate')}</div><div class="v">${tt.winrate}%</div></div>`+
     `<div class="c"><div class="l">${t('pnl_pts')}</div><div class="v ${tt.pnl_pt>=0?'pos':'neg'}">${sgn(tt.pnl_pt)}</div></div>`+
-    `<div class="c"><div class="l">${t('pnl_cur')}</div><div class="v ${tt.pnl_money>=0?'pos':'neg'}">${sgn(tt.pnl_money)}</div></div>`;
+    `<div class="c"><div class="l">${t('pnl_cur')}</div><div class="v ${tt.pnl_money>=0?'pos':'neg'}">${sgn(tt.pnl_money)}</div></div>`+
+    `<div class="c"><div class="l">Crescita</div><div class="v ${tt.growth_pct>=0?'pos':'neg'}">${fmtPct(tt.growth_pct)}</div></div>`;
   body.appendChild(tot);
   d.by_year.forEach(y=>body.appendChild(yearRow(y)));
 }
 function yearRow(y){
   const row=document.createElement('div'); row.className='acc-row';
   const head=document.createElement('div'); head.className='acc-head';
-  head.innerHTML=`<span class="yr">${y.year}</span><span class="meta">${y.trades} trade · win ${y.winrate}%</span><span class="pnl ${y.pnl_pt>=0?'pos':'neg'}">${sgn(y.pnl_pt)}pt</span>`;
+  head.innerHTML=`<span class="yr">${y.year}</span><span class="meta">${y.trades} trade · win ${y.winrate}% · cap ${fmtMoney(y.start_capital)}€</span><span class="pnl ${y.pnl_money>=0?'pos':'neg'}">${y.pnl_money>=0?'+':''}${fmtMoney(y.pnl_money)}€ · ${fmtPct(y.growth_pct)}</span>`;
   row.appendChild(head);
   const sub=document.createElement('div'); sub.className='acc-sub'; sub.hidden=true; row.appendChild(sub);
   head.onclick=async()=>{
     if(!sub.hidden){sub.hidden=true;return;} sub.hidden=false;
     if(sub.dataset.loaded)return;
     const d=await (await fetch('/api/backtest/year?'+btQuery('year='+y.year))).json();
+    // Dettaglio per simbolo (solo vista "tutti i simboli" con piu' simboli)
+    if(!activeSymbol && d.by_symbol && d.by_symbol.length>1){
+      const lab=document.createElement('div'); lab.className='brk-lab'; lab.textContent='Per simbolo';
+      sub.appendChild(lab);
+      d.by_symbol.forEach(s=>{
+        const r=document.createElement('div'); r.className='mn-row sym';
+        r.innerHTML=`<span class="nm">${s.symbol}</span><span class="mt">${s.trades} trade · win ${s.winrate}%</span><span class="pnl ${s.pnl_money>=0?'pos':'neg'}">${s.pnl_money>=0?'+':''}${fmtMoney(s.pnl_money)}€</span>`;
+        sub.appendChild(r);
+      });
+      const lab2=document.createElement('div'); lab2.className='brk-lab'; lab2.textContent='Per mese';
+      sub.appendChild(lab2);
+    }
     d.by_month.forEach(m=>sub.appendChild(monthRow(y.year,m)));
     sub.dataset.loaded='1';
   };

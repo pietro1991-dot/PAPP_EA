@@ -53,6 +53,7 @@ class Tee:
             f.flush()
 
 PT_SIZE  = 0.00001
+PIP_SIZE = 10 * PT_SIZE      # 1 pip = 10 punti (simboli a 5 decimali)
 MAX_BARS = 200
 
 LINE_NAMES = ['MA365', 'MA182', 'MA121', 'MA30', 'MA14', 'MA7', 'MA3', 'Median']
@@ -68,7 +69,7 @@ ABOVE_COLS = ['a365', 'a182', 'a121', 'a30', 'a14', 'a7', 'a3', 'aMed']
 PAIR_COLS = ['MA3_7', 'MA7_14', 'MA14_30', 'MA30_121', 'MA121_182', 'MA182_365']
 
 SL_CANDIDATES = ['MA14', 'MA30', 'MA121', 'MA365', 'Median']
-TP_CANDIDATES = [20, 30, 40, 50, 60, 80, 100, 120, 150]
+TP_CANDIDATES = [2, 3, 4, 5, 6, 8, 10, 12, 15]   # in PIP (come gli input EA)
 
 # ============================================================
 def load_csv(path):
@@ -175,11 +176,11 @@ def simulate_trade(rows, entry_idx, buy, entry_price, sl_col, tp_pt,
             pnl = (entry_price - sl_val) / PT_SIZE - cost
             return pnl, 'SL', j, sl_col
 
-        # TP fisso
-        if buy and hi >= entry_price + tp_pt * PT_SIZE:
-            return tp_pt - cost, 'TP', j, 'TP'
-        if not buy and lo <= entry_price - tp_pt * PT_SIZE:
-            return tp_pt - cost, 'TP', j, 'TP'
+        # TP fisso (tp_pt in PIP; il livello usa PIP_SIZE, il PnL resta in punti = tp_pt*10)
+        if buy and hi >= entry_price + tp_pt * PIP_SIZE:
+            return tp_pt*10 - cost, 'TP', j, 'TP'
+        if not buy and lo <= entry_price - tp_pt * PIP_SIZE:
+            return tp_pt*10 - cost, 'TP', j, 'TP'
 
     # TIMEOUT: ne' SL ne' TP entro max_bars -> chiudi mark-to-market
     # all'ultima close disponibile (NON scartare: scartare nascondeva i
@@ -438,7 +439,7 @@ def print_summary(all_results, min_trades=10):
         if best:
             (d, ex, etype, tp, sl), n, wr, avg, sh = best
             d_str = 'BUY' if d == 1 else 'SELL'
-            extra = f" TP={tp}" if tp else ""
+            extra = f" TP={tp}pip" if tp else ""
             extra += f" SL={sl}" if sl else ""
             extra += f" [{etype}]" if etype else ""
             print(f"  {line:<10} -> {d_str:<5} | exit={ex:<10}{extra:<25} | "
@@ -507,7 +508,7 @@ def make_exit_fn(rows, rule, spread_pt=0, commission_pt=0, swap_pt=0):
 def rule_label(rule):
     d = 'BUY' if rule['dir'] == 1 else 'SELL'
     if rule['type'] == 'GRID':
-        return f"{rule['line']} {d} SL={rule['sl']} TP={rule['tp']}"
+        return f"{rule['line']} {d} SL={rule['sl']} TP={rule['tp']}pip"
     if rule['type'] == 'SPEC':
         return f"{rule['line']} {d} exitX={rule['exit_col']}"
     return f"{rule['line']} {d} exit=OPP"
@@ -667,19 +668,19 @@ def fast_sim(idx, buy, ep, sl, tp, H, L, C, spread, comm, swap, fold_end):
     # fisso. Le barre sono limitate a fold_end: i trade NON sconfinano nella
     # finestra successiva (folds indipendenti). Timeout -> mark-to-market.
     end = min(idx + MAX_BARS, fold_end)
-    up = ep + tp*PT_SIZE; dn = ep - tp*PT_SIZE
+    up = ep + tp*PIP_SIZE; dn = ep - tp*PIP_SIZE   # tp in PIP -> livello prezzo
     for j in range(idx+1, end):
         sv = sl[j-1]; bars = j - idx; cost = spread + comm + swap*bars
         if buy:
             if sv > 0 and L[j] <= sv:
                 return (sv - ep)/PT_SIZE - cost, j
             if H[j] >= up:
-                return tp - cost, j
+                return tp*10 - cost, j   # PnL in punti = tp(pip)*10
         else:
             if sv > 0 and H[j] >= sv:
                 return (ep - sv)/PT_SIZE - cost, j
             if L[j] <= dn:
-                return tp - cost, j
+                return tp*10 - cost, j   # PnL in punti = tp(pip)*10
     j = end - 1
     if j > idx:
         bars = j - idx; cost = spread + comm + swap*bars
@@ -776,7 +777,7 @@ def robust_multifold(all_rows, n_folds, spread_pt, commission_pt, swap_pt, min_t
 def rule_label_robust(r):
     d = 'BUY' if r['dir'] == 1 else 'SELL'
     if r['exit'] == 'GRID':
-        return f"{r['line']} {d} SL={r['sl']} TP={r['tp']}"
+        return f"{r['line']} {d} SL={r['sl']} TP={r['tp']}pip"
     if r['exit'] == 'CROSS':
         return f"{r['line']} {d} exitX={r['exit_col']}"
     return f"{r['line']} {d} exit=OPP"
@@ -957,7 +958,7 @@ def main():
     print("    ANALISI 2  exit = crossover di una linea SPECIFICA (opposta)")
     print("    ANALISI 3  exit = SL dinamico su una linea + TP fisso (griglia SL x TP)")
     print("  Costi: spread + commissione sottratti a ogni trade; swap per barra tenuta.")
-    print("  Unita': PUNTI (1 pip = 10 punti su simboli a 5 decimali).")
+    print("  Unita': TP in PIP (come gli input EA); PnL/metriche in PUNTI (1 pip = 10 punti).")
     print("")
     print("  COLONNE:")
     print("    Trades   numero di operazioni del pattern")
@@ -1016,7 +1017,7 @@ def main():
                     print(f"  [{count+1}] {ent['datetime']} | {ent['line']} "
                           f"{'BUY' if buy else 'SELL'} "
                           f"@ {ent['price']:.5f} | "
-                          f"SL={sl_name}({sl_val:.5f}) TP={tp_pt} | "
+                          f"SL={sl_name}({sl_val:.5f}) TP={tp_pt}pip | "
                           f"-> {etype} @ {exit_row['datetime']} "
                           f"({exit_close:.5f}) | "
                           f"PnL={pnl:+.0f}pt | {eidx-ent['idx']} barre")
@@ -1080,7 +1081,7 @@ def main():
             tp_perf[r['tp_pt']].append(r['pnl_pt'])
         for tp, pnls in sorted(tp_perf.items(), key=lambda x: -mean(x[1])):
             wr = sum(1 for p in pnls if p > 0) / len(pnls) * 100
-            print(f"    TP={tp:<4}pt -> PnL medio {mean(pnls):>+7.1f}  "
+            print(f"    TP={tp:<4}pip -> PnL medio {mean(pnls):>+7.1f}  "
                   f"Win% {wr:>5.1f}%  Sharpe {compute_sharpe(pnls):.2f}  "
                   f"(su {len(pnls)} trade)")
 
@@ -1159,7 +1160,7 @@ def main():
 
                 label = f"{line} {'BUY' if d==1 else 'SELL'} | {ex_line} | {etype}"
                 if tp:
-                    label += f" TP={tp}"
+                    label += f" TP={tp}pip"
                 if sl:
                     label += f" SL={sl}"
                 print(f"  {label:<60} {bp['sharpe']:>8.2f} {test_sh:>8.2f} "

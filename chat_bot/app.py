@@ -417,6 +417,9 @@ def _row_stats(r):
     }
 
 
+INITIAL_CAPITAL = 10000.0   # deposito iniziale dei backtest (EUR)
+
+
 @app.get("/api/backtest/overview")
 async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_user)):
     async with AsyncSession() as session:
@@ -438,11 +441,21 @@ async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_
                 ).group_by("y").order_by(desc("y"))
             )
         ).all()
+    by_year = [{"year": int(y[0]), **_row_stats(y[1:])} for y in years]
+    # Capitale composto: ogni anno parte dal saldo di fine anno precedente.
+    # growth_pct = PnL dell'anno / capitale d'inizio anno (= aumento sul capitale dell'anno prima).
+    cap = INITIAL_CAPITAL
+    for yr in sorted(by_year, key=lambda e: e["year"]):   # cronologico
+        yr["start_capital"] = round(cap, 2)
+        yr["growth_pct"] = round(yr["pnl_money"] / cap * 100, 2) if cap else 0.0
+        cap = round(cap + yr["pnl_money"], 2)
+        yr["end_capital"] = cap
     return {
         "available": True,
         "symbols": sorted(s for s in symbols if s),
-        "totals": totals,
-        "by_year": [{"year": int(y[0]), **_row_stats(y[1:])} for y in years],
+        "initial_capital": INITIAL_CAPITAL,
+        "totals": {**totals, "growth_pct": round(totals["pnl_money"] / INITIAL_CAPITAL * 100, 2)},
+        "by_year": by_year,
     }
 
 
@@ -453,7 +466,20 @@ async def backtest_year(year: int, symbol: str = "", user: User = Depends(auth.c
             select(extract("month", BacktestTrade.exit_time).label("m"), *_bt_agg()), symbol
         ).where(extract("year", BacktestTrade.exit_time) == year)
         months = (await session.execute(q.group_by("m").order_by("m"))).all()
-    return {"year": year, "by_month": [{"month": int(m[0]), **_row_stats(m[1:])} for m in months]}
+        # dettaglio per simbolo nell'anno (ordinato per PnL decrescente)
+        sq = _bt_scope(
+            select(BacktestTrade.symbol.label("s"), *_bt_agg()), symbol
+        ).where(extract("year", BacktestTrade.exit_time) == year)
+        syms = (
+            await session.execute(
+                sq.group_by("s").order_by(desc(sa_func.coalesce(sa_func.sum(BacktestTrade.pnl_money), 0)))
+            )
+        ).all()
+    return {
+        "year": year,
+        "by_month": [{"month": int(m[0]), **_row_stats(m[1:])} for m in months],
+        "by_symbol": [{"symbol": s[0], **_row_stats(s[1:])} for s in syms if s[0]],
+    }
 
 
 @app.get("/api/backtest/trades")

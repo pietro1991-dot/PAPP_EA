@@ -24,8 +24,8 @@ input string  InpIndicatorName = "PaPP_Median.ex5";
 input double  InpRiskPct       = 4.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input double  InpMaxLot        = 1.0;           // Lotto massimo assoluto - tetto di sicurezza (0=usa broker)
-input int     InpMaxSpread     = 50;            // Spread massimo in punti (0=disabilita)
-input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
+input int     InpMaxSpreadPips = 5;             // Spread massimo in PIP (0=disabilita)
+input int     InpMinSLDistPips = 5;             // Distanza SL minima in PIP
 input double  InpFallbackRiskPips = 600.0;      // Risk distance pips senza SL (P1/P2 no-stop: ~escursione avversa reale -> sizing corretto)
 input bool    InpDynamicSL     = true;          // true=SL trascina sulla linea MA ogni D1; false=SL statico all'entry
 input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
@@ -42,7 +42,7 @@ input bool    InpLog           = true;
 //   Exit  : 0=nessuno (usa SL/TP); >0=esci sul cross prezzo-linea di quella linea
 //   SL    : linea per SL dinamico (0=nessuno)
 //   SLpips: SL FISSO a distanza in pip (disaster stop; usato solo se SL=0)
-//   TP    : take profit in punti (0=nessuno)
+//   TP    : take profit in PIP (0=nessuno)
 //   Dir   : 0=OFF, 1=BUY, 2=SELL
 // ===========================================================================
 
@@ -57,7 +57,7 @@ input int     InpP1_SL     = 0;
 input int     InpP1_SLpips = 0;
 input int     InpP1_TrailAct  = 0;   // trail OFF: il TP=500 lo supera (meglio validato)
 input int     InpP1_TrailGive = 0;
-input int     InpP1_TP     = 5000;   // TP in PUNTI: 5000 punti = 500 pip (validato OOS), chiude e rientra
+input int     InpP1_TP     = 500;    // TP in PIP: 500 pip (validato OOS), chiude e rientra
 input int     InpP1_Dir    = 2;
 
 input group "==  P2 - MA182 BUY -> crossMA14 [BUY-trend, 5/5, Ret/DD 1.88, +20237]  =="
@@ -71,7 +71,7 @@ input int     InpP2_TrailGive = 0;
 input int     InpP2_TP     = 0;
 input int     InpP2_Dir    = 1;
 
-input group "==  P3 - MA14 BUY, SL=MA121, TP=120 [BUY mean-revert, win 82%]  =="
+input group "==  P3 - MA14 BUY, SL=MA121, TP=12pip [BUY mean-revert, win 82%]  =="
 input bool    InpP3_On    = true;    // ATTIVA (stile diverso; 68% corr. con P2)
 input int     InpP3_Entry = 14;
 input int     InpP3_Exit  = 0;
@@ -79,7 +79,7 @@ input int     InpP3_SL     = 121;
 input int     InpP3_SLpips = 0;
 input int     InpP3_TrailAct  = 0;   // GRID (SL+TP): niente trailing
 input int     InpP3_TrailGive = 0;
-input int     InpP3_TP     = 120;
+input int     InpP3_TP     = 12;    // TP in PIP (GRID)
 input int     InpP3_Dir    = 1;
 
 input group "==  P4 - MA14 SELL -> crossMA365, TP=500 [variante SELL lenta, 5/5]  =="
@@ -90,7 +90,7 @@ input int     InpP4_SL     = 0;
 input int     InpP4_SLpips = 0;
 input int     InpP4_TrailAct  = 0;
 input int     InpP4_TrailGive = 0;
-input int     InpP4_TP     = 5000;  // 5000 punti = 500 pip
+input int     InpP4_TP     = 500;   // TP in PIP: 500 pip
 input int     InpP4_Dir    = 2;
 
 input group "==  P5 - MA3 SELL -> crossMA182, TP=500 [variante SELL, 5/5]  =="
@@ -101,7 +101,7 @@ input int     InpP5_SL     = 0;
 input int     InpP5_SLpips = 0;
 input int     InpP5_TrailAct  = 0;
 input int     InpP5_TrailGive = 0;
-input int     InpP5_TP     = 5000;  // 5000 punti = 500 pip
+input int     InpP5_TP     = 500;   // TP in PIP: 500 pip
 input int     InpP5_Dir    = 2;
 
 input group "==  P6 - MA7 SELL -> crossMA182, TP=500 [variante SELL, 5/5]  =="
@@ -112,7 +112,7 @@ input int     InpP6_SL     = 0;
 input int     InpP6_SLpips = 0;
 input int     InpP6_TrailAct  = 0;
 input int     InpP6_TrailGive = 0;
-input int     InpP6_TP     = 5000;  // 5000 punti = 500 pip
+input int     InpP6_TP     = 500;   // TP in PIP: 500 pip
 input int     InpP6_Dir    = 2;
 
 input group "==  P7 - Median SELL -> crossMA182, TP=500 [variante SELL, Ret/DD 2.03]  =="
@@ -123,7 +123,7 @@ input int     InpP7_SL     = 0;
 input int     InpP7_SLpips = 0;
 input int     InpP7_TrailAct  = 0;
 input int     InpP7_TrailGive = 0;
-input int     InpP7_TP     = 5000;  // 5000 punti = 500 pip
+input int     InpP7_TP     = 500;   // TP in PIP: 500 pip
 input int     InpP7_Dir    = 2;
 
 input group "==  P8 - MA14 SELL -> crossMA30 [SELL exit veloce, Ret/DD 2.41]  =="
@@ -281,7 +281,7 @@ string DirStr(int dir)
 string PatternSetupStr(int pi)
 {
    Pattern p = g_patterns[pi];
-   // Codice neutro (tradotto dalla UI): e=entry, d=dir, x=exit, tr=trailing, sl=linea SL, sp=SL pip, tp=punti
+   // Codice neutro (tradotto dalla UI): e=entry, d=dir, x=exit, tr=trailing, sl=linea SL, sp=SL pip, tp=pip
    string s = "SETUP|e:" + IntegerToString(p.entry) + "|d:" + IntegerToString(p.dir);
    if(p.exit > 0)        { s += "|x:" + IntegerToString(p.exit);
                            if(p.trailAct > 0) s += "|tr:1"; }
@@ -538,22 +538,23 @@ void OpenPatternTrade(int pi)
       }
    }
 
-   // Spread check
-   MqlTick tk;
-   if(!SymbolInfoTick(_Symbol, tk)) return;
-   double spreadPts = (tk.ask - tk.bid) / _Point;
-   if(InpMaxSpread > 0 && spreadPts > InpMaxSpread) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt > ", InpMaxSpread, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "R|skip_spread"); return; }
-
    double pt     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double pipSize = pt * 10.0;
+
+   // Spread check (in pip)
+   MqlTick tk;
+   if(!SymbolInfoTick(_Symbol, tk)) return;
+   double spreadPips = (tk.ask - tk.bid) / pipSize;
+   if(InpMaxSpreadPips > 0 && spreadPips > InpMaxSpreadPips) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPips,1), "pip > ", InpMaxSpreadPips, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "R|skip_spread"); return; }
+
    double entry  = (wantDir == 1) ? tk.ask : tk.bid;
 
    double sl = 0.0, tp = 0.0;
    double riskDist = 0.0;
 
-   // TP fisso
+   // TP fisso (in pip)
    if(p.tpPt > 0)
-      tp = (wantDir == 1) ? entry + p.tpPt * pt : entry - p.tpPt * pt;
+      tp = (wantDir == 1) ? entry + p.tpPt * pipSize : entry - p.tpPt * pipSize;
 
    // Hard SL broker-side (linea)
    bool slValid = false;
@@ -593,12 +594,12 @@ void OpenPatternTrade(int pi)
    if(riskDist <= 0.0)
       riskDist = InpFallbackRiskPips * pipSize;
 
-   // Protezione: distanza minima per evitare lotti enormi
-   double minDist = InpMinSLDistPts * pt;
+   // Protezione: distanza minima (pip) per evitare lotti enormi
+   double minDist = InpMinSLDistPips * pipSize;
    if(riskDist < minDist)
    {
       if(InpLog) Print("   Pattern ", pi, " SKIPPED: riskDist troppo piccolo (",
-         DoubleToString(riskDist/pt, 1), "pt < ", InpMinSLDistPts, "pt)");
+         DoubleToString(riskDist/pipSize, 1), "pip < ", InpMinSLDistPips, "pip)");
       LogDecision("skip", pi, DirStr(p.dir), "R|skip_riskdist");
       return;
    }
@@ -877,9 +878,9 @@ int OnInit()
    }
 
    if(InpLog)
-      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%d minSL=%dpt maxPos=%d maxPerPatt=%d patterns=%d",
+      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%dpip minSL=%dpip maxPos=%d maxPerPatt=%d patterns=%d",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
-         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpread, InpMinSLDistPts, InpMaxPos, InpMaxPerPattern, g_numPatterns));
+         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpreadPips, InpMinSLDistPips, InpMaxPos, InpMaxPerPattern, g_numPatterns));
    return INIT_SUCCEEDED;
 }
 

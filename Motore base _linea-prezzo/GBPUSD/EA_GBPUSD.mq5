@@ -21,15 +21,15 @@
 input group "======  GENERALE / RISCHIO  ======"
 input string  InpIndicatorName = "PaPP_Median.ex5";
 
-input double  InpRiskPct       = 10.0;          // Rischio % per trade
+input double  InpRiskPct       = 7.0;          // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
-input double  InpMaxLot        = 1.0;           // Lotto massimo assoluto - tetto di sicurezza (0=usa broker)
-input int     InpMaxSpread     = 50;            // Spread massimo in punti (0=disabilita)
-input int     InpMinSLDistPts  = 50;            // Distanza SL minima in punti
+input double  InpMaxLot        = 5.0;           // Lotto massimo assoluto - tetto di sicurezza (0=usa broker)
+input int     InpMaxSpreadPips = 0;             // Spread massimo in PIP (0=disabilita)
+input int     InpMinSLDistPips = 5;             // Distanza SL minima in PIP
 input double  InpFallbackRiskPips = 100.0;      // Risk distance in pips quando il pattern non ha SL (per sizing)
 input bool    InpDynamicSL     = true;          // true=SL trascina sulla linea MA ogni D1; false=SL statico all'entry
-input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
-input int     InpMaxPerPattern = 1;             // Max posizioni per pattern (0=illimitato)
+input int     InpMaxPos        = 0;            // Max posizioni totali (0=illimitato)
+input int     InpMaxPerPattern = 0;             // Max posizioni per pattern (0=illimitato)
 input int     InpMagic         = 20260624;
 input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuoto=disabilita)
 input int     InpMarketInterval = 300;           // Intervallo market snapshot secondi (0=disabilita)
@@ -41,7 +41,7 @@ input bool    InpLog           = true;
 //   Entry : linea crossover prezzo-linea (0=Med,3,7,14,30,121,182,365)
 //   Exit  : 0=nessuno (usa SL/TP); >0=esci sul cross prezzo-linea di quella linea
 //   SL    : linea per SL dinamico (0=nessuno)
-//   TP    : take profit in punti (0=nessuno)
+//   TP    : take profit in PIP (0=nessuno)
 //   Dir   : 0=OFF, 1=BUY, 2=SELL
 // ===========================================================================
 
@@ -214,7 +214,7 @@ string DirStr(int dir)
 string PatternSetupStr(int pi)
 {
    Pattern p = g_patterns[pi];
-   // Codice neutro (tradotto dalla UI): e=entry, d=dir, x=exit, sl=linea SL, sp=SL pip, tp=punti
+   // Codice neutro (tradotto dalla UI): e=entry, d=dir, x=exit, sl=linea SL, sp=SL pip, tp=pip
    string s = "SETUP|e:" + IntegerToString(p.entry) + "|d:" + IntegerToString(p.dir);
    if(p.exit > 0)        s += "|x:" + IntegerToString(p.exit);
    if(p.slLine > 0)      s += "|sl:" + IntegerToString(p.slLine);
@@ -466,22 +466,23 @@ void OpenPatternTrade(int pi)
       }
    }
 
-   // Spread check
-   MqlTick tk;
-   if(!SymbolInfoTick(_Symbol, tk)) return;
-   double spreadPts = (tk.ask - tk.bid) / _Point;
-   if(InpMaxSpread > 0 && spreadPts > InpMaxSpread) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPts,0), "pt > ", InpMaxSpread, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "R|skip_spread"); return; }
-
    double pt     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
    double pipSize = pt * 10.0;
+
+   // Spread check (in pip)
+   MqlTick tk;
+   if(!SymbolInfoTick(_Symbol, tk)) return;
+   double spreadPips = (tk.ask - tk.bid) / pipSize;
+   if(InpMaxSpreadPips > 0 && spreadPips > InpMaxSpreadPips) { if(InpLog) Print("   Spread troppo alto (", DoubleToString(spreadPips,1), "pip > ", InpMaxSpreadPips, ") - salto"); LogDecision("skip", pi, DirStr(p.dir), "R|skip_spread"); return; }
+
    double entry  = (wantDir == 1) ? tk.ask : tk.bid;
 
    double sl = 0.0, tp = 0.0;
    double riskDist = 0.0;
 
-   // TP fisso
+   // TP fisso (in pip)
    if(p.tpPt > 0)
-      tp = (wantDir == 1) ? entry + p.tpPt * pt : entry - p.tpPt * pt;
+      tp = (wantDir == 1) ? entry + p.tpPt * pipSize : entry - p.tpPt * pipSize;
 
    // Hard SL broker-side
    bool slValid = false;
@@ -522,12 +523,12 @@ void OpenPatternTrade(int pi)
    if(riskDist <= 0.0)
       riskDist = InpFallbackRiskPips * pipSize;
 
-   // Protezione: distanza minima per evitare lotti enormi
-   double minDist = InpMinSLDistPts * pt;
+   // Protezione: distanza minima (pip) per evitare lotti enormi
+   double minDist = InpMinSLDistPips * pipSize;
    if(riskDist < minDist)
    {
       if(InpLog) Print("   Pattern ", pi, " SKIPPED: riskDist troppo piccolo (",
-         DoubleToString(riskDist/pt, 1), "pt < ", InpMinSLDistPts, "pt)");
+         DoubleToString(riskDist/pipSize, 1), "pip < ", InpMinSLDistPips, "pip)");
       LogDecision("skip", pi, DirStr(p.dir), "R|skip_riskdist");
       return;
    }
@@ -741,9 +742,9 @@ int OnInit()
    }
 
    if(InpLog)
-      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%d minSL=%dpt maxPos=%d maxPerPatt=%d patterns=%d",
+      Print(StringFormat("INIT OK sym=%s tf=%s magic=%d risk=%.1f%% maxLot=%.2f maxSpread=%dpip minSL=%dpip maxPos=%d maxPerPatt=%d patterns=%d",
          _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
-         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpread, InpMinSLDistPts, InpMaxPos, InpMaxPerPattern, g_numPatterns));
+         InpMagic, InpRiskPct, InpMaxLot, InpMaxSpreadPips, InpMinSLDistPips, InpMaxPos, InpMaxPerPattern, g_numPatterns));
    return INIT_SUCCEEDED;
 }
 

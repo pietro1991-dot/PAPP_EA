@@ -34,15 +34,15 @@ Questi valori sono i **default attuali** di [EA_EURUSD.mq5](EA_EURUSD.mq5). Conf
 
 ## Pattern attivi
 
-| Pattern | On | Entry | Dir | Exit | SL | TP |
+| Pattern | On | Entry | Dir | Exit | SL | TP (pip) |
 |---|---|---|---|---|---|---|
-| P1 | ✅ | MA30 | SELL | — | MA365 | 150 |
-| P2 | ✅ | MA121 | BUY | — | MA365 | 150 |
-| P3 | ✅ | MA365 | SELL | — | MA121 | 120 |
-| P4 | ✅ | MA7 | SELL | — | MA365 | 120 |
-| P5 | ✅ | MA30 | BUY | — | MA365 | 150 |
-| P6 | ✅ | MA14 | BUY | — | MA365 | 150 |
-| P7-P10 | ❌ | — | — | cross MA121 | 0 (no SL) | 1500 |
+| P1 | ✅ | MA30 | SELL | — | MA365 | 15 |
+| P2 | ✅ | MA121 | BUY | — | MA365 | 15 |
+| P3 | ✅ | MA365 | SELL | — | MA121 | 12 |
+| P4 | ✅ | MA7 | SELL | — | MA365 | 12 |
+| P5 | ✅ | MA30 | BUY | — | MA365 | 15 |
+| P6 | ✅ | MA14 | BUY | — | MA365 | 15 |
+| P7-P10 | ❌ | — | — | cross MA121 | 0 (no SL) | 150 |
 
 **Tutti e soli i pattern con SL su linea.** I pattern senza SL (P7-P10) sono OFF: portavano
 più profitto ma quasi tutto il drawdown (vedi variante con P8: DD equity 34% vs 20% qui).

@@ -6,7 +6,7 @@ Genera PATTERNS_<SIMBOLO>.md: schede di validazione dei pattern.
   configurati (entry/exit/SL/SLpips/TP/trail/dir, ON/OFF).
 - Simula ogni pattern con la STESSA logica di uscita dell'EA (cross-exit, SL su
   linea, disaster stop fisso, TP fisso, trailing) e le UNITA' giuste:
-    TP = punti (tpPt*point)   SLpips/trail = pip (*10*point)
+    TP = pip (tp*10*point)   SLpips/trail = pip (*10*point)
 - Calcola train/test (split) e produce un Markdown: tabella + scheda per pattern
   dell'EA, + appendice coi candidati base robusti (positivi train E test).
 
@@ -24,7 +24,7 @@ LINES = {0:'median',3:'MA3',7:'MA7',14:'MA14',30:'MA30',121:'MA121',182:'MA182',
 CROSS = {0:'crossMed',3:'crossMA3',7:'crossMA7',14:'crossMA14',30:'crossMA30',
          121:'crossMA121',182:'crossMA182',365:'crossMA365'}
 SL_GRID = [14,30,121,365,0]                       # linee SL candidate (come il miner)
-TP_GRID = [20,30,40,50,60,80,100,120,150]         # TP candidati (PUNTI)
+TP_GRID = [2,3,4,5,6,8,10,12,15]                  # TP candidati (PIP)
 
 def lname(n): return 'Median' if n==0 else f'MA{n}'
 def dname(d): return 'BUY' if d==1 else 'SELL'
@@ -56,7 +56,7 @@ def sim_one(A, idx, p, spread, comm):
         if buy and sv0>=ep: return None
         if (not buy) and sv0<=ep: return None
     slfix = (ep - slpips*PIP) if (slpips and not slk and buy) else ((ep + slpips*PIP) if (slpips and not slk) else None)
-    tplvl = (ep + tp*PT) if (tp and buy) else ((ep - tp*PT) if tp else None)
+    tplvl = (ep + tp*PIP) if (tp and buy) else ((ep - tp*PIP) if tp else None)
     best = ep
     end=min(idx+MAXB, n)
     for j in range(idx+1, end):
@@ -70,7 +70,7 @@ def sim_one(A, idx, p, spread, comm):
         if slfix is not None:
             if buy and L[j]<=slfix: return (slfix-ep)/PT-cost, j
             if (not buy) and H[j]>=slfix: return (ep-slfix)/PT-cost, j
-        # TP (punti)
+        # TP (pip)
         if tplvl is not None:
             if buy and H[j]>=tplvl: return (tplvl-ep)/PT-cost, j
             if (not buy) and L[j]<=tplvl: return (ep-tplvl)/PT-cost, j
@@ -147,7 +147,7 @@ def descr(p):
     bits=[]
     if p['sl']>0: bits.append(f"SL={lname(p['sl'])}")
     if p['slpips']>0: bits.append(f"SLfix={p['slpips']}pip")
-    if p['tp']>0: bits.append(f"TP={p['tp']}pt({p['tp']//10}pip)")
+    if p['tp']>0: bits.append(f"TP={p['tp']}pip")
     if p['trailgive']>0: bits.append(f"trail {p['trailgive']}pip")
     if bits: s+=" ["+", ".join(bits)+"]"
     return s
@@ -206,7 +206,7 @@ def main():
         prot=[]
         if p['sl']>0: prot.append(f"SL dinamico su {lname(p['sl'])}")
         if p['slpips']>0: prot.append(f"disaster stop {p['slpips']} pip")
-        if p['tp']>0: prot.append(f"TP {p['tp']} punti ({p['tp']//10} pip)")
+        if p['tp']>0: prot.append(f"TP {p['tp']} pip")
         if p['trailgive']>0: prot.append(f"trailing {p['trailgive']} pip (attiva +{p['trailact']})")
         w(f"- **Uscita:** {ex if ex else '—'}" + (f" · **Protezioni:** {', '.join(prot)}" if prot else ""))
         if mt:
@@ -239,7 +239,7 @@ def main():
                     mr=metrics(run(Atr,p,spread,comm)); mt=metrics(run(Ate,p,spread,comm))
                     if (mr and mt and mr['n']>=15 and mt['n']>=8 and mr['pnl']>0 and mt['pnl']>0
                         and mt['mdd']>0 and mt['sharpe']!=0):
-                        cand.append((f"{lname(entry)} {dname(d)} SL={lname(slk)} TP={tpv}pt", mt))
+                        cand.append((f"{lname(entry)} {dname(d)} SL={lname(slk)} TP={tpv}pip", mt))
     cand.sort(key=lambda x: -(x[1]['retdd'] if x[1]['retdd']!=float('inf') else 999))
     w(f"\nCandidati robusti: **{len(cand)}**\n")
     w("| Pattern | TestN | Successi | Win% | PnL test | Ret/DD |")

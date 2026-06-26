@@ -16,12 +16,12 @@ del range giornaliero) e 7 medie mobili — MA3, MA7, MA14, MA30, MA121, MA182, 
 ## Configurazione attiva (v2.05): 6 pattern validati OOS
 Solo i pattern che reggono out-of-sample sono attivi (P7–P10 disattivati):
 (numeri dal backtest canonico EURUSD 2010–2025, 783 trade)
-- **P1**: entry MA30, SELL, SL su MA365, TP 150 — 126 trade, Win 96%, +808 €
-- **P2**: entry MA121, BUY, SL su MA365, TP 150 — 61 trade, Win 95%, +11.510 €
-- **P3**: entry MA365, SELL, SL su MA121, TP 120 — 34 trade, Win 94%, +3.648 €
-- **P4**: entry MA7, SELL, SL su MA365, TP 120 — 312 trade, Win 97%, +27.265 €
-- **P5**: entry MA30, BUY, SL su MA365, TP 150 — 101 trade, Win 97%, +22.276 €
-- **P6**: entry MA14, BUY, SL su MA365, TP 150 — 149 trade, Win 98%, +26.730 €
+- **P1**: entry MA30, SELL, SL su MA365, TP 15 pip — 126 trade, Win 96%, +808 €
+- **P2**: entry MA121, BUY, SL su MA365, TP 15 pip — 61 trade, Win 95%, +11.510 €
+- **P3**: entry MA365, SELL, SL su MA121, TP 12 pip — 34 trade, Win 94%, +3.648 €
+- **P4**: entry MA7, SELL, SL su MA365, TP 12 pip — 312 trade, Win 97%, +27.265 €
+- **P5**: entry MA30, BUY, SL su MA365, TP 15 pip — 101 trade, Win 97%, +22.276 €
+- **P6**: entry MA14, BUY, SL su MA365, TP 15 pip — 149 trade, Win 98%, +26.730 €
 
 ## Backtest ufficiale EURUSD (2010–2025, deposito 10.000 €)
 Risultati del backtest MT5 con la configurazione canonica qui sopra (solo P1–P6). I dati trade
@@ -36,6 +36,16 @@ per anno/mese sono nel contesto "STORICO BACKTEST"; questi sono i numeri di sint
   Si è scelto il profilo a rischio più basso.
 - Il backtest copre davvero tutto il 2010–2025 (l'indicatore `PaPP_Median` v2.02 ha corretto un
   bug per cui prima i test si "fermavano" di fatto al 2016).
+
+## Backtest GBPUSD (2026-06-26, deposito 10.000 €)
+Config diversa da EURUSD: **3 pattern trend-following** (entrata su cross, uscita sul cross
+opposto), tutti con disaster stop 100 pip e TP cap 200 pip. Pattern: P1 MA182 SELL→crossMA3
+(SL MA121), P2 MA365 SELL→crossMA7, P3 MA121 BUY→crossMA30.
+- **Net Profit +34.758 €** (balance ~44.758), 197 trade, **win rate 43,65%** (basso: è trend-following).
+- **Profit Factor 1.46**, **Recovery Factor 5.10**.
+- **Max Drawdown equity 63,96%** (molto alto): RiskPct 15% + drawdown precoce su conto piccolo.
+  Redditizio ma volatile — profilo opposto a EURUSD (lì win 97% e DD 20%).
+- Parametri: RiskPct 15%, FallbackRiskPips 500, MaxPerPattern 0, SL dinamico ON.
 
 ## Caratteristiche chiave
 - **SL dinamico**: lo stop viene trascinato sul valore corrente della linea MA ad ogni nuova
