@@ -44,6 +44,7 @@ class _Job:
     context: str
     key: str
     future: asyncio.Future
+    lang: str = "it"
 
 
 class TokenBucket:
@@ -140,7 +141,11 @@ async def _db_put(key: str, question: str, answer: str):
 
 
 async def submit(
-    question: str, context: str, context_sig: str | None, user_id: int | None = None
+    question: str,
+    context: str,
+    context_sig: str | None,
+    user_id: int | None = None,
+    lang: str = "it",
 ) -> str:
     """Punto d'ingresso per gli endpoint. Cache-hit → risposta immediata (0 quota);
     altrimenti applica la fairness per-utente, accoda e attende il worker.
@@ -169,7 +174,7 @@ async def submit(
     try:
         loop = asyncio.get_running_loop()
         fut: asyncio.Future = loop.create_future()
-        await _queue.put(_Job(question=question, context=context, key=key, future=fut))
+        await _queue.put(_Job(question=question, context=context, key=key, future=fut, lang=lang))
         return await fut
     finally:
         if user_id is not None:
@@ -193,7 +198,7 @@ async def _worker():
             answer = None
             for attempt in range(LLM_RETRIES + 1):
                 await _bucket.acquire()
-                answer = await ask(job.question, job.context, timeout=LLM_PRIMARY_TIMEOUT)
+                answer = await ask(job.question, job.context, timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang)
                 if answer:
                     break
                 if attempt < LLM_RETRIES:
@@ -207,7 +212,7 @@ async def _worker():
             if not answer and LLM_FALLBACK_MODEL:
                 log.warning("Primario fallito, provo il fallback %s", LLM_FALLBACK_MODEL)
                 await _bucket.acquire()
-                answer = await ask(job.question, job.context, model=LLM_FALLBACK_MODEL)
+                answer = await ask(job.question, job.context, model=LLM_FALLBACK_MODEL, lang=job.lang)
 
             if answer:
                 _lru_put(job.key, answer)

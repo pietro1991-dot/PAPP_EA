@@ -19,7 +19,8 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:
   radial-gradient(900px 500px at 50% -10%,rgba(203,166,92,.10),transparent),var(--bg);
   color:var(--text);min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;
   padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:32px 30px;width:min(360px,100%);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.card{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:32px 30px;width:min(360px,100%);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.lang-sel{position:absolute;top:14px;right:14px;background:#11141b;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:5px 6px;font-size:12px;font-weight:600;cursor:pointer;outline:none}
 @media(max-width:420px){.card{padding:26px 20px}}
 .brand{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:6px}
 .brand img{width:64px;height:64px}
@@ -40,27 +41,44 @@ button:hover{filter:brightness(1.08)}button:disabled{opacity:.5;cursor:not-allow
 </head>
 <body>
 <div class="card">
+  <select class="lang-sel" id="lang-sel" onchange="setLang(this.value)" aria-label="Lingua">
+    <option value="it">🇮🇹 IT</option><option value="en">🇬🇧 EN</option><option value="fr">🇫🇷 FR</option><option value="es">🇪🇸 ES</option>
+  </select>
   <div class="brand"><img src="/static/logo-mark.png" alt="PHAI"><span class="wm">PHAI <i>TRADING</i></span></div>
-  <div class="sub">Monitor &amp; assistente — accesso riservato</div>
+  <div class="sub" data-i18n="sub">Monitor &amp; assistente — accesso riservato</div>
   <div class="tabs">
-    <div class="tab active" id="tab-login" onclick="setMode('login')">Accedi</div>
-    <div class="tab" id="tab-register" onclick="setMode('register')">Registrati</div>
+    <div class="tab active" id="tab-login" onclick="setMode('login')" data-i18n="login">Accedi</div>
+    <div class="tab" id="tab-register" onclick="setMode('register')" data-i18n="register">Registrati</div>
   </div>
   <div class="err" id="err"></div>
   <input type="email" id="email" placeholder="Email" autocomplete="username"/>
-  <input type="password" id="password" placeholder="Password" autocomplete="current-password"/>
-  <input type="text" id="license" class="lic" placeholder="License key (es. PAPP-XXXXX-…)"/>
-  <button id="submit" onclick="submitForm()">Accedi</button>
-  <div class="disclaimer">Strumento informativo. Non costituisce consulenza finanziaria.</div>
+  <input type="password" id="password" placeholder="Password" data-i18n-ph="password" autocomplete="current-password"/>
+  <input type="text" id="license" class="lic" placeholder="License key (es. PAPP-XXXXX-…)" data-i18n-ph="license_ph"/>
+  <button id="submit" onclick="submitForm()" data-i18n="login">Accedi</button>
+  <div class="disclaimer" data-i18n="disclaimer">Strumento informativo. Non costituisce consulenza finanziaria.</div>
 </div>
 <script>
+const I18N={
+ it:{sub:'Monitor & assistente — accesso riservato',login:'Accedi',register:'Registrati',password:'Password',license_ph:'License key (es. PAPP-XXXXX-…)',disclaimer:'Strumento informativo. Non costituisce consulenza finanziaria.',req:'Inserisci email e password',err:'Errore',net:'Errore di rete'},
+ en:{sub:'Monitor & AI assistant — restricted access',login:'Sign in',register:'Sign up',password:'Password',license_ph:'License key (e.g. PAPP-XXXXX-…)',disclaimer:'Informational tool. Not financial advice.',req:'Enter email and password',err:'Error',net:'Network error'},
+ fr:{sub:'Monitor & assistant IA — accès réservé',login:'Connexion',register:'Inscription',password:'Mot de passe',license_ph:'Clé de licence (ex. PAPP-XXXXX-…)',disclaimer:'Outil informatif. Ne constitue pas un conseil financier.',req:'Saisissez e-mail et mot de passe',err:'Erreur',net:'Erreur réseau'},
+ es:{sub:'Monitor y asistente IA — acceso reservado',login:'Acceder',register:'Registrarse',password:'Contraseña',license_ph:'Clave de licencia (p. ej. PAPP-XXXXX-…)',disclaimer:'Herramienta informativa. No es asesoramiento financiero.',req:'Introduce email y contraseña',err:'Error',net:'Error de red'}
+};
+let lang=localStorage.getItem('lang')||((navigator.language||'it').slice(0,2)); if(!I18N[lang])lang='it';
+function t(k){return (I18N[lang]&&I18N[lang][k])||I18N.it[k]||k;}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(e=>{ if(e.id!=='submit'&&!e.classList.contains('tab')||true) e.textContent=t(e.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.placeholder=t(e.getAttribute('data-i18n-ph')));
+  document.documentElement.lang=lang;
+}
+function setLang(l){ if(!I18N[l])return; lang=l; localStorage.setItem('lang',l); applyI18n(); setMode(mode); }
 let mode='login'; const err=document.getElementById('err');
 function setMode(m){
   mode=m;
   document.getElementById('tab-login').classList.toggle('active',m==='login');
   document.getElementById('tab-register').classList.toggle('active',m==='register');
   document.getElementById('license').style.display=m==='register'?'block':'none';
-  document.getElementById('submit').textContent=m==='register'?'Registrati':'Accedi';
+  document.getElementById('submit').textContent=m==='register'?t('register'):t('login');
   err.textContent='';
 }
 async function submitForm(){
@@ -69,17 +87,19 @@ async function submitForm(){
   const email=document.getElementById('email').value.trim();
   const password=document.getElementById('password').value;
   const license_key=document.getElementById('license').value.trim();
-  if(!email||!password){err.textContent='Inserisci email e password';return;}
+  if(!email||!password){err.textContent=t('req');return;}
   btn.disabled=true;
   try{
     const body=mode==='register'?{email,password,license_key}:{email,password};
     const r=await fetch('/api/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();
     if(r.ok&&d.ok){location.href='/';}
-    else{err.textContent=d.error||'Errore';btn.disabled=false;}
-  }catch(e){err.textContent='Errore di rete';btn.disabled=false;}
+    else{err.textContent=d.error||t('err');btn.disabled=false;}
+  }catch(e){err.textContent=t('net');btn.disabled=false;}
 }
 ['password','license'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')submitForm()}));
+const _ls=document.getElementById('lang-sel'); if(_ls)_ls.value=lang;
+applyI18n(); setMode('login');
 if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}
 </script>
 </body>

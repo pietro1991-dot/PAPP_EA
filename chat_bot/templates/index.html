@@ -44,6 +44,8 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .user .email{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .user .logout{cursor:pointer;color:var(--accent);font-weight:600}
 .user .logout:hover{text-decoration:underline}
+.lang-sel{background:#1a2236;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 7px;font-size:12px;font-weight:600;cursor:pointer;outline:none;flex-shrink:0}
+.lang-sel:hover{border-color:var(--accent)}
 .install-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 .install-btn:hover{background:rgba(203,166,92,.12)}
 .notif-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:#1a2236;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0}
@@ -246,41 +248,47 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 <header>
   <div class="brand"><img src="/static/logo-mark.png" class="brand-mark" alt="PHAI"><span class="brand-name">PHAI<i>TRADING</i></span></div>
   <div class="tabs" id="tabs"></div>
-  <button class="hdr-btn" id="mercato-btn" onclick="openMercato()" title="Stato mercato">
+  <button class="hdr-btn" id="mercato-btn" onclick="openMercato()" data-i18n-title="market_title">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
-    Mercato
+    <span data-i18n="market">Mercato</span>
   </button>
-  <button class="hdr-btn" id="storico-btn" onclick="openStorico()" title="Storico backtest">
+  <button class="hdr-btn" id="storico-btn" onclick="openStorico()" data-i18n-title="storico_title">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="7"/><line x1="18" y1="20" x2="18" y2="10"/></svg>
-    Storico
+    <span data-i18n="history">Storico</span>
   </button>
   <div class="user">
-    <button class="install-btn" id="install-btn" hidden>⤓ Installa</button>
+    <select class="lang-sel" id="lang-sel" onchange="setLang(this.value)" aria-label="Lingua">
+      <option value="it">🇮🇹 IT</option>
+      <option value="en">🇬🇧 EN</option>
+      <option value="fr">🇫🇷 FR</option>
+      <option value="es">🇪🇸 ES</option>
+    </select>
+    <button class="install-btn" id="install-btn" hidden data-i18n="install">⤓ Installa</button>
     <button class="notif-btn" id="notif-btn" title="Attiva notifiche" onclick="toggleNotifications()" aria-label="Notifiche">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </button>
     <span class="email" id="user-email"></span>
-    <span class="logout" onclick="logout()">Esci</span>
+    <span class="logout" onclick="logout()" data-i18n="logout">Esci</span>
   </div>
 </header>
 
 <div class="cards account">
-  <div class="card"><div class="card-label">Balance</div><div class="card-val" id="acc-balance">—</div></div>
-  <div class="card"><div class="card-label">Equity</div><div class="card-val" id="acc-equity">—</div></div>
-  <div class="card"><div class="card-label">Margine libero</div><div class="card-val" id="acc-free">—</div></div>
-  <div class="card"><div class="card-label">Livello margine</div><div class="card-val" id="acc-level">—</div></div>
-  <div class="card"><div class="card-label" id="acc-pl-label">P/L flottante</div><div class="card-val" id="acc-pl">—</div></div>
+  <div class="card"><div class="card-label" data-i18n="balance">Balance</div><div class="card-val" id="acc-balance">—</div></div>
+  <div class="card"><div class="card-label" data-i18n="equity">Equity</div><div class="card-val" id="acc-equity">—</div></div>
+  <div class="card"><div class="card-label" data-i18n="free_margin">Margine libero</div><div class="card-val" id="acc-free">—</div></div>
+  <div class="card"><div class="card-label" data-i18n="margin_level">Livello margine</div><div class="card-val" id="acc-level">—</div></div>
+  <div class="card"><div class="card-label" id="acc-pl-label" data-i18n="floating_pl">P/L flottante</div><div class="card-val" id="acc-pl">—</div></div>
 </div>
 <div class="cards stats-row">
-  <div class="card sm"><div class="card-label">Aperte</div><div class="card-val accent" id="stat-open">0</div></div>
-  <div class="card sm"><div class="card-label">Chiuse</div><div class="card-val" id="stat-close">0</div></div>
-  <div class="card sm"><div class="card-label">Skip</div><div class="card-val" id="stat-skip">0</div></div>
-  <div class="card sm"><div class="card-label">PnL chiuse (punti)</div><div class="card-val" id="stat-pnl">0</div></div>
+  <div class="card sm"><div class="card-label" data-i18n="open_n">Aperte</div><div class="card-val accent" id="stat-open">0</div></div>
+  <div class="card sm"><div class="card-label" data-i18n="closed_n">Chiuse</div><div class="card-val" id="stat-close">0</div></div>
+  <div class="card sm"><div class="card-label" data-i18n="skip_n">Skip</div><div class="card-val" id="stat-skip">0</div></div>
+  <div class="card sm"><div class="card-label" data-i18n="pnl_closed">PnL chiuse (punti)</div><div class="card-val" id="stat-pnl">0</div></div>
 </div>
 
 <div class="container">
   <div class="panel signals-panel">
-    <div class="panel-head">Segnali <span class="scope" id="sig-scope">· Tutti</span>
+    <div class="panel-head"><span data-i18n="signals">Segnali</span> <span class="scope" id="sig-scope">· Tutti</span>
       <span class="live"><span class="pulse"></span>LIVE</span>
     </div>
     <div class="signal-list" id="signal-list"></div>
@@ -296,25 +304,25 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 <div class="drawer-overlay" id="drawer-overlay"></div>
 <aside class="drawer" id="drawer">
   <div class="drawer-head">
-    <button class="icon-btn" id="hist-btn" title="Cronologia">
+    <button class="icon-btn" id="hist-btn" data-i18n-title="hist_title">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <div class="drawer-title">Assistente <span class="scope" id="chat-scope"></span></div>
-    <button class="icon-btn primary" id="new-btn" title="Nuova chat">
+    <div class="drawer-title"><span data-i18n="assistant">Assistente</span> <span class="scope" id="chat-scope"></span></div>
+    <button class="icon-btn primary" id="new-btn" data-i18n-title="new_chat">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
-    <button class="icon-btn" id="close-btn" title="Chiudi">
+    <button class="icon-btn" id="close-btn" data-i18n-title="close">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
   <div class="messages" id="chat-messages"></div>
   <div class="history" id="history-view" hidden></div>
   <div class="input-bar" id="chat-inputbar">
-    <input type="text" id="chat-input" placeholder="Chiedi qualcosa sull'EA…" autocomplete="off"/>
-    <button class="mic-btn" id="mic-btn" title="Dettatura vocale" aria-label="Dettatura vocale">
+    <input type="text" id="chat-input" placeholder="Chiedi qualcosa sull'EA…" data-i18n-ph="chat_ph" autocomplete="off"/>
+    <button class="mic-btn" id="mic-btn" data-i18n-title="dictation" aria-label="Dettatura vocale">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
     </button>
-    <button id="chat-btn">Invia</button>
+    <button id="chat-btn" data-i18n="send">Invia</button>
   </div>
 </aside>
 
@@ -322,8 +330,8 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 <div class="drawer-overlay" id="st-overlay"></div>
 <aside class="drawer left" id="st-drawer">
   <div class="drawer-head">
-    <div class="drawer-title">Storico backtest <span class="scope" id="st-scope"></span></div>
-    <button class="icon-btn" id="st-close" title="Chiudi">
+    <div class="drawer-title"><span data-i18n="storico_title">Storico backtest</span> <span class="scope" id="st-scope"></span></div>
+    <button class="icon-btn" id="st-close" data-i18n-title="close">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
@@ -334,8 +342,8 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 <div class="drawer-overlay" id="mk-overlay"></div>
 <aside class="drawer left" id="mk-drawer">
   <div class="drawer-head">
-    <div class="drawer-title">Stato mercato <span class="scope" id="mk-scope"></span></div>
-    <button class="icon-btn" id="mk-close" title="Chiudi">
+    <div class="drawer-title"><span data-i18n="market_title">Stato mercato</span> <span class="scope" id="mk-scope"></span></div>
+    <button class="icon-btn" id="mk-close" data-i18n-title="close">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
@@ -344,6 +352,43 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 
 <script>
 const $=id=>document.getElementById(id);
+
+/* ===== i18n (IT/EN/FR/ES) ===== */
+const I18N={
+ it:{market:'Mercato',history:'Storico',install:'⤓ Installa',logout:'Esci',balance:'Balance',equity:'Equity',free_margin:'Margine libero',margin_level:'Livello margine',floating_pl:'P/L flottante',open_n:'Aperte',closed_n:'Chiuse',skip_n:'Skip',pnl_closed:'PnL chiuse (punti)',signals:'Segnali',all:'Tutti',assistant:'Assistente',chat_ph:"Chiedi qualcosa sull'EA…",send:'Invia',hist_title:'Cronologia',new_chat:'Nuova chat',close:'Chiudi',dictation:'Dettatura vocale',storico_title:'Storico backtest',market_title:'Stato mercato',loading:'Carico…',trades:'Trade',winrate:'Win rate',pnl_pts:'PnL punti',pnl_cur:'PnL valuta',feature:'Feature',current:'Attuale',average:'Media',percentile:'Percentile',no_bt:'Nessun dato di backtest ancora.',no_feat:'Nessuna feature di mercato.',no_conv:'Nessuna conversazione salvata.',start_chat:'Inizia a chattare per crearne una.',last_bar:'ultima barra',welcome:"Ciao! Chiedimi pattern, segnali e performance dell'EA. Usa <b>+</b> per una nuova conversazione e <b>☰</b> per la cronologia.",order_open:'Ordine aperto',order_close:'Ordine chiuso',notif_on:'Notifiche attive',notif_off:'Attiva notifiche',notif_on_msg:'Riceverai gli avvisi di apertura e chiusura ordini.',notif_off_msg:'Notifiche disattivate'},
+ en:{market:'Market',history:'History',install:'⤓ Install',logout:'Log out',balance:'Balance',equity:'Equity',free_margin:'Free margin',margin_level:'Margin level',floating_pl:'Floating P/L',open_n:'Open',closed_n:'Closed',skip_n:'Skip',pnl_closed:'Closed PnL (points)',signals:'Signals',all:'All',assistant:'Assistant',chat_ph:'Ask about the EA…',send:'Send',hist_title:'History',new_chat:'New chat',close:'Close',dictation:'Voice dictation',storico_title:'Backtest history',market_title:'Market state',loading:'Loading…',trades:'Trades',winrate:'Win rate',pnl_pts:'PnL points',pnl_cur:'PnL currency',feature:'Feature',current:'Current',average:'Average',percentile:'Percentile',no_bt:'No backtest data yet.',no_feat:'No market features.',no_conv:'No saved conversations.',start_chat:'Start chatting to create one.',last_bar:'last bar',welcome:'Hi! Ask me about patterns, signals and EA performance. Use <b>+</b> for a new conversation and <b>☰</b> for history.',order_open:'Order opened',order_close:'Order closed',notif_on:'Notifications on',notif_off:'Enable notifications',notif_on_msg:"You'll get alerts on order open and close.",notif_off_msg:'Notifications disabled'},
+ fr:{market:'Marché',history:'Historique',install:'⤓ Installer',logout:'Déconnexion',balance:'Balance',equity:'Equity',free_margin:'Marge libre',margin_level:'Niveau de marge',floating_pl:'P/L flottant',open_n:'Ouvertes',closed_n:'Fermées',skip_n:'Skip',pnl_closed:'PnL clôturé (points)',signals:'Signaux',all:'Tous',assistant:'Assistant',chat_ph:"Posez une question sur l'EA…",send:'Envoyer',hist_title:'Historique',new_chat:'Nouvelle conversation',close:'Fermer',dictation:'Dictée vocale',storico_title:'Historique backtest',market_title:'État du marché',loading:'Chargement…',trades:'Trades',winrate:'Taux de réussite',pnl_pts:'PnL points',pnl_cur:'PnL devise',feature:'Indicateur',current:'Actuel',average:'Moyenne',percentile:'Percentile',no_bt:'Aucune donnée de backtest.',no_feat:'Aucune feature de marché.',no_conv:'Aucune conversation enregistrée.',start_chat:'Commencez à discuter pour en créer une.',last_bar:'dernière barre',welcome:"Bonjour ! Posez-moi des questions sur les patterns, signaux et performances de l'EA. Utilisez <b>+</b> pour une nouvelle conversation et <b>☰</b> pour l'historique.",order_open:'Ordre ouvert',order_close:'Ordre fermé',notif_on:'Notifications activées',notif_off:'Activer les notifications',notif_on_msg:"Vous serez alerté à l'ouverture et la fermeture des ordres.",notif_off_msg:'Notifications désactivées'},
+ es:{market:'Mercado',history:'Historial',install:'⤓ Instalar',logout:'Salir',balance:'Balance',equity:'Equity',free_margin:'Margen libre',margin_level:'Nivel de margen',floating_pl:'P/L flotante',open_n:'Abiertas',closed_n:'Cerradas',skip_n:'Skip',pnl_closed:'PnL cerrado (puntos)',signals:'Señales',all:'Todos',assistant:'Asistente',chat_ph:'Pregunta sobre el EA…',send:'Enviar',hist_title:'Historial',new_chat:'Nuevo chat',close:'Cerrar',dictation:'Dictado por voz',storico_title:'Historial de backtest',market_title:'Estado del mercado',loading:'Cargando…',trades:'Operaciones',winrate:'Tasa de acierto',pnl_pts:'PnL puntos',pnl_cur:'PnL divisa',feature:'Indicador',current:'Actual',average:'Media',percentile:'Percentil',no_bt:'Aún no hay datos de backtest.',no_feat:'Sin features de mercado.',no_conv:'Sin conversaciones guardadas.',start_chat:'Empieza a chatear para crear una.',last_bar:'última barra',welcome:'¡Hola! Pregúntame sobre patrones, señales y rendimiento del EA. Usa <b>+</b> para una nueva conversación y <b>☰</b> para el historial.',order_open:'Orden abierta',order_close:'Orden cerrada',notif_on:'Notificaciones activas',notif_off:'Activar notificaciones',notif_on_msg:'Recibirás avisos de apertura y cierre de órdenes.',notif_off_msg:'Notificaciones desactivadas'}
+};
+const MONTHS_I18N={
+ it:['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
+ en:['','January','February','March','April','May','June','July','August','September','October','November','December'],
+ fr:['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+ es:['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+};
+let lang=localStorage.getItem('lang')||((navigator.language||'it').slice(0,2));
+if(!I18N[lang]) lang='it';
+function t(k){return (I18N[lang]&&I18N[lang][k])||I18N.it[k]||k;}
+const ASK_ON={it:'Chiedi su',en:'Ask about',fr:'Question sur',es:'Pregunta sobre'};
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.getAttribute('data-i18n')));
+  document.querySelectorAll('[data-i18n-ph]').forEach(e=>e.placeholder=t(e.getAttribute('data-i18n-ph')));
+  document.querySelectorAll('[data-i18n-title]').forEach(e=>e.title=t(e.getAttribute('data-i18n-title')));
+  document.documentElement.lang=lang;
+}
+function welcomeHtml(){return '<div class="msg bot"><span class="who">PHAI Assistant</span>'+t('welcome')+'</div>';}
+function setLang(l){
+  if(!I18N[l])return; lang=l; localStorage.setItem('lang',l);
+  applyI18n(); renderTabs();
+  const sc=activeSymbol?('· '+activeSymbol):('· '+t('all')); $('sig-scope').textContent=sc;
+  chatInput.placeholder=activeSymbol?(ASK_ON[lang]+' '+activeSymbol+'…'):t('chat_ph');
+  if(currentConvId===null) chatMsg.innerHTML=welcomeHtml();
+  updatePLCard&&updatePLCard();
+  if(stDrawer&&stDrawer.classList.contains('open'))loadStorico();
+  if(mkDrawer&&mkDrawer.classList.contains('open'))loadMercato();
+  if($('history-view')&&!$('history-view').hidden)loadConversations();
+}
+
 const chatMsg=$('chat-messages'), chatInput=$('chat-input'), chatBtn=$('chat-btn'), signalList=$('signal-list');
 let activeSymbol='';            // '' = tutti
 let knownSymbols=[];
@@ -387,15 +432,15 @@ function renderTabs(){
     }
     t.onclick=()=>setSymbol(val); tabs.appendChild(t);
   };
-  mk('Tutti','');
+  mk(t('all'),'');
   knownSymbols.forEach(s=>mk(s,s));
 }
 function setSymbol(sym){
   activeSymbol=sym; renderTabs();
-  const label=sym||'Tutti';
+  const label=sym||t('all');
   $('sig-scope').textContent='· '+label;
   $('chat-scope').textContent=sym?('· '+sym):'';
-  chatInput.placeholder=sym?`Chiedi su ${sym}…`:"Chiedi qualcosa sull'EA…";
+  chatInput.placeholder=sym?(ASK_ON[lang]+' '+sym+'…'):t('chat_ph');
   loadRecent(); refreshStats(); updatePLCard();
 }
 
@@ -422,7 +467,7 @@ function updatePLCard(){
     if(s && s.profit!=null){pl.textContent=fmtMoney(s.profit)+'  ('+fmtPct(s.pct||0)+')';pl.className='card-val '+(s.profit>=0?'pos':'neg');}
     else{pl.textContent='—';pl.className='card-val';}
   }else{
-    lab.textContent='P/L flottante';
+    lab.textContent=t('floating_pl');
     const v=accountData.profit;
     pl.textContent=v==null?'—':fmtMoney(v); pl.className='card-val '+(v>0?'pos':v<0?'neg':'');
   }
@@ -513,8 +558,8 @@ function connectWS(){
     // toast in-app immediato su apertura/chiusura
     if(d.action==='open'||d.action==='close'){
       const head=(d.symbol?d.symbol+' ':'')+'P'+(d.pattern??'?')+' '+(d.dir||'');
-      if(d.action==='open'){ toast('🟢 Ordine aperto', head+(d.entry?(' @'+d.entry.toFixed(5)):''), getComputedStyle(document.body).getPropertyValue('--green')); }
-      else{ const neg=d.pnl_pt!=null&&d.pnl_pt<0; toast((neg?'🔴':'🟢')+' Ordine chiuso', head+(d.pnl_pt!=null?(' · PnL '+(d.pnl_pt>=0?'+':'')+d.pnl_pt.toFixed(1)+'pt'):''), getComputedStyle(document.body).getPropertyValue(neg?'--red':'--green')); }
+      if(d.action==='open'){ toast('🟢 '+t('order_open'), head+(d.entry?(' @'+d.entry.toFixed(5)):''), getComputedStyle(document.body).getPropertyValue('--green')); }
+      else{ const neg=d.pnl_pt!=null&&d.pnl_pt<0; toast((neg?'🔴':'🟢')+' '+t('order_close'), head+(d.pnl_pt!=null?(' · PnL '+(d.pnl_pt>=0?'+':'')+d.pnl_pt.toFixed(1)+'pt'):''), getComputedStyle(document.body).getPropertyValue(neg?'--red':'--green')); }
       refreshAccount();
     }
     refreshStats();
@@ -530,7 +575,7 @@ chatBtn.onclick=async()=>{
   const bot=addBotMsg(); bot.innerHTML='<span class="who">PHAI Assistant</span><span class="typing"><i></i><i></i><i></i></span>';
   try{
     const convId=await ensureConversation();
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,symbol:activeSymbol,conversation_id:convId})});
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,symbol:activeSymbol,conversation_id:convId,lang:lang})});
     const reader=r.body.getReader(); const dec=new TextDecoder(); let text='';
     while(true){
       const {done,value}=await reader.read(); if(done)break;
@@ -589,7 +634,7 @@ function showChatView(){$('history-view').hidden=true;$('chat-messages').hidden=
 function showHistoryView(){$('chat-messages').hidden=true;$('chat-inputbar').style.display='none';$('history-view').hidden=false;loadConversations();}
 fab.onclick=openChat; overlay.onclick=closeChat; $('close-btn').onclick=closeChat;
 $('hist-btn').onclick=()=>{$('history-view').hidden?showHistoryView():showChatView();};
-$('new-btn').onclick=()=>{currentConvId=null;chatMsg.innerHTML=WELCOME;showChatView();chatInput.focus();};
+$('new-btn').onclick=()=>{currentConvId=null;chatMsg.innerHTML=welcomeHtml();showChatView();chatInput.focus();};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawer.classList.contains('open'))closeChat();});
 function fmtDateTime(iso){if(!iso)return'';const d=new Date(/[zZ+]/.test(iso)?iso:iso+'Z');return isNaN(d)?'':d.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
 async function ensureConversation(){
@@ -599,7 +644,7 @@ async function ensureConversation(){
 async function loadConversations(){
   const r=await fetch('/api/conversations'); if(r.status===401){location.href='/';return;}
   const list=await r.json(); const hv=$('history-view'); hv.innerHTML='';
-  if(!list.length){hv.innerHTML='<div class="hist-empty">Nessuna conversazione salvata.<br>Inizia a chattare per crearne una.</div>';return;}
+  if(!list.length){hv.innerHTML='<div class="hist-empty">'+t('no_conv')+'<br>'+t('start_chat')+'</div>';return;}
   list.forEach(c=>{
     const it=document.createElement('div');it.className='hist-item';
     const main=document.createElement('div');main.className='hist-main';
@@ -614,13 +659,13 @@ async function loadConversations(){
 async function openConversation(id){
   const r=await fetch('/api/conversations/'+id+'/messages'); if(!r.ok)return;
   const d=await r.json(); currentConvId=id; chatMsg.innerHTML='';
-  if(!d.messages.length)chatMsg.innerHTML=WELCOME;
+  if(!d.messages.length)chatMsg.innerHTML=welcomeHtml();
   d.messages.forEach(m=>{addUserMsg(m.q);const b=addBotMsg();b.innerHTML='<span class="who">PHAI Assistant</span>'+renderMarkdown(m.a);});
   showChatView();
 }
 async function deleteConversation(id){
   await fetch('/api/conversations/'+id,{method:'DELETE'});
-  if(currentConvId===id){currentConvId=null;chatMsg.innerHTML=WELCOME;}
+  if(currentConvId===id){currentConvId=null;chatMsg.innerHTML=welcomeHtml();}
   loadConversations();
 }
 
@@ -635,15 +680,15 @@ function sgn(v){return (v>=0?'+':'')+v;}
 function btQuery(extra){return (activeSymbol?('symbol='+encodeURIComponent(activeSymbol)+(extra?'&':'')):'')+(extra||'');}
 async function loadStorico(){
   $('st-scope').textContent=activeSymbol?('· '+activeSymbol):'';
-  const body=$('st-body'); body.innerHTML='<div class="hist-empty">Carico…</div>';
+  const body=$('st-body'); body.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
   const r=await fetch('/api/backtest/overview'+(activeSymbol?('?symbol='+encodeURIComponent(activeSymbol)):'')); if(r.status===401){location.href='/';return;}
   const d=await r.json(); body.innerHTML='';
-  if(!d.available){body.innerHTML='<div class="hist-empty">Nessun dato di backtest ancora.<br>Lancia il tester su MT5, poi importa i CSV con <b>import_backtests.py</b>.</div>';return;}
-  const t=d.totals, tot=document.createElement('div'); tot.className='st-tot';
-  tot.innerHTML=`<div class="c"><div class="l">Trade</div><div class="v">${t.trades}</div></div>`+
-    `<div class="c"><div class="l">Win rate</div><div class="v">${t.winrate}%</div></div>`+
-    `<div class="c"><div class="l">PnL punti</div><div class="v ${t.pnl_pt>=0?'pos':'neg'}">${sgn(t.pnl_pt)}</div></div>`+
-    `<div class="c"><div class="l">PnL valuta</div><div class="v ${t.pnl_money>=0?'pos':'neg'}">${sgn(t.pnl_money)}</div></div>`;
+  if(!d.available){body.innerHTML='<div class="hist-empty">'+t('no_bt')+'<br>Tester MT5 → <b>import_backtests.py</b>.</div>';return;}
+  const tt=d.totals, tot=document.createElement('div'); tot.className='st-tot';
+  tot.innerHTML=`<div class="c"><div class="l">${t('trades')}</div><div class="v">${tt.trades}</div></div>`+
+    `<div class="c"><div class="l">${t('winrate')}</div><div class="v">${tt.winrate}%</div></div>`+
+    `<div class="c"><div class="l">${t('pnl_pts')}</div><div class="v ${tt.pnl_pt>=0?'pos':'neg'}">${sgn(tt.pnl_pt)}</div></div>`+
+    `<div class="c"><div class="l">${t('pnl_cur')}</div><div class="v ${tt.pnl_money>=0?'pos':'neg'}">${sgn(tt.pnl_money)}</div></div>`;
   body.appendChild(tot);
   d.by_year.forEach(y=>body.appendChild(yearRow(y)));
 }
@@ -665,7 +710,7 @@ function yearRow(y){
 function monthRow(year,m){
   const wrap=document.createElement('div');
   const row=document.createElement('div'); row.className='mn-row';
-  row.innerHTML=`<span class="nm">${MONTHS[m.month]}</span><span class="mt">${m.trades} trade · win ${m.winrate}%</span><span class="pnl ${m.pnl_pt>=0?'pos':'neg'}">${sgn(m.pnl_pt)}pt</span>`;
+  row.innerHTML=`<span class="nm">${(MONTHS_I18N[lang]||MONTHS_I18N.it)[m.month]}</span><span class="mt">${m.trades} ${t('trades').toLowerCase()} · win ${m.winrate}%</span><span class="pnl ${m.pnl_pt>=0?'pos':'neg'}">${sgn(m.pnl_pt)}pt</span>`;
   wrap.appendChild(row);
   const tr=document.createElement('div'); tr.hidden=true; wrap.appendChild(tr);
   row.onclick=async()=>{
@@ -693,19 +738,19 @@ mkOverlay.onclick=closeMercato; $('mk-close').onclick=closeMercato;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mkDrawer.classList.contains('open'))closeMercato();});
 async function loadMercato(){
   $('mk-scope').textContent=activeSymbol?('· '+activeSymbol):'';
-  const body=$('mk-body'); body.innerHTML='<div class="hist-empty">Carico…</div>';
+  const body=$('mk-body'); body.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
   const r=await fetch('/api/market-state'+(activeSymbol?('?symbol='+encodeURIComponent(activeSymbol)):'')); if(r.status===401){location.href='/';return;}
   const d=await r.json(); body.innerHTML='';
-  if(!d.available){body.innerHTML='<div class="hist-empty">Nessuna feature di mercato.<br>Importa l\'export con <b>import_features.py</b>.</div>';return;}
+  if(!d.available){body.innerHTML='<div class="hist-empty">'+t('no_feat')+'<br><b>import_features.py</b></div>';return;}
   const hd=document.createElement('div'); hd.className='mk-head';
   const sym=document.createElement('div'); sym.className='mk-sym'; sym.textContent=d.symbol;
-  const sub=document.createElement('div'); sub.className='mk-sub'; sub.textContent=`ultima barra ${d.t} · close ${d.close}`;
+  const sub=document.createElement('div'); sub.className='mk-sub'; sub.textContent=`${t('last_bar')} ${d.t} · close ${d.close}`;
   hd.appendChild(sym); hd.appendChild(sub); body.appendChild(hd);
   const chips=document.createElement('div'); chips.className='mk-chips';
   d.price_vs.forEach(p=>{const c=document.createElement('span'); c.className='mk-chip '+(p.pos==='sopra'?'pos':'neg'); c.textContent=`${p.pos} ${p.ma} (${p.dist>=0?'+':''}${p.dist}%)`; chips.appendChild(c);});
   body.appendChild(chips);
   const tbl=document.createElement('table'); tbl.className='mk-table';
-  tbl.innerHTML='<thead><tr><th>Feature</th><th>Attuale</th><th>Media</th><th>Percentile</th></tr></thead>';
+  tbl.innerHTML=`<thead><tr><th>${t('feature')}</th><th>${t('current')}</th><th>${t('average')}</th><th>${t('percentile')}</th></tr></thead>`;
   const tb=document.createElement('tbody');
   d.features.forEach(f=>{
     const tr=document.createElement('tr');
@@ -745,7 +790,10 @@ async function loadUser(){
   const r=await fetch('/api/me'); if(r.status===401){location.href='/';return;}
   const d=await r.json(); $('user-email').textContent=d.email||'';
 }
-chatMsg.innerHTML=WELCOME;
+const _ls=$('lang-sel'); if(_ls)_ls.value=lang;
+applyI18n();
+$('sig-scope').textContent='· '+t('all');
+chatMsg.innerHTML=welcomeHtml();
 loadUser(); loadSymbols(); connectWS(); loadRecent(); refreshStats(); refreshAccount();
 setInterval(refreshStats,10000);
 setInterval(refreshAccount,10000);
@@ -760,7 +808,7 @@ function toast(title,body,color){
   setTimeout(()=>t.remove(),6500);
 }
 function urlB64ToUint8(s){const pad='='.repeat((4-s.length%4)%4);const b=(s+pad).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(b);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
-function updateBell(on){const b=$('notif-btn'); if(!b)return; b.classList.toggle('on',on); b.title=on?'Notifiche attive (clic per disattivare)':'Attiva notifiche';}
+function updateBell(on){const b=$('notif-btn'); if(!b)return; b.classList.toggle('on',on); b.title=on?t('notif_on'):t('notif_off');}
 async function initPush(){
   const b=$('notif-btn'); if(!b)return;
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){b.style.display='none';return;}
@@ -770,14 +818,14 @@ async function toggleNotifications(){
   try{
     const reg=await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
-    if(sub){ await fetch('/api/push/unsubscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:sub.endpoint})}); await sub.unsubscribe(); updateBell(false); toast('Notifiche disattivate',''); return; }
+    if(sub){ await fetch('/api/push/unsubscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:sub.endpoint})}); await sub.unsubscribe(); updateBell(false); toast(t('notif_off_msg'),''); return; }
     const perm=await Notification.requestPermission();
     if(perm!=='granted'){ toast('Permesso negato','Abilita le notifiche nelle impostazioni del browser.',getComputedStyle(document.body).getPropertyValue('--red')); return; }
     const {key}=await (await fetch('/api/push/key')).json();
     if(!key){ toast('Non disponibile','Chiave push non configurata.'); return; }
     sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8(key)});
     await fetch('/api/push/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sub)});
-    updateBell(true); toast('Notifiche attive','Riceverai gli avvisi di apertura e chiusura ordini.');
+    updateBell(true); toast(t('notif_on'),t('notif_on_msg'));
   }catch(e){ toast('Errore notifiche', e.message||''); }
 }
 

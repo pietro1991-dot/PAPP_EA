@@ -754,6 +754,9 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
     question = body.get("question", "").strip()
     symbol = (body.get("symbol") or "").strip()
     conversation_id = body.get("conversation_id")
+    lang = (body.get("lang") or "it").strip().lower()
+    if lang not in ("it", "en", "fr", "es"):
+        lang = "it"
     if not question:
         return JSONResponse({"error": "Domanda vuota"}, status_code=400)
 
@@ -763,20 +766,20 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
     # invalida quando i dati (anche il P/L flottante) cambiano.
     digest = await metrics.build_digest(symbol)
     context = digest["text"]
-    context_sig = digest["sig"]
+    context_sig = digest["sig"] + ":" + lang  # la cache distingue per lingua
     recent_count = digest["recent_count"]
 
     # Domande comuni → riassunto condiviso precalcolato, 0 quota LLM.
-    # (solo per la vista globale: il riassunto precalcolato non è per-simbolo)
+    # Solo vista globale e in italiano (il riassunto precalcolato è in italiano).
     precomputed = None
-    if not symbol and _is_common_question(question):
+    if lang == "it" and not symbol and _is_common_question(question):
         precomputed = await _latest_summary("perf_today")
 
     async def event_stream():
         if precomputed is not None:
             full = precomputed
         else:
-            full = await llm_worker.submit(question, context, context_sig, user.id)
+            full = await llm_worker.submit(question, context, context_sig, user.id, lang)
         # Risposta inviata come singolo evento JSON: preserva newline e caratteri
         # speciali, che con "data: {full}" romperebbero il framing SSE (le righe
         # successive alla prima venivano scartate dal client).

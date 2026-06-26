@@ -18,9 +18,16 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "3000"))
 # Vuoto = ometti il parametro (per modelli che lo rifiutano con 400).
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "low").strip()
 
+LANG_NAMES = {
+    "it": "italiano",
+    "en": "English",
+    "fr": "français",
+    "es": "español",
+}
+
 SYSTEM_PROMPT = (
     "Sei l'assistente del PAPP_EA, un Expert Advisor di trading su MetaTrader 5. "
-    "Rispondi sempre in italiano, in modo chiaro e ben strutturato (usa elenchi puntati e "
+    "Rispondi in modo chiaro e ben strutturato (usa elenchi puntati e "
     "tabelle quando rendono la risposta più leggibile). "
     "USA ESCLUSIVAMENTE i dati forniti nel contesto (stato conto, performance per simbolo e "
     "per pattern, periodo, ultimi segnali) e la conoscenza sull'EA qui sotto: ogni numero che "
@@ -48,10 +55,16 @@ def _load_knowledge() -> str:
 EA_KNOWLEDGE = _load_knowledge()
 
 
-def _system_content() -> str:
+def _system_content(lang: str = "it") -> str:
+    langname = LANG_NAMES.get(lang, LANG_NAMES["it"])
+    directive = (
+        f"IMPORTANTE: rispondi SEMPRE e SOLO in {langname}, qualunque sia la lingua "
+        f"dei dati o del contesto qui sotto (che possono essere in italiano).\n\n"
+    )
+    body = SYSTEM_PROMPT
     if EA_KNOWLEDGE:
-        return SYSTEM_PROMPT + "\n\n--- Conoscenza sul PAPP_EA ---\n" + EA_KNOWLEDGE
-    return SYSTEM_PROMPT
+        body += "\n\n--- Conoscenza sul PAPP_EA ---\n" + EA_KNOWLEDGE
+    return directive + body
 
 
 def _api_key() -> Optional[str]:
@@ -80,6 +93,7 @@ async def ask(
     context: Optional[str] = None,
     model: Optional[str] = None,
     timeout: Optional[float] = None,
+    lang: str = "it",
 ) -> Optional[str]:
     """Interroga l'LLM via API HTTP OpenAI-compatibile (OpenCode Zen).
     `model` permette di usare un modello diverso da quello di default (es. fallback).
@@ -94,7 +108,7 @@ async def ask(
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": _system_content()},
+            {"role": "system", "content": _system_content(lang)},
             {"role": "user", "content": build_user_message(question, context)},
         ],
         "max_tokens": LLM_MAX_TOKENS,
