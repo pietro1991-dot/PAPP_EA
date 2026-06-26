@@ -44,6 +44,7 @@ risponde alle domande di mercato — in italiano, inglese, francese, spagnolo.
 | [08_VSL_E_SALES_PAGE.md](08_VSL_E_SALES_PAGE.md) | Script VSL + struttura sales page |
 | [09_KPI_BUDGET_PIPELINE.md](09_KPI_BUDGET_PIPELINE.md) | Numeri: budget, KPI, funnel math, calendario |
 | [10_COMPLIANCE_DISCLAIMER.md](10_COMPLIANCE_DISCLAIMER.md) | Regole legali, disclaimer, claim ammessi |
+| [11_MODELLO_BUSINESS.md](11_MODELLO_BUSINESS.md) | **Analisi di tutti i modelli + scelta: SaaS ibrido abbonamento-first** |
 
 ## Come usare questa cartella
 1. Parti da **strategia** e **avatar** (capisci a chi e perché).
