@@ -21,7 +21,7 @@
 input group "======  GENERALE / RISCHIO  ======"
 input string  InpIndicatorName = "PaPP_Median.ex5";
 
-input double  InpRiskPct       = 10.0;          // Rischio % per trade
+input double  InpRiskPct       = 4.0;           // Rischio % per trade
 input double  InpLotFixed      = 0.0;           // Lotto fisso (0=usa % rischio)
 input double  InpMaxLot        = 1.0;           // Lotto massimo assoluto - tetto di sicurezza (0=usa broker)
 input int     InpMaxSpread     = 50;            // Spread massimo in punti (0=disabilita)
@@ -477,6 +477,34 @@ void LogMarketSnapshot()
 }
 
 //+------------------------------------------------------------------+
+// Snapshot del conto: balance/equity/margine come MetaTrader, + P/L flottante
+// del simbolo corrente e profitto % (su balance). Loggato periodicamente.
+void LogAccountSnapshot()
+{
+   if(g_logHandle < 0) return;
+   double bal = g_acc.Balance();
+   double symProfit = 0.0; int symOpen = 0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong tkt = PositionGetTicket(i);
+      if(tkt == 0) continue;
+      if(PositionGetString(POSITION_SYMBOL) != _Symbol) continue;
+      symProfit += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+      symOpen++;
+   }
+   double symPct = (bal > 0.0) ? symProfit / bal * 100.0 : 0.0;
+   string json = StringFormat(
+      "{\"t\":%d,\"symbol\":\"%s\",\"action\":\"account\",\"balance\":%.2f,\"equity\":%.2f,"
+      "\"margin\":%.2f,\"free_margin\":%.2f,\"margin_level\":%.2f,\"profit\":%.2f,"
+      "\"sym_profit\":%.2f,\"sym_pct\":%.2f,\"sym_open\":%d}\n",
+      (int)TimeCurrent(), _Symbol, bal, g_acc.Equity(), g_acc.Margin(), g_acc.FreeMargin(),
+      g_acc.MarginLevel(), g_acc.Profit(), symProfit, symPct, symOpen);
+   FileSeek(g_logHandle, 0, SEEK_END);
+   FileWriteString(g_logHandle, json);
+   FileFlush(g_logHandle);
+}
+
+//+------------------------------------------------------------------+
 void OpenPatternTrade(int pi)
 {
    Pattern p = g_patterns[pi];
@@ -875,6 +903,7 @@ void OnTimer()
    if(now - g_lastMarketLog < 60) return;  // non piu' spesso di 60s
    g_lastMarketLog = now;
    LogMarketSnapshot();
+   LogAccountSnapshot();
 }
 
 //+------------------------------------------------------------------+
