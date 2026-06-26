@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, Fil
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 
-from sqlalchemy import select, desc, delete, func as sa_func
+from sqlalchemy import select, desc, delete, extract, case, func as sa_func
 
 from db import (
     init_db,
@@ -22,6 +22,7 @@ from db import (
     AccountSnapshot,
     Conversation,
     PushSubscription,
+    BacktestTrade,
 )
 from mt5_bridge import LogTailer
 import llm_worker
@@ -387,6 +388,100 @@ async def get_symbols(user: User = Depends(auth.current_user)):
             )
         ).scalars().all()
     return sorted(s for s in rows if s)
+
+
+def _bt_scope(q, symbol):
+    q = q.where(BacktestTrade.exit_time.isnot(None))
+    if symbol:
+        q = q.where(BacktestTrade.symbol == symbol)
+    return q
+
+
+def _bt_agg():
+    return (
+        sa_func.count(BacktestTrade.id),
+        sa_func.coalesce(sa_func.sum(BacktestTrade.pnl_pt), 0),
+        sa_func.coalesce(sa_func.sum(BacktestTrade.pnl_money), 0),
+        sa_func.sum(case((BacktestTrade.pnl_pt > 0, 1), else_=0)),
+    )
+
+
+def _row_stats(r):
+    n, pt, money, w = r
+    return {
+        "trades": n or 0,
+        "pnl_pt": round(float(pt or 0), 1),
+        "pnl_money": round(float(money or 0), 2),
+        "winrate": round((w or 0) / n * 100) if n else 0,
+    }
+
+
+@app.get("/api/backtest/overview")
+async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_user)):
+    async with AsyncSession() as session:
+        symbols = (
+            await session.execute(
+                select(BacktestTrade.symbol).where(BacktestTrade.symbol.isnot(None)).distinct()
+            )
+        ).scalars().all()
+        if not symbols:
+            return {"available": False, "symbols": []}
+        totals = _row_stats(
+            (await session.execute(_bt_scope(select(*_bt_agg()), symbol))).first()
+        )
+        years = (
+            await session.execute(
+                _bt_scope(
+                    select(extract("year", BacktestTrade.exit_time).label("y"), *_bt_agg()),
+                    symbol,
+                ).group_by("y").order_by(desc("y"))
+            )
+        ).all()
+    return {
+        "available": True,
+        "symbols": sorted(s for s in symbols if s),
+        "totals": totals,
+        "by_year": [{"year": int(y[0]), **_row_stats(y[1:])} for y in years],
+    }
+
+
+@app.get("/api/backtest/year")
+async def backtest_year(year: int, symbol: str = "", user: User = Depends(auth.current_user)):
+    async with AsyncSession() as session:
+        q = _bt_scope(
+            select(extract("month", BacktestTrade.exit_time).label("m"), *_bt_agg()), symbol
+        ).where(extract("year", BacktestTrade.exit_time) == year)
+        months = (await session.execute(q.group_by("m").order_by("m"))).all()
+    return {"year": year, "by_month": [{"month": int(m[0]), **_row_stats(m[1:])} for m in months]}
+
+
+@app.get("/api/backtest/trades")
+async def backtest_trades(
+    year: int, month: int = 0, symbol: str = "", user: User = Depends(auth.current_user)
+):
+    async with AsyncSession() as session:
+        q = _bt_scope(select(BacktestTrade), symbol).where(
+            extract("year", BacktestTrade.exit_time) == year
+        )
+        if month:
+            q = q.where(extract("month", BacktestTrade.exit_time) == month)
+        rows = (await session.execute(q.order_by(BacktestTrade.exit_time))).scalars().all()
+    return [
+        {
+            "symbol": r.symbol,
+            "pattern": r.pattern,
+            "dir": r.dir,
+            "entry_time": r.entry_time.isoformat() if r.entry_time else None,
+            "exit_time": r.exit_time.isoformat() if r.exit_time else None,
+            "entry_price": r.entry_price,
+            "exit_price": r.exit_price,
+            "pnl_pt": r.pnl_pt,
+            "pnl_money": r.pnl_money,
+            "reason": r.reason,
+            "duration_d": r.duration_d,
+        }
+        for r in rows
+    ]
 
 
 @app.get("/api/push/key")

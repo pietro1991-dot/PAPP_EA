@@ -205,6 +205,10 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 <header>
   <div class="brand"><img src="/static/logo-mark.png" class="brand-mark" alt="PHAI"><span class="brand-name">PHAI<i>TRADING</i></span></div>
   <div class="tabs" id="tabs"></div>
+  <button class="hdr-btn" id="storico-btn" onclick="openStorico()" title="Storico backtest">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="7"/><line x1="18" y1="20" x2="18" y2="10"/></svg>
+    Storico
+  </button>
   <div class="user">
     <button class="install-btn" id="install-btn" hidden>⤓ Installa</button>
     <button class="notif-btn" id="notif-btn" title="Attiva notifiche" onclick="toggleNotifications()" aria-label="Notifiche">
@@ -267,6 +271,18 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
     </button>
     <button id="chat-btn">Invia</button>
   </div>
+</aside>
+
+<!-- Drawer Storico backtest -->
+<div class="drawer-overlay" id="st-overlay"></div>
+<aside class="drawer left" id="st-drawer">
+  <div class="drawer-head">
+    <div class="drawer-title">Storico backtest <span class="scope" id="st-scope"></span></div>
+    <button class="icon-btn" id="st-close" title="Chiudi">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="st-body" id="st-body"></div>
 </aside>
 
 <script>

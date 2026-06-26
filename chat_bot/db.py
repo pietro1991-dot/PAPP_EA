@@ -115,6 +115,25 @@ class AccountSnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class BacktestTrade(Base):
+    __tablename__ = "backtest_trades"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    symbol: Mapped[str | None] = mapped_column(String(20), index=True, nullable=True)
+    pattern: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
+    dir: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    entry_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    entry_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    exit_time: Mapped[datetime | None] = mapped_column(DateTime, index=True, nullable=True)
+    exit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lot: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pnl_pt: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pnl_money: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    duration_d: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source_file: Mapped[str | None] = mapped_column(String(200), index=True, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class LlmCache(Base):
     __tablename__ = "llm_cache"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

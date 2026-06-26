@@ -8,12 +8,12 @@
 | # | Pattern | Stato | TestN | Successi | Win% | PnL test | Ret/DD | PnL train |
 |---|---|---|---|---|---|---|---|---|
 | P1 | MA14 SELL → crossMA182 [TP=5000pt(500pip)] | ✅ ON | 48 | 19 | 40% | +23892 | 4.75 | +45686 |
-| P2 | MA182 BUY → crossMA14 | ✅ ON | 41 | 14 | 34% | +3219 | 0.47 | +16883 |
+| P2 | MA182 BUY → crossMA14 | ⬜ OFF | 41 | 14 | 34% | +3219 | 0.47 | +16883 |
 | P3 | MA14 BUY [SL=MA121, TP=120pt(12pip)] | ✅ ON | 61 | 50 | 82% | +1735 | 0.95 | +704 |
 | P4 | MA14 SELL → crossMA365 [TP=5000pt(500pip)] | ⬜ OFF | 27 | 12 | 44% | +14755 | 2.61 | +27112 |
 | P5 | MA3 SELL → crossMA182 [TP=5000pt(500pip)] | ⬜ OFF | 55 | 20 | 36% | +7938 | 0.83 | +30400 |
 | P6 | MA7 SELL → crossMA182 [TP=5000pt(500pip)] | ⬜ OFF | 53 | 20 | 38% | +13011 | 1.67 | +21355 |
-| P7 | Median SELL → crossMA182 [TP=5000pt(500pip)] | ⬜ OFF | 55 | 17 | 31% | +27072 | 3.70 | +22949 |
+| P7 | Median SELL → crossMA182 [TP=5000pt(500pip)] | ✅ ON | 55 | 17 | 31% | +27072 | 3.70 | +22949 |
 | P8 | MA14 SELL → crossMA30 | ⬜ OFF | 85 | 24 | 28% | +12322 | 1.79 | +3024 |
 
 ## Schede
@@ -26,7 +26,7 @@
 
 ### P2 — MA182 BUY → crossMA14
 *MA182 BUY -> crossMA14 [BUY-trend, 5/5, Ret/DD 1.88, +20237]*  
-- **Stato:** ON · **Direzione:** BUY · **Entrata:** cross prezzo×MA182
+- **Stato:** OFF · **Direzione:** BUY · **Entrata:** cross prezzo×MA182
 - **Uscita:** cross×MA14
 - **Test OOS:** 41 trade, **14 successi (34%)**, PnL **+3219**, Ret/DD 0.47, MaxDD 6919
 - **Train:** 54 trade, 21 successi (39%), PnL +16883
@@ -56,7 +56,7 @@
 - **Train:** 69 trade, 33 successi (48%), PnL +21355
 
 ### P7 — Median SELL → crossMA182 [TP=5000pt(500pip)]
-- **Stato:** OFF · **Direzione:** SELL · **Entrata:** cross prezzo×Median
+- **Stato:** ON · **Direzione:** SELL · **Entrata:** cross prezzo×Median
 - **Uscita:** cross×MA182 · **Protezioni:** TP 5000 punti (500 pip)
 - **Test OOS:** 55 trade, **17 successi (31%)**, PnL **+27072**, Ret/DD 3.70, MaxDD 7321
 - **Train:** 69 trade, 27 successi (39%), PnL +22949

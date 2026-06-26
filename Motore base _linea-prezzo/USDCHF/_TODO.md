@@ -80,3 +80,7 @@ v2.15 - FIX UNITA' TP: InpP1_TP (e P4-P7) da 500 a 5000.
   Il TP nell'EA e' in PUNTI (tpPt*point), non in pip: 500 punti = 50 pip (10x troppo
   stretto). Il tp_test era validato a 500 PIP -> servono 5000 punti. Il GRID P3 (TP=120
   punti = 12 pip) e i TP di EURUSD erano gia' corretti. Da ri-backtestare USDCHF.
+
+v2.16 - SET RIVISTO da portafoglio combinato OOS: P2 OFF (BUY trend zavorra,
+peggiorava Ret/DD), P7 ON (Median SELL). Set attivo P1+P3+P7:
+combinato +52699 / Ret/DD 4.47 vs P1+P2+P3 +28846 / 3.23 (domina su profitto E rischio).

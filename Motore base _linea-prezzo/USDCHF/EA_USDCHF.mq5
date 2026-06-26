@@ -9,7 +9,7 @@
 //  rischio/rendimento. NB: su USDCHF le uscite migliori sono LENTE (crossMA182).
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.15"
+#property version   "2.16"
 #property description "Multi-Pattern EA - USDCHF (motore BASE, pattern validati OOS)"
 #property description "Ogni pattern: On, Entry, Exit, SL, SLpips, TP, Direction."
 #property description "Linee: 0=Median, 3,7,14,30,121,182,365. Dir: 1=BUY, 2=SELL"
@@ -61,7 +61,7 @@ input int     InpP1_TP     = 5000;   // TP in PUNTI: 5000 punti = 500 pip (valid
 input int     InpP1_Dir    = 2;
 
 input group "==  P2 - MA182 BUY -> crossMA14 [BUY-trend, 5/5, Ret/DD 1.88, +20237]  =="
-input bool    InpP2_On    = true;    // ATTIVA (BUY robusto, diversifica direzione)
+input bool    InpP2_On    = false;   // OFF: BUY trend zavorra (Ret/DD OOS 0.47, peggiora il portafoglio)
 input int     InpP2_Entry = 182;
 input int     InpP2_Exit  = 14;
 input int     InpP2_SL     = 0;
@@ -116,7 +116,7 @@ input int     InpP6_TP     = 5000;  // 5000 punti = 500 pip
 input int     InpP6_Dir    = 2;
 
 input group "==  P7 - Median SELL -> crossMA182, TP=500 [variante SELL, Ret/DD 2.03]  =="
-input bool    InpP7_On    = false;   // OFF: correlato alla famiglia SELL
+input bool    InpP7_On    = true;    // ATTIVA: Median SELL forte (OOS +27072) - col combinato P1+P3+P7 domina
 input int     InpP7_Entry = 0;       // 0 = Median
 input int     InpP7_Exit  = 182;
 input int     InpP7_SL     = 0;
@@ -886,8 +886,85 @@ int OnInit()
 }
 
 //+------------------------------------------------------------------+
+// Export backtest: a fine test scrive UN record per trade (dalla cronologia deal
+// di MT5 = verita' assoluta) in papp_backtest_<simbolo>.csv. Solo in tester.
+void WriteBacktestTrades()
+{
+   if(!MQLInfoInteger(MQL_TESTER)) return;
+   if(!HistorySelect(0, TimeCurrent())) return;
+   int total = HistoryDealsTotal();
+
+   long inPos[]; datetime inTime[]; double inPrice[]; double inVol[]; string inCmt[]; long inType[];
+   for(int i = 0; i < total; i++)
+   {
+      ulong tk = HistoryDealGetTicket(i);
+      if(tk == 0) continue;
+      if(HistoryDealGetInteger(tk, DEAL_MAGIC) != InpMagic) continue;
+      if(HistoryDealGetString(tk, DEAL_SYMBOL) != _Symbol) continue;
+      if(HistoryDealGetInteger(tk, DEAL_ENTRY) != DEAL_ENTRY_IN) continue;
+      int n = ArraySize(inPos);
+      ArrayResize(inPos, n+1); ArrayResize(inTime, n+1); ArrayResize(inPrice, n+1);
+      ArrayResize(inVol, n+1); ArrayResize(inCmt, n+1); ArrayResize(inType, n+1);
+      inPos[n]   = HistoryDealGetInteger(tk, DEAL_POSITION_ID);
+      inTime[n]  = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
+      inPrice[n] = HistoryDealGetDouble(tk, DEAL_PRICE);
+      inVol[n]   = HistoryDealGetDouble(tk, DEAL_VOLUME);
+      inCmt[n]   = HistoryDealGetString(tk, DEAL_COMMENT);
+      inType[n]  = HistoryDealGetInteger(tk, DEAL_TYPE);
+   }
+
+   int fh = FileOpen("papp_backtest_" + _Symbol + ".csv",
+                     FILE_WRITE|FILE_CSV|FILE_ANSI|FILE_COMMON, ',');
+   if(fh == INVALID_HANDLE) { Print("Backtest export: impossibile aprire il file"); return; }
+   FileWrite(fh, "symbol","pattern","dir","entry_time","entry_price","exit_time",
+             "exit_price","lot","pnl_pt","pnl_money","reason","duration_d");
+
+   double pt = SymbolInfoDouble(_Symbol, SYMBOL_POINT); if(pt <= 0) pt = _Point;
+   int written = 0;
+   for(int i = 0; i < total; i++)
+   {
+      ulong tk = HistoryDealGetTicket(i);
+      if(tk == 0) continue;
+      if(HistoryDealGetInteger(tk, DEAL_MAGIC) != InpMagic) continue;
+      if(HistoryDealGetString(tk, DEAL_SYMBOL) != _Symbol) continue;
+      if(HistoryDealGetInteger(tk, DEAL_ENTRY) != DEAL_ENTRY_OUT) continue;
+      long posid = HistoryDealGetInteger(tk, DEAL_POSITION_ID);
+      int idx = -1;
+      for(int k = 0; k < ArraySize(inPos); k++) if(inPos[k] == posid) { idx = k; break; }
+      if(idx < 0) continue;
+
+      string cmt = inCmt[idx];
+      int pat = -1;
+      if(StringLen(cmt) >= 2 && StringGetCharacter(cmt, 0) == 'P')
+         pat = (int)StringToInteger(StringSubstr(cmt, 1));
+      string dir = (inType[idx] == DEAL_TYPE_BUY) ? "BUY" : "SELL";
+
+      datetime et = inTime[idx];
+      double   ep = inPrice[idx];
+      double   lot = inVol[idx];
+      datetime xt = (datetime)HistoryDealGetInteger(tk, DEAL_TIME);
+      double   xp = HistoryDealGetDouble(tk, DEAL_PRICE);
+      double   money = HistoryDealGetDouble(tk, DEAL_PROFIT)
+                     + HistoryDealGetDouble(tk, DEAL_SWAP)
+                     + HistoryDealGetDouble(tk, DEAL_COMMISSION);
+      double   pnlpt = ((dir == "BUY") ? (xp - ep) : (ep - xp)) / pt;
+      double   durd  = (double)(xt - et) / 86400.0;
+      string   reason = HistoryDealGetString(tk, DEAL_COMMENT);
+
+      FileWrite(fh, _Symbol, pat, dir,
+                TimeToString(et, TIME_DATE|TIME_MINUTES), DoubleToString(ep, 5),
+                TimeToString(xt, TIME_DATE|TIME_MINUTES), DoubleToString(xp, 5),
+                DoubleToString(lot, 2), DoubleToString(pnlpt, 1),
+                DoubleToString(money, 2), reason, DoubleToString(durd, 1));
+      written++;
+   }
+   FileClose(fh);
+   Print("Backtest export: ", written, " trade in papp_backtest_", _Symbol, ".csv");
+}
+
 void OnDeinit(const int reason)
 {
+   WriteBacktestTrades();
    if(g_ind != INVALID_HANDLE) IndicatorRelease(g_ind);
    if(g_indD1 != INVALID_HANDLE) IndicatorRelease(g_indD1);
    if(g_logHandle >= 0) FileClose(g_logHandle);

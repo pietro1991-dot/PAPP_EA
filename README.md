@@ -20,11 +20,12 @@ PAPP_EA/
 │   │   ├── Export_PAPP.mq5 (+.ex5)       script: esporta il CSV per il miner
 │   │   ├── EXPORT_PAPP.md                → come funziona l'export
 │   │   ├── pattern_mining.py             miner: trova e valida i pattern
-│   │   └── MINER_pattern_mining.md       → come funziona il miner
+│   │   ├── MINER_pattern_mining.md       → come funziona il miner
+│   │   └── genera_schede.py              genera PATTERNS_<SIMBOLO>.md (schede pattern + stat)
 │   │
-│   ├── EURUSD/   EA_EURUSD.mq5 (+.ex5) · PAPP_Export.csv · OHLC · analisi_oos.txt
-│   ├── GBPUSD/   EA_GBPUSD.mq5 (+.ex5) · PAPP_Export_GBPUSD.csv · analisi_oos.txt · _TODO.md
-│   └── USDCHF/   EA_USDCHF.mq5 (+.ex5) · PAPP_Export_USDCHF.csv · analisi_oos.txt · _TODO.md
+│   ├── EURUSD/   EA_EURUSD.mq5 (+.ex5) · PAPP_Export.csv · OHLC · analisi_oos.txt · PATTERNS_EURUSD.md
+│   ├── GBPUSD/   EA_GBPUSD.mq5 (+.ex5) · PAPP_Export_GBPUSD.csv · analisi_oos.txt · PATTERNS_GBPUSD.md · _TODO.md
+│   └── USDCHF/   EA_USDCHF.mq5 (+.ex5) · PAPP_Export_USDCHF.csv · analisi_oos.txt · PATTERNS_USDCHF.md · _TODO.md
 │
 ├── chat_bot/      assistant FastAPI/PostgreSQL (legge il log dell'EA)
 ├── docs/          DOCUMENTAZIONE.md (completa), MAPPA_FILE.md (dove vivono i file generati)
@@ -63,7 +64,13 @@ Dettagli in [Motore base _linea-prezzo/Indicatore/](Motore%20base%20_linea-prezz
    Tieni solo i pattern **positivi out-of-sample** (sezione SELEZIONE ROBUSTA).
 3. **Crea l'EA**: copia un `EA_*.mq5` esistente → `EA_AUDUSD.mq5` e imposta nei default
    i pattern validati per AUDUSD.
-4. **Compila e backtesta** in MT5 sul grafico AUDUSD.
+4. **Genera la scheda dei pattern** (statistiche per pattern + appendice candidati):
+   ```
+   python3 "../Indicatore/genera_schede.py" PAPP_Export.csv EA_AUDUSD.mq5 AUDUSD \
+           --split=2020.01.01 --spread=15 --comm=7
+   ```
+   → produce `PATTERNS_AUDUSD.md`, sempre allineato all'EA e ai dati.
+5. **Compila e backtesta** in MT5 sul grafico AUDUSD.
 
 > ⚠️ **Manutenzione**: avendo una copia EA per simbolo, una correzione alla *logica* va
 > propagata a tutte le copie `EA_*.mq5`. I pattern invece restano indipendenti per simbolo.

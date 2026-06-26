@@ -12,9 +12,9 @@ Sezioni del digest:
 """
 from datetime import datetime, timedelta
 
-from sqlalchemy import select, func, desc, case
+from sqlalchemy import select, func, desc, case, extract
 
-from db import AsyncSession, Signal, AccountSnapshot
+from db import AsyncSession, Signal, AccountSnapshot, BacktestTrade
 
 
 def _pnl(v):
@@ -155,6 +155,45 @@ async def build_digest(symbol: str = "") -> dict:
                 parts.append(line)
         else:
             parts.append("(nessun segnale registrato)")
+
+        # ---------- STORICO BACKTEST ----------
+        bt_filter = [BacktestTrade.exit_time.isnot(None)]
+        if sym:
+            bt_filter.append(BacktestTrade.symbol == sym)
+        bt_total = (
+            await session.execute(
+                select(
+                    func.count(BacktestTrade.id),
+                    func.coalesce(func.sum(BacktestTrade.pnl_pt), 0),
+                    func.coalesce(func.sum(BacktestTrade.pnl_money), 0),
+                    func.sum(case((BacktestTrade.pnl_pt > 0, 1), else_=0)),
+                ).where(*bt_filter)
+            )
+        ).first()
+        if bt_total and bt_total[0]:
+            n, ptot, mtot, w = bt_total
+            wr = (w or 0) / n * 100
+            parts.append("\n=== STORICO BACKTEST ===")
+            parts.append(
+                f"Totale: {n} trade, win rate {wr:.0f}%, "
+                f"PnL {float(ptot):+.1f}pt ({float(mtot):+.2f} valuta)"
+            )
+            yr = (
+                await session.execute(
+                    select(
+                        extract("year", BacktestTrade.exit_time).label("y"),
+                        func.count(BacktestTrade.id),
+                        func.coalesce(func.sum(BacktestTrade.pnl_pt), 0),
+                        func.sum(case((BacktestTrade.pnl_pt > 0, 1), else_=0)),
+                    )
+                    .where(*bt_filter)
+                    .group_by("y")
+                    .order_by("y")
+                )
+            ).all()
+            for y, c, ptt, ww in yr:
+                wry = (ww or 0) / c * 100 if c else 0
+                parts.append(f"  {int(y)}: {c} trade, win {wry:.0f}%, PnL {float(ptt):+.1f}pt")
 
     return {
         "text": "\n".join(parts),
