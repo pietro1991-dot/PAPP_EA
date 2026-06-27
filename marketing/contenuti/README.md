@@ -8,6 +8,7 @@ Tutto in italiano (mercato di lancio); la localizzazione EN/FR/ES è un pass suc
 |---|---|
 | [POST_SOCIAL.md](POST_SOCIAL.md) | Libreria post (IG/FB/TikTok/X/LinkedIn) per 7 angoli + caroselli + bio |
 | [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md) | 8 short verticali + VSL completo + explainer YouTube + walkthrough Demo |
+| [EMAIL_CAMPAIGN.md](EMAIL_CAMPAIGN.md) | **25 email pronte** (nurture/onboarding/retention) — sorgente `pipeline/email_campaign.py` |
 
 ## Landing / pagine (servite dall'app)
 | Pagina | URL | Scopo |
