@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import logging
 from typing import Optional
@@ -6,6 +7,21 @@ from typing import Optional
 import httpx
 
 log = logging.getLogger("papp.llm")
+
+# I modelli gratuiti (mimo/deepseek, di sviluppo cinese) ogni tanto "perdono" un
+# carattere CJK al posto della parola. Le nostre lingue (it/en/fr/es) sono tutte in
+# alfabeto latino: rimuoviamo i caratteri cinesi/giapponesi/coreani e fullwidth.
+_CJK_RE = re.compile(
+    "[　-〿぀-ヿㇰ-ㇿ㐀-䶿一-鿿"
+    "豈-﫿＀-￯가-힯]"
+)
+
+
+def _strip_cjk(text: str) -> str:
+    if not text or not _CJK_RE.search(text):
+        return text
+    # rimuove i CJK e compatta gli spazi doppi che potrebbero restare
+    return re.sub(r"  +", " ", _CJK_RE.sub("", text))
 
 # OpenCode Zen è OpenAI-compatibile: chiamata HTTP diretta, niente processo opencode.
 ZEN_BASE_URL = os.getenv("ZEN_BASE_URL", "https://opencode.ai/zen/v1")
@@ -59,7 +75,9 @@ def _system_content(lang: str = "it") -> str:
     langname = LANG_NAMES.get(lang, LANG_NAMES["it"])
     directive = (
         f"IMPORTANTE: rispondi SEMPRE e SOLO in {langname}, qualunque sia la lingua "
-        f"dei dati o del contesto qui sotto (che possono essere in italiano).\n\n"
+        f"dei dati o del contesto qui sotto (che possono essere in italiano). "
+        f"Scrivi ESCLUSIVAMENTE con l'alfabeto latino: non usare MAI caratteri cinesi, "
+        f"giapponesi, coreani o altri simboli non latini.\n\n"
     )
     body = SYSTEM_PROMPT
     if EA_KNOWLEDGE:
@@ -127,7 +145,7 @@ async def ask(
             log.warning("Zen API HTTP %s: %s", r.status_code, r.text[:200])
             return None
         data = r.json()
-        content = (data["choices"][0]["message"].get("content") or "").strip()
+        content = _strip_cjk((data["choices"][0]["message"].get("content") or "").strip())
         return content or None
     except Exception:
         log.exception("Errore nella chiamata all'API Zen")
@@ -183,7 +201,9 @@ async def ask_stream(
                         obj = json.loads(chunk)
                         delta = obj["choices"][0].get("delta", {}).get("content")
                         if delta:
-                            yield delta
+                            delta = _strip_cjk(delta)
+                            if delta:
+                                yield delta
                     except Exception:
                         continue
     except Exception:
