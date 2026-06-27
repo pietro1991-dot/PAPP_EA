@@ -47,6 +47,7 @@ risponde alle domande di mercato — in italiano, inglese, francese, spagnolo.
 | [11_MODELLO_BUSINESS.md](11_MODELLO_BUSINESS.md) | **Analisi di tutti i modelli + scelta: SaaS ibrido abbonamento-first** |
 | [12_DELIVERY_ONBOARDING.md](12_DELIVERY_ONBOARDING.md) | **Come PHAI gira sui conti dei clienti: delivery, licenza, telemetria, onboarding** |
 | [13_SCALABILITA_HOSTING.md](13_SCALABILITA_HOSTING.md) | **Scalabilità: VPS MetaTrader (PC spento), controllo centrale, perché non costruire VPS** |
+| [14_GUIDA_INSTALLAZIONE_CLIENTE.md](14_GUIDA_INSTALLAZIONE_CLIENTE.md) | **Guida cliente "PHAI in 5 minuti": passi semplici + troubleshooting** |
 
 ## Come usare questa cartella
 1. Parti da **strategia** e **avatar** (capisci a chi e perché).

@@ -398,6 +398,10 @@ async def ea_ingest(request: Request):
     if err:
         return PlainTextResponse(_kv({"ok": 0, "reason": err}))
     uid = lk.used_by_user_id
+    if uid is None:
+        # La key non è ancora collegata a un account app: NON misfilare i dati
+        # (andrebbero al proprietario). Il cliente deve prima registrare l'app.
+        return PlainTextResponse(_kv({"ok": 0, "reason": "register_app_first"}))
     events = body.get("events")
     if events is None:
         ev = {k: v for k, v in body.items() if k != "key"}
