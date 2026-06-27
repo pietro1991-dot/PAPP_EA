@@ -94,6 +94,17 @@ class Lead(Base):
     email: Mapped[str] = mapped_column(String(255), index=True)
     source: Mapped[str | None] = mapped_column(String(40), nullable=True)   # landing|demo|quiz|report
     lang: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    unsubscribed: Mapped[bool] = mapped_column(Boolean, default=False)      # opt-out email marketing
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class EmailSent(Base):
+    """Una riga per ogni email della campagna inviata a un indirizzo (anti-doppione)."""
+    __tablename__ = "email_sent"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), index=True)
+    email_id: Mapped[str] = mapped_column(String(60), index=True)   # es. 'nurture-3'
+    status: Mapped[str] = mapped_column(String(16), default="sent") # sent|skipped|error
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -220,6 +231,7 @@ _MIGRATIONS = [
     "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS buyer_email VARCHAR(255)",
     "CREATE INDEX IF NOT EXISTS ix_signals_user_id ON signals (user_id)",
     "CREATE INDEX IF NOT EXISTS ix_license_external_id ON license_keys (external_id)",
+    "ALTER TABLE leads ADD COLUMN IF NOT EXISTS unsubscribed BOOLEAN DEFAULT FALSE",
 ]
 
 
