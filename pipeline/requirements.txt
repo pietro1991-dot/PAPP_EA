@@ -1,0 +1,4 @@
+edge-tts>=6.1.0
+# opzionali (upgrade qualità/funzioni):
+# faster-whisper   # sottotitoli precisi dalla voce
+# requests         # (Pexels usa urllib, requests non necessario)
