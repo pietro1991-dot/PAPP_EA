@@ -99,7 +99,12 @@ async function submitForm(){
 }
 ['password','license'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')submitForm()}));
 const _ls=document.getElementById('lang-sel'); if(_ls)_ls.value=lang;
-applyI18n(); setMode('login');
+applyI18n();
+// prefill da checkout: ?mode=register&key=XXXX
+const _qs=new URLSearchParams(location.search);
+const _mode=_qs.get('mode')==='register'?'register':'login';
+const _key=_qs.get('key'); if(_key)document.getElementById('license').value=_key;
+setMode(_mode);
 if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}
 </script>
 </body>

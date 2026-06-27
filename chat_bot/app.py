@@ -587,6 +587,80 @@ async def paypal_webhook(request: Request):
     return {"ok": True}
 
 
+@app.get("/api/pay/config")
+async def pay_config():
+    """Config pubblica per i pulsanti PayPal sul checkout (client-id + plan id)."""
+    cid = os.getenv("PAYPAL_CLIENT_ID", "")
+    return {
+        "configured": bool(cid and os.getenv("PAYPAL_SECRET")),
+        "client_id": cid,
+        "currency": os.getenv("PAYPAL_CURRENCY", "EUR"),
+        "plans": {
+            "starter": {"plan_id": os.getenv("PAYPAL_PLAN_STARTER", ""), "label": "Starter — 49€/mese", "kind": "subscription"},
+            "pro": {"plan_id": os.getenv("PAYPAL_PLAN_PRO", ""), "label": "Pro — 97€/mese", "kind": "subscription"},
+            "lifetime": {"price": os.getenv("PAYPAL_LIFETIME_PRICE", "997"), "label": "Lifetime — pagamento unico", "kind": "order"},
+        },
+    }
+
+
+def _plan_from_paypal(plan_id: str | None):
+    if plan_id and plan_id == os.getenv("PAYPAL_PLAN_STARTER"):
+        return "starter"
+    if plan_id and plan_id == os.getenv("PAYPAL_PLAN_PRO"):
+        return "pro"
+    return None
+
+
+@app.post("/api/pay/paypal/confirm")
+async def paypal_confirm(request: Request):
+    """Chiamato dal browser dopo l'approvazione PayPal: verifica il pagamento lato
+    server (abbonamento o ordine) ed emette la license key (idempotente). Il webhook
+    resta come backstop affidabile."""
+    if not (os.getenv("PAYPAL_CLIENT_ID") and os.getenv("PAYPAL_SECRET")):
+        return JSONResponse({"ok": False, "reason": "paypal non configurato"}, status_code=503)
+    body = await request.json()
+    email = (body.get("email") or "").strip().lower() or None
+    plan_req = (body.get("plan") or "").lower()
+    sub_id = body.get("subscription_id")
+    order_id = body.get("order_id")
+    async with httpx.AsyncClient(timeout=20) as client:
+        token = await _paypal_token(client)
+        if not token:
+            return JSONResponse({"ok": False, "reason": "auth"}, status_code=502)
+        hdr = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        if sub_id:
+            r = await client.get(f"{PAYPAL_API}/v1/billing/subscriptions/{sub_id}", headers=hdr)
+            data = r.json()
+            if data.get("status") not in ("ACTIVE", "APPROVED"):
+                return {"ok": False, "reason": "subscription_not_active"}
+            plan = _plan_from_paypal(data.get("plan_id")) or (plan_req if plan_req in ("starter", "pro") else "pro")
+            email = email or (data.get("subscriber") or {}).get("email_address")
+            res = await licensing.issue_license(email, plan=plan, source="paypal", external_id=sub_id)
+            return {"ok": True, "key": res["key"]}
+        if order_id:
+            r = await client.post(f"{PAYPAL_API}/v2/checkout/orders/{order_id}/capture", headers=hdr)
+            data = r.json()
+            if data.get("status") != "COMPLETED":
+                # forse già catturato: ricontrolla
+                g = await client.get(f"{PAYPAL_API}/v2/checkout/orders/{order_id}", headers=hdr)
+                if g.json().get("status") != "COMPLETED":
+                    return {"ok": False, "reason": "order_not_completed"}
+            if not email:
+                try:
+                    email = data["payer"]["email_address"]
+                except Exception:
+                    email = None
+            # Lifetime = funzioni Pro senza scadenza
+            res = await licensing.issue_license(email, plan="pro", source="paypal", external_id=order_id)
+            return {"ok": True, "key": res["key"]}
+    return JSONResponse({"ok": False, "reason": "no_id"}, status_code=400)
+
+
+@app.get("/checkout", response_class=HTMLResponse)
+async def checkout_page():
+    return HTMLResponse(open("templates/checkout.html").read())
+
+
 @app.post("/api/register")
 async def api_register(request: Request):
     body = await request.json()
