@@ -1,13 +1,17 @@
-# 06 · Copy degli annunci — traffico freddo (Fase 1)
+# 06 · Copy degli annunci — versione abbonamento (CTA: "guardalo dal vivo")
 
 > "L'unico scopo della prima riga è far leggere la seconda." — Sabri Suby
->
-> Gli annunci NON vendono l'EA. Offrono valore (l'HVCO) ed entrano nella
-> conversazione già in testa al cliente (doc 02). Tono: esperto, trasparente,
-> anti-fuffa. MAI promesse di guadagno (doc 10).
 
-Struttura di ogni annuncio (modello di Sabri): **Hook (interrompi lo scroll) →
-Agita il problema → Presenta il valore gratis → Call to action.**
+Gli annunci NON vendono l'abbonamento a freddo. Portano alla **Demo** (l'esca-eroe,
+doc 04) o all'HVCO, entrando nella conversazione già in testa al cliente (doc 02).
+Tono **esperto, trasparente, sereno** (vende pazienza, non adrenalina — doc 16). MAI
+promesse di guadagno (doc 10).
+
+Struttura di ogni annuncio (Sabri): **Hook (interrompi lo scroll) → Agita il problema →
+Presenta il valore gratis → CTA alla Demo.**
+
+> CTA primaria nuova: **"Guardalo dal vivo"** / **"Apri la Demo"** (non "compra").
+> Barriera percepita ≈ zero → più clic qualificati nel funnel.
 
 ---
 
@@ -16,95 +20,86 @@ Agita il problema → Presenta il valore gratis → Call to action.**
 ### Annuncio A — sotto-avatar "Il Bruciato" (diffidenza)
 **Hook:** Hai già perso soldi con un "robot di trading"?
 **Corpo:**
-> La maggior parte degli EA in vendita online sono scatole nere: non sai cosa
-> fanno, perché entrano, quando escono. Quando perdi, resti al buio.
-> Noi facciamo l'opposto. Abbiamo scritto un report gratuito che ti mostra come
-> validiamo le nostre strategie su **15 anni** di Euro/Dollaro — e perché abbiamo
-> **spento i 4 pattern più redditizi** (troppo rischiosi).
+> La maggior parte degli EA è una scatola nera: non sai cosa fanno né perché. Quando
+> perdi, resti al buio.
+> Noi facciamo l'opposto. **Apri la nostra Demo** (senza registrarti) e guarda con i
+> tuoi occhi: ogni operazione spiegata, lo storico reale — sì, anche gli anni in rosso —
+> e un'AI che risponde alle tue domande.
 > Se sei stanco di essere il pollo di turno, parti da qui.
-**CTA:** 📥 Scarica il report gratis →
+**CTA:** 👀 Apri la Demo →
 *Il trading comporta rischi. Nessun rendimento è garantito.*
 
-### Annuncio B — sotto-avatar "Curioso impegnato" (comodità)
-**Hook:** Trading automatico, ma che ti SPIEGA ogni mossa.
+### Annuncio B — "Curioso impegnato" (comodità + serenità)
+**Hook:** Trading automatico che lavora mentre tu vivi la tua vita.
 **Corpo:**
-> Non hai tempo di stare incollato ai grafici. Ma non vuoi nemmeno affidare i tuoi
-> soldi a una scatola nera.
-> PHAI è un sistema automatico su MetaTrader 5 con un'app (anche su telefono) e un
-> **assistente AI** che ti spiega ogni operazione, nella tua lingua, 24/7.
-> Vuoi vedere com'è? Scarica il report gratuito e dai un'occhiata alla dashboard.
-**CTA:** 👀 Voglio vederlo →
+> Niente grafici da fissare. PHAI lavora sul **grafico giornaliero**: poche operazioni,
+> ben scelte. Quando apre o chiude, lo sai sul telefono — col **perché**.
+> Guarda com'è fatto: dashboard, storico, assistente AI. **Demo gratuita, niente carta.**
+**CTA:** ▶ Guardalo dal vivo →
 
-### Annuncio C — sotto-avatar "Scettico tecnico" (dati)
+### Annuncio C — "Scettico tecnico" (dati)
 **Hook:** Out-of-sample o curve-fitting? La domanda che separa i trader veri.
 **Corpo:**
-> Chiunque può "ottimizzare" una strategia sul passato. La vera prova è il
-> comportamento **fuori campione**: allenare fino al 2020, testare sul 2020→oggi.
-> Nel report gratuito mostriamo i 6 pattern PaPP su EURUSD, la logica degli incroci
-> prezzo-linea sul D1, e i numeri del backtest 2010–2025 *(simulazione storica)*.
-> Niente hype. Solo metodo.
-**CTA:** 📊 Dammi il report →
+> Chiunque "ottimizza" sul passato. La prova è il comportamento **fuori campione**
+> (allena ≤2020, testa 2020→oggi). Nella Demo vedi i 6 pattern PaPP su EURUSD e lo
+> **storico 2010–2025** *(simulazione storica)*. Niente hype. Solo metodo.
+**CTA:** 📊 Apri la Demo →
 
 ### Varianti hook brevi (per test rapidi)
-- "Il 90% degli EA è curve-fitting. Ecco come riconoscere il restante 10%."
+- "Un robot di trading che ti SPIEGA ogni mossa. Guardalo dal vivo."
 - "Abbiamo spento i 4 pattern più redditizi del nostro sistema. Ecco perché."
-- "Un robot di trading che ti spiega ogni operazione. Nella tua lingua."
-- "Stanco di screenshot finti come 'prove'? Guarda lo storico reale."
+- "A volte il nostro sistema non fa NIENTE per giorni. Ed è un bene — ti spiego."
+- "Stanco di screenshot finti come 'prove'? Apri lo storico reale."
 
 ## 2. Google Search (domanda consapevole)
 Keyword: "expert advisor MT5", "robot forex", "trading automatico EURUSD",
 "EA forex recensioni", "miglior expert advisor".
-
-**Annuncio responsive (titoli/descrizioni):**
+**Annuncio responsive:**
 - Titoli: "PHAI Trading — EA per MT5" · "Trasparente, non una scatola nera" ·
-  "App + Assistente AI incluso" · "Report gratuito sui 6 pattern"
+  "Guardalo dal vivo (Demo)" · "App + Assistente AI · da 49€/mese"
 - Descrizioni: "Sistema automatico su EURUSD/GBPUSD/USDCHF con app multilingua e
-  assistente AI che spiega ogni operazione. Scarica il report gratuito." ·
-  "Pattern validati fuori campione. Storico e backtest consultabili. Il trading
-  comporta rischi."
+  assistente AI che spiega ogni operazione. Apri la Demo gratuita, niente carta." ·
+  "Pattern validati fuori campione. Storico consultabile. Il trading comporta rischi."
 
 ## 3. YouTube (in-stream / discovery)
-Video-annuncio 60–90s, struttura Sabri:
-> **0–5s (hook):** "Se hai mai comprato un robot di trading che non capivi, questo
-> video è per te."
-> **5–25s (problema):** la frustrazione delle scatole nere, le finte prove, il
-> panico emotivo.
-> **25–55s (valore + meccanismo):** come PHAI lavora sul D1, gli incroci
-> prezzo-linea, la validazione fuori campione, l'app che spiega tutto.
-> **55–80s (HVCO + CTA):** "Ho preparato un report gratuito che mostra i 6 pattern
-> e come li validiamo. Link qui sotto."
+Video-annuncio 60–90s:
+> **0–5s (hook):** "Se hai mai comprato un robot di trading che non capivi, guarda questo."
+> **5–25s (problema):** scatole nere, finte prove, panico emotivo.
+> **25–55s (valore + meccanismo):** il D1 contro il rumore, gli incroci PaPP, la
+> validazione fuori campione, l'app che spiega tutto — e che lavora **con pazienza**.
+> **55–80s (CTA):** "Ho aperto una Demo dove vedi tutto dal vivo, senza registrarti.
+> Link qui sotto."
 > **Disclaimer a schermo:** "Il trading comporta rischi. Nessun rendimento garantito."
 
 ## 4. TikTok / Reels (organico + ads)
-Formato: parlato diretto, sottotitoli, 20–40s.
-- **Hook visivo**: "I robot di trading che vedi su Instagram? Quasi tutti finti.
-  Ti spiego come capirlo in 30 secondi."
-- **Valore**: 1 concetto per video (out-of-sample, il rumore del D1, perché
-  abbiamo spento 4 pattern, cos'è il drawdown).
-- **CTA soft**: "Report completo gratis nel link in bio."
-- Serie di contenuti = costruisce autorità (Sabri: "diventa il medico fidato").
+Formato parlato diretto, 20–40s, sottotitoli:
+- **Hook visivo**: "I robot di trading su Instagram? Quasi tutti finti. Ti spiego come
+  capirlo in 30 secondi."
+- **Valore**: 1 concetto/video (out-of-sample, il rumore del D1, perché abbiamo spento
+  4 pattern, cos'è il drawdown, **perché 'non fare niente' a volte è la mossa giusta**).
+- **CTA soft**: "Demo dal vivo nel link in bio."
+- Serie di contenuti = autorità (Sabri: "diventa il medico fidato").
 
-## 5. Angoli di contenuto (per non finire mai le idee)
-Sabri: ruota gli angoli, non ripetere lo stesso annuncio.
-1. **Anti-truffa** — come riconoscere un EA finto (cavalca la diffidenza).
-2. **Educativo** — cos'è la validazione OOS, cos'è il drawdown, il D1 vs rumore.
-3. **Trasparenza** — "ti mostro lo storico vero, anche gli anni in perdita".
-4. **Comodità/tech** — l'app, l'AI multilingua, le notifiche, dal telefono.
-5. **Storia/dietro le quinte** — perché abbiamo costruito PHAI, le scelte di rischio.
-6. **Confronto** — PHAI vs il tipico EA da 30€ (trasparenza, app, AI).
+## 5. Angoli di contenuto (ruotali, non ripeterti — Sabri)
+1. **Anti-truffa** — come riconoscere un EA finto.
+2. **Educativo** — validazione OOS, drawdown, D1 vs rumore.
+3. **Trasparenza** — "ti mostro lo storico vero, anche le perdite".
+4. **Comodità/tech** — app, AI multilingua, notifiche, dal telefono.
+5. **Pazienza/serenità** — "il sistema che aspetta invece di forzare" (qualifica + anti-churn).
+6. **Storia/dietro le quinte** — perché abbiamo costruito PHAI, le scelte di rischio.
+7. **Confronto** — PHAI vs il tipico EA da 30€ (trasparenza, app, AI).
 
 ## 6. Regole di copy non negoziabili (compliance + Sabri)
-- ❌ MAI "guadagni garantiti", "rendimenti sicuri", "diventa ricco", cifre di
-  profitto promesse. → doc 10.
-- ✅ I numeri di backtest sempre etichettati: *"simulazione storica, non indicativa
-  di risultati futuri"*.
+- ❌ MAI "guadagni garantiti", "rendimenti sicuri", "diventa ricco", cifre di profitto
+  promesse. → doc 10.
+- ✅ Numeri di backtest sempre etichettati: *"simulazione storica, non risultati futuri"*.
 - ✅ Disclaimer di rischio visibile in ogni annuncio.
-- ✅ Specificità (783 trade, 15 anni, 6 pattern) > genericità.
-- ✅ Una sola CTA per annuncio: scaricare l'HVCO. Non vendere l'EA a freddo.
+- ✅ **Specificità** (783 trade, 15 anni, 6 pattern) > genericità.
+- ✅ **Una sola CTA**: aprire la **Demo** (o l'HVCO). Non vendere l'abbonamento a freddo.
+- ✅ Tono sereno/anti-hype: è un **differenziatore** in una nicchia piena di urlatori.
 
 ---
 
 ### Collegato a
-- Gli avatar/angoli vengono da → [02_DREAM_BUYER_AVATAR.md](02_DREAM_BUYER_AVATAR.md)
-- Gli annunci portano all' → [04_HVCO_LEAD_MAGNET.md](04_HVCO_LEAD_MAGNET.md)
-- Vincoli legali → [10_COMPLIANCE_DISCLAIMER.md](10_COMPLIANCE_DISCLAIMER.md)
+- Avatar/angoli → [02_DREAM_BUYER_AVATAR.md](02_DREAM_BUYER_AVATAR.md) · Esca (Demo) → [04_HVCO_LEAD_MAGNET.md](04_HVCO_LEAD_MAGNET.md)
+- Lente SaaS (tono/CTA) → [16_STRATEGIA_RIVISTA_SAAS.md](16_STRATEGIA_RIVISTA_SAAS.md) · Vincoli legali → [10_COMPLIANCE_DISCLAIMER.md](10_COMPLIANCE_DISCLAIMER.md)

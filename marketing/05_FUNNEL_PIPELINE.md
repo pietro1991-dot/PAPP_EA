@@ -1,119 +1,121 @@
-# 05 · Il Funnel e la Pipeline operativa
+# 05 · Il Funnel e la Pipeline — versione abbonamento (acquisisci → attiva → trattieni)
 
-> "Non vendi a freddo. Porti uno sconosciuto in un viaggio: da 'chi sei?' a
-> 'prendi i miei soldi'." — Sabri Suby
+> "Non vendi a freddo. Porti uno sconosciuto in un viaggio: da 'chi sei?' a 'prendi i
+> miei soldi' — e poi lo fai restare." — adattato da Sabri Suby
 
-Questo documento è la **macchina completa**: ogni fase, gli strumenti, e la
-pipeline operativa per costruirla e gestirla. È l'attuazione della "Halo Strategy"
-del doc 01.
+La "Halo Strategy" di Sabri (4 fasi) resta la spina dorsale, ma nel SaaS (doc 16)
+**l'acquisto non è il traguardo**: dopo vengono **attivazione** (far funzionare l'EA) e
+**retention** (farlo restare). Il valore di un abbonato si crea **dopo** il checkout.
 
 ---
 
-## 1. Mappa del funnel (vista d'insieme)
+## 1. Mappa del funnel (6 fasi)
 
 ```
-                    ┌─────────────────────────────────────────────┐
-   FASE 1           │   TRAFFICO FREDDO (annunci che danno valore) │
-   Traffico         │   Meta · YouTube · Google · TikTok           │ → doc 06
-                    └───────────────────────┬─────────────────────┘
-                                            ▼
-   FASE 2           ┌─────────────────────────────────────────────┐
-   Lead             │   LANDING HVCO  →  email (lead acquisito)    │ → doc 04
-                    │   + Demo dashboard read-only                 │
-                    └───────────────────────┬─────────────────────┘
-                                            ▼
-   FASE 3           ┌─────────────────────────────────────────────┐
-   Nurture          │   SEQUENZA EMAIL (valore→storia→prove→       │ → doc 07
-                    │   obiezioni→offerta)                         │
-                    └───────────────────────┬─────────────────────┘
-                                            ▼
-   FASE 4           ┌─────────────────────────────────────────────┐
-   Vendita          │   VSL + SALES PAGE  →  GODFATHER OFFER       │ → doc 03/08
-                    │   checkout (Lifetime 997€ / Mensile 97€)     │
-                    └───────────────────────┬─────────────────────┘
-                                            ▼
-   FASE 5           ┌─────────────────────────────────────────────┐
-   Ascensione       │   Upsell: Setup DFY · PHAI Pro · Community   │ → doc 03 §7
-                    └─────────────────────────────────────────────┘
+                 ┌─────────────────────────────────────────────────┐
+  FASE 1         │  TRAFFICO FREDDO — ads che DANNO valore          │ → doc 06
+  Traffico       │  Meta · YouTube · Google · TikTok → alla DEMO    │
+                 └───────────────────────┬─────────────────────────┘
+                                         ▼
+  FASE 2         ┌─────────────────────────────────────────────────┐
+  Lead/Prova     │  DEMO read-only (hero) + Report + Quiz → email   │ → doc 04
+                 └───────────────────────┬─────────────────────────┘
+                                         ▼
+  FASE 3         ┌─────────────────────────────────────────────────┐
+  Nurture        │  SEQUENZA EMAIL (valore→storia→prove→obiezioni)  │ → doc 07
+                 └───────────────────────┬─────────────────────────┘
+                                         ▼
+  FASE 4         ┌─────────────────────────────────────────────────┐
+  Conversione    │  VSL + SALES PAGE → GODFATHER OFFER              │ → doc 03/08
+                 │  Demo→ "sblocca": Starter 49€ / Pro 97€ (gar.30g)│
+                 └───────────────────────┬─────────────────────────┘
+                                         ▼
+  FASE 5 ⭐      ┌─────────────────────────────────────────────────┐
+  ATTIVAZIONE    │  registra → installa EA → primo dato live        │ → doc 07/14
+                 │  lo SNODO CRITICO. DFY come riduttore di frizione │
+                 └───────────────────────┬─────────────────────────┘
+                                         ▼
+  FASE 6 ⭐      ┌─────────────────────────────────────────────────┐
+  RETENTION &    │  lifecycle (valore anche a mercato fermo) +      │ → doc 07
+  ESPANSIONE     │  upsell (Pro/Elite/Annuale/Lifetime) + referral  │
+                 └─────────────────────────────────────────────────┘
 
-   In parallelo: RETARGETING su chi non converte ad ogni fase.
+  In parallelo a OGNI fase: RETARGETING.
 ```
 
-## 2. Le 5 fasi nel dettaglio
+## 2. Le fasi nel dettaglio (con le leve di Sabri)
 
 ### Fase 1 — Traffico (freddo → tiepido)
-- **Canali**: Meta Ads (FB/IG) e YouTube come primari; Google Search per la
-  domanda consapevole ("expert advisor MT5", "robot forex"); TikTok per volume e
-  pubblico giovane.
-- **Angolo**: gli annunci NON vendono l'EA. Offrono l'HVCO gratis (doc 04) o
-  portano a un contenuto di valore (video).
-- **Asset**: 3–5 varianti di annuncio per i 3 sotto-avatar (doc 02 §8).
+- **Canali**: Meta + YouTube primari; Google Search per la domanda consapevole; TikTok per volume.
+- **Angolo Sabri**: l'annuncio NON vende. Offre **valore gratis** (Demo/Report/Quiz) ed
+  **entra nella conversazione** già in testa al cliente (doc 02). CTA = "guardalo dal vivo".
 
-### Fase 2 — Conversione a lead
-- **Landing HVCO** (doc 04 §4): un obiettivo, zero distrazioni.
-- **Strumento**: page builder + email/CRM (vedi §4).
-- **Doppio step opzionale**: dopo l'email, invito alla **Demo read-only** della
-  dashboard → i lead che vedono il prodotto convertono molto di più.
+### Fase 2 — Lead/Prova (la Demo è l'esca)
+- **Demo read-only** (doc 04) = massima conversione (il prodotto vende sé stesso).
+- **Value-in-advance**: dà prima di chiedere → debito di reciprocità (Cialdini/Sabri).
+- **Open loop**: l'Ai risponde a 3 domande, poi la curiosità si chiude solo sbloccando.
 
 ### Fase 3 — Nurture (il "Magic Lantern")
-- 5–7 email in 7–10 giorni (doc 07): prima valore, poi storia, poi prove
-  (storico/backtest), poi obiezioni, poi offerta.
-- In parallelo: **retargeting** con contenuti/testimonianze.
+- 5–7 email (doc 07): valore → storia → prove (storico/backtest) → obiezioni → offerta.
+- **Slippery slide**: ogni email fa aprire la successiva (curiosità + bucket brigades).
 
-### Fase 4 — Conversione a cliente
-- **VSL** (video sales letter) + **sales page** lunga (doc 08) con la Godfather
-  Offer (doc 03).
-- **Checkout**: due opzioni (Lifetime/Mensile). Order bump (es. guida sizing) e
-  upsell post-acquisto.
+### Fase 4 — Conversione (barriera bassa + rischio zero)
+- **VSL + sales page** (doc 08) con la Godfather Offer (doc 03).
+- Ingresso facile: **Starter 49€** o **Pro 97€**, **garanzia 30 giorni** ("meglio che gratis").
+- **Order bump** (guida sizing 27€) + **upsell post-checkout** (DFY +297€).
+- *Niente trial a tempo* (i trade D1 sono rari → mostrerebbe il vuoto, doc 16).
 
-### Fase 5 — Ascensione & retention
-- Upsell immediato (Setup DFY) in pagina di ringraziamento.
-- Onboarding curato (la prima esperienza decide il rimborso o il passaparola).
-- Email ricorrenti di valore → upgrade a PHAI Pro, community, referral.
+### Fase 5 — Attivazione ⭐ (dove si vince o si perde il business)
+Iscriversi è facile; il rischio è **pagare e non installare** → niente valore → churn.
+- **Onboarding immediato** (doc 07): "hai installato? serve aiuto?", guida "5 minuti" (doc 14).
+- **DFY** come salvagente: "non vuoi farlo? lo facciamo noi" (+297€) → frizione → ricavo.
+- **Trigger tecnico**: il server sa quando arriva il **primo dato** dell'EA del cliente →
+  se non arriva entro X giorni, parte l'email/contatto di recupero.
+- **KPI**: *tasso di attivazione* (iscritti → EA che invia dati). È qui il collo di bottiglia.
+
+### Fase 6 — Retention & Espansione (il motore del LTV)
+- **Valore anche a mercato fermo** (doc 16 §6): l'app/AI/notifiche danno motivi per
+  tornare anche senza trade ("il sistema sta aspettando, è corretto").
+- **Lifecycle email**: educazione, dietro le quinte, "il tuo mese in PHAI".
+- **Upsell/ascensione**: Starter→Pro, Pro→Annuale/Lifetime, +Elite, +DFY (doc 03 §8).
+- **Referral**: "porta un amico, un mese gratis a entrambi" (loop virale, Sabri).
 
 ## 3. Pipeline operativa — cosa costruire, in ordine
-Checklist di implementazione (dipendenze dall'alto verso il basso):
+1. **Dominio + HTTPS** (`app.phai.io`) — *prerequisito* (deploy/setup-domain.sh).
+2. **Sito**: home + landing **Demo** + sales page + grazie + checkout.
+3. **Demo read-only** collegata all'app (dati reali/di esempio, AI a domande limitate).
+4. **CRM/email** con le 3 sequenze (nurture, onboarding/attivazione, retention) + tag.
+5. **Checkout & licenze**: pagamento (PayPal/bonifico) → **license key** automatica → app
+   (già fatto: `licensing.py`, `/api/pay/paypal/webhook`, `/api/admin/issue-license`).
+6. **Tracciamento attivazione**: evento "primo dato EA ricevuto" per il recupero.
+7. **Tracciamento**: pixel Meta, GA4, eventi (lead, checkout, **activation**, churn).
+8. **Annunci** (doc 06) per i 3 sotto-avatar; **retargeting** su ogni fase.
+9. **Dashboard KPI** (doc 09): MRR, attivazione, churn, LTV:CAC, payback.
 
-1. **Dominio + HTTPS** (`app.phai.io`, wildcard cert) — sblocca PWA/notifiche.
-2. **Sito/landing**: home + landing HVCO + sales page + grazie + checkout.
-3. **HVCO prodotto**: report PDF + video + (demo read-only collegata all'app).
-4. **CRM/email** configurato con la sequenza nurture (doc 07) e i tag.
-5. **Checkout & licenze**: pagamento (Stripe) → generazione **license key**
-   monouso → accesso app. (La logica licenze esiste già nell'app.)
-6. **Tracciamento**: pixel Meta, tag Google/GA4, eventi (lead, checkout, acquisto).
-7. **Annunci** (doc 06) caricati con creatività per i 3 sotto-avatar.
-8. **Retargeting** impostato su ogni fase.
-9. **Dashboard KPI** (doc 09) per leggere i numeri e iterare.
-
-## 4. Stack strumenti consigliato (lean, sostenibile)
-| Funzione | Opzione consigliata | Alternativa economica |
+## 4. Stack strumenti (lean)
+| Funzione | Consigliato | Alternativa |
 |---|---|---|
-| Landing/sales page | Framer / Webflow / pagina nel nostro stack | Carrd |
-| Email/CRM + automazioni | Brevo / MailerLite | ActiveCampaign (più potente) |
-| Pagamenti + abbonamenti | Stripe | Paddle (gestisce tasse/IVA come merchant of record) |
-| Licenze | logica già nell'app (license key) | Gumroad (se vuoi marketplace) |
-| Video VSL | hosting su YouTube unlisted / Vimeo | self-host |
-| Analytics | GA4 + Meta Pixel | Plausible (privacy-friendly) |
-| Hosting app | la VPS attuale (+ dominio/cert) | — |
+| Landing/sales page | Framer / Webflow / nel nostro stack | Carrd |
+| Email/CRM + automazioni | Brevo / MailerLite | ActiveCampaign |
+| Pagamenti + abbonamenti | **PayPal** (carte+PayPal) + bonifico manuale | Paddle (IVA gestita) |
+| Licenze | nostro motore (`licensing.py`) | — |
+| Demo | istanza read-only della nostra app | video screencast |
+| Analytics | GA4 + Meta Pixel + eventi attivazione | Plausible |
+| Hosting | VPS attuale (+ dominio/cert) | — |
 
-> **Nota fiscale**: vendendo "in giro per il mondo" l'IVA digitale è complessa.
-> **Paddle** (merchant of record) la gestisce per te ed è spesso la scelta più
-> semplice per un prodotto SaaS venduto a privati in più Paesi.
+## 5. Le 3 sequenze email (non più una sola)
+A differenza del modello one-time, qui servono **tre** automazioni (doc 07):
+1. **Nurture** (pre-vendita): lead → cliente.
+2. **Onboarding/Attivazione** (post-acquisto): cliente → EA attivo.
+3. **Retention/Lifecycle** (continuativa): cliente → cliente che resta e sale.
 
-## 5. Tracciamento eventi (minimo indispensabile)
-- `view_landing` → `lead` (opt-in) → `view_sales` → `begin_checkout` →
-  `purchase` → `upsell_purchase`.
-- Su Meta: eventi standard `Lead`, `InitiateCheckout`, `Purchase` (con valore).
-- Serve per ottimizzare gli annunci sulle **conversioni reali**, non sui click.
-
-## 6. La regola d'oro della pipeline (Sabri)
-> **"Misura tutto. Il marketing è matematica."** Ogni fase ha un tasso di
-> conversione. Migliora l'anello più debole, non quello che ti diverte di più.
-> I numeri target e la "funnel math" sono nel doc 09.
+## 6. La regola d'oro (Sabri)
+> **"Misura tutto."** Ma ora l'anello più debole spesso **non** è negli ads: è
+> **l'attivazione** e il **churn**. Aggiusta quelli prima di versare benzina sul traffico.
 
 ---
 
 ### Collegato a
-- Creatività e copy per la Fase 1 → [06_COPY_ANNUNCI.md](06_COPY_ANNUNCI.md)
-- Email per la Fase 3 → [07_EMAIL_SEQUENCE.md](07_EMAIL_SEQUENCE.md)
-- Numeri e budget → [09_KPI_BUDGET_PIPELINE.md](09_KPI_BUDGET_PIPELINE.md)
+- Creatività → [06_COPY_ANNUNCI.md](06_COPY_ANNUNCI.md) · Email → [07_EMAIL_SEQUENCE.md](07_EMAIL_SEQUENCE.md)
+- Numeri → [09_KPI_BUDGET_PIPELINE.md](09_KPI_BUDGET_PIPELINE.md) · Lente SaaS → [16_STRATEGIA_RIVISTA_SAAS.md](16_STRATEGIA_RIVISTA_SAAS.md)
+- Onboarding cliente → [14_GUIDA_INSTALLAZIONE_CLIENTE.md](14_GUIDA_INSTALLAZIONE_CLIENTE.md)
