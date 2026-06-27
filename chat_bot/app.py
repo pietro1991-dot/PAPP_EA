@@ -367,6 +367,12 @@ async def login_page():
     return HTMLResponse(open("templates/login.html").read())
 
 
+@app.get("/report", response_class=HTMLResponse)
+async def report_page():
+    """Squeeze page HVCO (opt-in report) per il traffico freddo degli annunci."""
+    return HTMLResponse(open("templates/squeeze.html").read())
+
+
 @app.get("/demo")
 async def demo(request: Request):
     """Demo read-only: auto-login come utente demo (dati di esempio). Niente
