@@ -87,6 +87,16 @@ class LicenseKey(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class Lead(Base):
+    """Email catturate dalla landing/HVCO (lead di marketing, pre-registrazione)."""
+    __tablename__ = "leads"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), index=True)
+    source: Mapped[str | None] = mapped_column(String(40), nullable=True)   # landing|demo|quiz|report
+    lang: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class MarketSnapshot(Base):
     __tablename__ = "market_snapshots"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

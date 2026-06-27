@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import httpx
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 
@@ -27,6 +27,7 @@ from db import (
     BacktestTrade,
     MarketFeature,
     LicenseKey,
+    Lead,
 )
 from mt5_bridge import LogTailer
 import llm_worker
@@ -333,12 +334,52 @@ app = FastAPI(title="PAPP EA Chat", version="1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+DEMO_EMAIL = os.getenv("DEMO_EMAIL", "demo@phai.io")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     token = request.cookies.get(auth.COOKIE_NAME)
     if token and auth.verify_session_token(token):
         return HTMLResponse(open("templates/index.html").read())
+    return HTMLResponse(open("templates/landing.html").read())   # pubblico → landing marketing
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page():
     return HTMLResponse(open("templates/login.html").read())
+
+
+@app.get("/demo")
+async def demo(request: Request):
+    """Demo read-only: auto-login come utente demo (dati di esempio). Niente
+    registrazione, niente carta. Protegge la quota AI col rate-limit per-utente."""
+    async with AsyncSession() as session:
+        u = (await session.execute(select(User).where(User.email == DEMO_EMAIL))).scalar_one_or_none()
+    if not u:
+        return RedirectResponse("/login", status_code=302)
+    resp = RedirectResponse("/", status_code=302)
+    resp.set_cookie(
+        auth.COOKIE_NAME, auth.create_session_token(u.id),
+        httponly=True, max_age=auth.SESSION_MAX_AGE, samesite="lax", secure=auth.COOKIE_SECURE,
+    )
+    return resp
+
+
+@app.post("/api/lead")
+async def api_lead(request: Request):
+    """Cattura email dalla landing/HVCO (lead di marketing)."""
+    body = await request.json()
+    email = (body.get("email") or "").strip().lower()
+    if "@" not in email or "." not in email:
+        return JSONResponse({"error": "Email non valida"}, status_code=400)
+    async with AsyncSession() as session:
+        session.add(Lead(email=email, source=(body.get("source") or "landing")[:40], lang=(body.get("lang") or "")[:8] or None))
+        try:
+            await session.commit()
+        except Exception:
+            await session.rollback()
+    return {"ok": True}
 
 
 # --- PWA: manifest e service worker (pubblici, a scope root) ---
@@ -711,9 +752,13 @@ async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_
             )
         ).all()
     by_year = [{"year": int(y[0]), **_row_stats(y[1:])} for y in years]
+    # Capitale iniziale: 10k PER CONTO. Vista singolo simbolo = 10k; vista combinata
+    # (tutti i simboli) = 10k x numero di simboli (conti separati), cosi' la % non e' gonfiata.
+    n_acc = 1 if symbol else max(1, len([s for s in symbols if s]))
+    base = INITIAL_CAPITAL * n_acc
     # Capitale composto: ogni anno parte dal saldo di fine anno precedente.
     # growth_pct = PnL dell'anno / capitale d'inizio anno (= aumento sul capitale dell'anno prima).
-    cap = INITIAL_CAPITAL
+    cap = base
     for yr in sorted(by_year, key=lambda e: e["year"]):   # cronologico
         yr["start_capital"] = round(cap, 2)
         yr["growth_pct"] = round(yr["pnl_money"] / cap * 100, 2) if cap else 0.0
@@ -722,8 +767,9 @@ async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_
     return {
         "available": True,
         "symbols": sorted(s for s in symbols if s),
-        "initial_capital": INITIAL_CAPITAL,
-        "totals": {**totals, "growth_pct": round(totals["pnl_money"] / INITIAL_CAPITAL * 100, 2)},
+        "initial_capital": base,
+        "accounts": n_acc,
+        "totals": {**totals, "growth_pct": round(totals["pnl_money"] / base * 100, 2)},
         "by_year": by_year,
     }
 
