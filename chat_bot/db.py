@@ -80,6 +80,10 @@ class LicenseKey(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)                    # abbonamento attivo
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)   # scadenza (None=illimitata)
     last_seen: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)    # ultimo ping dell'EA
+    # --- provenienza / pagamento (PayPal, bonifico manuale, ecc.) ---
+    source: Mapped[str] = mapped_column(String(20), default="manual")              # manual|paypal|stripe|paddle
+    external_id: Mapped[str | None] = mapped_column(String(120), index=True, nullable=True)  # id pagamento/abbonamento (idempotenza)
+    buyer_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
@@ -201,7 +205,11 @@ _MIGRATIONS = [
     "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE",
     "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP",
     "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS source VARCHAR(20) DEFAULT 'manual'",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS external_id VARCHAR(120)",
+    "ALTER TABLE license_keys ADD COLUMN IF NOT EXISTS buyer_email VARCHAR(255)",
     "CREATE INDEX IF NOT EXISTS ix_signals_user_id ON signals (user_id)",
+    "CREATE INDEX IF NOT EXISTS ix_license_external_id ON license_keys (external_id)",
 ]
 
 

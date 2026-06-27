@@ -4,6 +4,8 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
+import httpx
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -31,6 +33,7 @@ import llm_worker
 import auth
 import metrics
 import notifications
+import licensing
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("papp")
@@ -443,6 +446,104 @@ async def ea_config(key: str = "", symbol: str = ""):
         for p in pats
     )
     return PlainTextResponse(_kv({"ok": 1, "enabled": enabled, "risk": risk, "npat": len(pats), "patterns": patline}))
+
+
+# ---------------------------------------------------------------------------
+# Pagamenti → emissione license key. Motore agnostico (licensing.py):
+#   - PayPal (carte + PayPal) via webhook automatico
+#   - bonifici / vendite manuali via endpoint admin (emetti con un click)
+# ---------------------------------------------------------------------------
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
+PAYPAL_API = os.getenv("PAYPAL_API", "https://api-m.paypal.com")  # sandbox: api-m.sandbox.paypal.com
+
+
+@app.post("/api/admin/issue-license")
+async def admin_issue_license(request: Request):
+    """Emette una license key manualmente (bonifico, vendita diretta, omaggio).
+    Protetto da header X-Admin-Token == env ADMIN_TOKEN."""
+    if not ADMIN_TOKEN or request.headers.get("X-Admin-Token") != ADMIN_TOKEN:
+        return JSONResponse({"error": "non autorizzato"}, status_code=401)
+    body = await request.json()
+    res = await licensing.issue_license(
+        (body.get("email") or "").strip().lower() or None,
+        plan=body.get("plan") or "pro",
+        source=body.get("source") or "manual",
+        external_id=body.get("external_id") or None,
+        months=body.get("months"),
+    )
+    return {"ok": True, **res}
+
+
+async def _paypal_token(client):
+    r = await client.post(
+        f"{PAYPAL_API}/v1/oauth2/token",
+        auth=(os.getenv("PAYPAL_CLIENT_ID", ""), os.getenv("PAYPAL_SECRET", "")),
+        data={"grant_type": "client_credentials"},
+    )
+    return r.json().get("access_token")
+
+
+async def _paypal_verify(headers, event, client, token) -> bool:
+    wid = os.getenv("PAYPAL_WEBHOOK_ID")
+    if not wid or not token:
+        return False
+    payload = {
+        "transmission_id": headers.get("paypal-transmission-id"),
+        "transmission_time": headers.get("paypal-transmission-time"),
+        "cert_url": headers.get("paypal-cert-url"),
+        "auth_algo": headers.get("paypal-auth-algo"),
+        "transmission_sig": headers.get("paypal-transmission-sig"),
+        "webhook_id": wid,
+        "webhook_event": event,
+    }
+    r = await client.post(
+        f"{PAYPAL_API}/v1/notifications/verify-webhook-signature",
+        headers={"Authorization": f"Bearer {token}"},
+        json=payload,
+    )
+    return r.json().get("verification_status") == "SUCCESS"
+
+
+@app.post("/api/pay/paypal/webhook")
+async def paypal_webhook(request: Request):
+    """Webhook PayPal: alla conferma del pagamento/abbonamento emette la key;
+    alla cancellazione disattiva la licenza (l'EA smette di aprire)."""
+    if not (os.getenv("PAYPAL_CLIENT_ID") and os.getenv("PAYPAL_SECRET") and os.getenv("PAYPAL_WEBHOOK_ID")):
+        return JSONResponse({"error": "paypal non configurato"}, status_code=503)
+    raw = await request.body()
+    try:
+        event = json.loads(raw)
+    except Exception:
+        return JSONResponse({"error": "payload non valido"}, status_code=400)
+    async with httpx.AsyncClient(timeout=15) as client:
+        token = await _paypal_token(client)
+        if not await _paypal_verify(request.headers, event, client, token):
+            log.warning("PayPal webhook: firma NON valida — ignorato")
+            return JSONResponse({"error": "firma non valida"}, status_code=400)
+
+    etype = event.get("event_type", "")
+    res = event.get("resource", {}) or {}
+    log.info("PayPal webhook verificato: %s", etype)
+    try:
+        plan_map = json.loads(os.getenv("PAYPAL_PLAN_MAP", "{}"))
+    except Exception:
+        plan_map = {}
+
+    ISSUE = ("BILLING.SUBSCRIPTION.ACTIVATED", "PAYMENT.SALE.COMPLETED",
+             "CHECKOUT.ORDER.APPROVED", "PAYMENT.CAPTURE.COMPLETED")
+    OFF = ("BILLING.SUBSCRIPTION.CANCELLED", "BILLING.SUBSCRIPTION.SUSPENDED",
+           "BILLING.SUBSCRIPTION.EXPIRED")
+    if etype in ISSUE:
+        email = ((res.get("subscriber") or {}).get("email_address")
+                 or (res.get("payer") or {}).get("email_address")
+                 or res.get("custom_id"))
+        plan = plan_map.get(res.get("plan_id")) or "pro"
+        await licensing.issue_license(email, plan=plan, source="paypal", external_id=res.get("id"))
+    elif etype in OFF:
+        await licensing.set_active_by_external(res.get("id"), False)
+    elif etype == "BILLING.SUBSCRIPTION.UPDATED":
+        await licensing.set_active_by_external(res.get("id"), True)
+    return {"ok": True}
 
 
 @app.post("/api/register")
