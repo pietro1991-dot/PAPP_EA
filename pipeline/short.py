@@ -26,38 +26,62 @@ CHROME = shutil.which("google-chrome-stable") or shutil.which("google-chrome") o
 FFMPEG = shutil.which("ffmpeg")
 FFPROBE = shutil.which("ffprobe")
 
+CHART_SVG = """<svg class="chart" viewBox="0 0 1080 420" preserveAspectRatio="none">
+<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#cba65c" stop-opacity=".20"/><stop offset="1" stop-color="#cba65c" stop-opacity="0"/></linearGradient></defs>
+<path d="M0,350 L135,300 L270,330 L405,225 L540,260 L675,150 L810,185 L945,80 L1080,40 L1080,420 L0,420 Z" fill="url(#ga)"/>
+<path d="M0,350 L135,300 L270,330 L405,225 L540,260 L675,150 L810,185 L945,80 L1080,40" fill="none" stroke="#cba65c" stroke-opacity=".5" stroke-width="3.5"/>
+</svg>"""
+
 FRAME_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:%(W)dpx;height:%(H)dpx;overflow:hidden}
-body{font-family:'Segoe UI',system-ui,sans-serif;
- background:radial-gradient(800px 700px at 50%% 30%%,rgba(203,166,92,.18),transparent),#0a0e18;
- color:#e9ebf2;display:flex;flex-direction:column;justify-content:center;align-items:center;
- text-align:center;padding:120px 90px;position:relative}
-.brand{position:absolute;top:80px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:12px;font-weight:800;letter-spacing:3px;font-size:30px}
-.brand i{font-style:normal;color:#cba65c;font-size:14px;letter-spacing:4px}
-.brand .mk{width:42px;height:42px;border:2px solid #cba65c;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#cba65c}
-.cap{font-size:72px;line-height:1.22;font-weight:800;letter-spacing:-.5px}
-.cap b{color:#cba65c}
-.hook .cap{font-size:86px}
-.cta .cap{color:#cba65c}
-.disc{position:absolute;bottom:120px;left:0;right:0;color:#5a6273;font-size:26px;padding:0 90px}
-""" % {"W": W, "H": H}
+html,body{width:1080px;height:1920px;overflow:hidden}
+body{font-family:'Inter',system-ui,sans-serif;color:#eef1f8;position:relative;
+ background:
+  radial-gradient(700px 560px at 50% 26%, rgba(203,166,92,.22), transparent 60%),
+  radial-gradient(760px 620px at 12% 100%, rgba(46,86,160,.18), transparent 60%),
+  linear-gradient(165deg,#0b1120 0%,#070b14 60%,#05080f 100%);
+ display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 96px}
+.grid{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+ background-size:72px 72px;mask-image:radial-gradient(circle at 50% 40%,#000 50%,transparent 88%)}
+.chart{position:absolute;left:0;right:0;bottom:0;width:100%;height:420px}
+.top{position:absolute;top:120px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:26px}
+.brand{display:flex;align-items:center;gap:14px;font-family:'Sora';font-weight:800;letter-spacing:3px;font-size:34px}
+.brand i{font-style:normal;color:#cba65c;font-size:15px;letter-spacing:5px}
+.brand .mk{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:30px;
+ color:#0a0e18;background:linear-gradient(135deg,#e9c878,#cba65c);box-shadow:0 6px 22px rgba(203,166,92,.4)}
+.prog{width:300px;height:7px;border-radius:7px;background:rgba(255,255,255,.10);overflow:hidden}
+.prog>i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,#f4d98c,#cba65c)}
+.cap{position:relative;font-family:'Sora','Segoe UI',sans-serif;font-size:80px;line-height:1.18;font-weight:800;letter-spacing:-1px;
+ background:linear-gradient(180deg,#ffffff,#cbd4e6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cap b{background:linear-gradient(135deg,#f4d98c,#cba65c);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hook .cap{font-size:96px}
+.cta-pill{position:relative;display:inline-block;font-family:'Sora';font-weight:800;font-size:62px;color:#0a0e18;
+ background:linear-gradient(135deg,#f4d98c,#cba65c);padding:34px 52px;border-radius:24px;box-shadow:0 22px 60px rgba(203,166,92,.4);line-height:1.1}
+.disc{position:absolute;bottom:150px;left:0;right:0;color:#566079;font-size:30px;padding:0 96px;font-weight:500}
+"""
 
 
-def _frame_html(text, kind):
+def _frame_html(text, kind, idx, total):
+    pct = int(idx / max(1, total) * 100)
+    cap = f'<div class="cta-pill">{text}</div>' if kind == "cta" else f'<div class="cap">{text}</div>'
     return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>{FRAME_CSS}</style></head>
 <body class="{kind}">
-<div class="brand"><span class="mk">P</span>PHAI <i>TRADING</i></div>
-<div class="cap">{text}</div>
+<div class="grid"></div>{CHART_SVG}
+<div class="top"><div class="brand"><span class="mk">P</span>PHAI <i>TRADING</i></div><div class="prog"><i style="width:{pct}%"></i></div></div>
+{cap}
 <div class="disc">Il trading comporta rischi. Nessun rendimento è garantito.</div>
 </body></html>"""
 
 
-def _render_frame(text, kind, path):
+def _render_frame(text, kind, path, idx, total):
     html = path + ".html"
-    open(html, "w", encoding="utf-8").write(_frame_html(text, kind))
-    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                    f"--window-size={W},{H}", f"--screenshot={path}", "file://" + html],
+    open(html, "w", encoding="utf-8").write(_frame_html(text, kind, idx, total))
+    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+                    "--virtual-time-budget=4000", f"--window-size={W},{H}", f"--screenshot={path}", "file://" + html],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.remove(html)
 
@@ -118,7 +142,7 @@ def make_short(slug, lines, lang="it"):
         for i, (line, dur) in enumerate(zip(lines, durs)):
             kind = "hook" if i == 0 else ("cta" if i == len(lines) - 1 else "mid")
             png = os.path.join(d, f"f{i:02d}.png")
-            _render_frame(line, kind, png)
+            _render_frame(line, kind, png, i + 1, len(lines))
             ft.write(f"file '{png}'\nduration {dur:.3f}\n")
         ft.write(f"file '{png}'\n")  # ultimo frame ripetuto (quirk concat)
 
