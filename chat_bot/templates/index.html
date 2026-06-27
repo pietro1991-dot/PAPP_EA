@@ -836,7 +836,8 @@ function renderMarkdown(src){
     if(/^\s*\d+\.\s+/.test(line)){html+='<ol>';while(i<lines.length&&/^\s*\d+\.\s+/.test(lines[i])){html+='<li>'+mdInline(lines[i].replace(/^\s*\d+\.\s+/,''))+'</li>';i++;}html+='</ol>';continue;}
     if(line.trim()===''){i++;continue;}
     const para=[];while(i<lines.length&&lines[i].trim()!==''&&!/^#{1,4}\s/.test(lines[i])&&!/^\s*[-*]\s+/.test(lines[i])&&!/^\s*\d+\.\s+/.test(lines[i])&&lines[i].indexOf('|')<0){para.push(lines[i]);i++;}
-    if(para.length)html+='<p>'+para.map(mdInline).join('<br>')+'</p>';
+    if(para.length){html+='<p>'+para.map(mdInline).join('<br>')+'</p>';}
+    else{html+='<p>'+mdInline(line)+'</p>';i++;}   // avanzamento garantito: riga con '|' non-tabella (es. tabella a metà streaming) → evita loop infinito
   }
   return html;
 }
