@@ -228,6 +228,16 @@ async def _signal_subscriber_ids() -> "set[int]":
     return ids
 
 
+async def _signal_recipients(user_id: int | None) -> "set[int]":
+    """Destinatari della push di un segnale, COERENTI con lo scoping della dashboard
+    (_broadcast). Il feed master/owner va a tutti gli abbonati ai segnali; il segnale
+    del conto di un cliente va SOLO a quel cliente (niente leak tra tenant)."""
+    oid = _owner_id()
+    if user_id is None or user_id == oid:
+        return await _signal_subscriber_ids()
+    return {user_id}
+
+
 async def process_event(data: dict, user_id: int | None = None):
     """Ingestione di un evento dell'EA (da bridge locale o da /api/ea/ingest),
     taggato con il tenant `user_id`. Gestisce account, market e segnali."""
@@ -322,7 +332,7 @@ async def process_event(data: dict, user_id: int | None = None):
                 body += f"PnL {sig.pnl_pt:+.1f}pt. "
             if sig.reason:
                 body += sig.reason
-        sub_ids = await _signal_subscriber_ids()
+        sub_ids = await _signal_recipients(user_id)
         asyncio.create_task(
             notifications.dispatch(title, body or "Nuovo evento sull'EA", tag=f"sig{sig.id}", user_ids=sub_ids)
         )
