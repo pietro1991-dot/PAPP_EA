@@ -98,6 +98,29 @@ cinesi — già filtrati, vedi commit dedicato). Passando a un modello a pagamen
 migliore (es. Claude Haiku) **migliora anche la qualità** delle risposte, non solo la
 capacità. È un upgrade "due piccioni con una fava" quando il volume lo giustifica.
 
+## 8. L'interruttore è già pronto (capacità costruita, costo zero)
+Il codice **sceglie già il modello LLM in base al piano del cliente** (free/paid/premium),
+guidato da `.env`. Di default **tutti restano sul free** (mimo/deepseek) → costo zero
+finché non vendi. Per attivare Claude (o qualsiasi modello a pagamento):
+
+```ini
+# Modello per i clienti Pro (tier "paid"). Vuoto = restano sul free.
+LLM_PAID_MODEL=<id-modello-claude>
+# Modello per i clienti Elite (tier "premium"). Vuoto = usa il paid.
+LLM_PREMIUM_MODEL=<id-modello-claude-piu-capace>
+# Se il modello NON passa da OpenCode Zen (es. API Anthropic OpenAI-compatibile):
+LLM_PAID_BASE_URL=<endpoint>      # vuoto = stesso endpoint del free (Zen)
+LLM_PAID_API_KEY=<chiave>         # vuoto = stessa chiave del free
+```
+
+Mappatura piano → modello: **Demo/Starter → free**, **Pro → paid**, **Elite → premium**.
+La cache è separata per tier (un cliente paid non riceve mai una risposta del free, e
+viceversa). Nessuna riscrittura: basta riavviare il servizio dopo aver impostato le env.
+
+> Strategia consigliata (doc): parti col free per tutti; al primo cliente pagante metti
+> `LLM_PAID_MODEL` su un Claude economico (es. Haiku) → i paganti salgono di qualità e
+> si **isolano** dalla fragilità del free; tieni il premium (Sonnet) come leva Elite.
+
 ---
 
 ### Collegato a

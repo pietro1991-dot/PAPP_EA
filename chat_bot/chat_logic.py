@@ -34,6 +34,33 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "3000"))
 # Vuoto = ometti il parametro (per modelli che lo rifiutano con 400).
 LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "low").strip()
 
+# --- Modello LLM per TIER (free / paid / premium) -----------------------------
+# Default: TUTTO sul free (Zen) finché non imposti i modelli a pagamento. Così la
+# capacità di differenziare per piano è già pronta, ma resti a costo zero fino alla
+# vendita. Per attivare Claude sui paganti: imposta LLM_PAID_MODEL (e, se non passa
+# da Zen, LLM_PAID_BASE_URL + LLM_PAID_API_KEY). LLM_PREMIUM_MODEL = Elite.
+LLM_FREE_MODEL = os.getenv("LLM_FREE_MODEL", ZEN_MODEL)
+LLM_FREE_FALLBACK = os.getenv("LLM_FREE_FALLBACK", "deepseek-v4-flash-free").strip()
+LLM_PAID_MODEL = os.getenv("LLM_PAID_MODEL", "").strip()        # es. un modello Claude (Pro)
+LLM_PREMIUM_MODEL = os.getenv("LLM_PREMIUM_MODEL", "").strip()  # es. Claude più capace (Elite)
+LLM_PAID_BASE_URL = os.getenv("LLM_PAID_BASE_URL", "").strip()  # vuoto = stesso endpoint del free (Zen)
+LLM_PAID_API_KEY = os.getenv("LLM_PAID_API_KEY", "").strip()    # vuoto = stessa chiave del free
+
+
+def resolve_llm(tier: str = "free") -> dict:
+    """Config LLM per tier: {base_url, api_key, model, fallback}.
+    tier: 'free' (Demo/Starter) · 'paid' (Pro) · 'premium' (Elite).
+    Se i modelli a pagamento non sono impostati, ricade sul free (zero rework)."""
+    free = {"base_url": ZEN_BASE_URL, "api_key": _api_key(), "model": LLM_FREE_MODEL, "fallback": LLM_FREE_FALLBACK}
+    paid_base = LLM_PAID_BASE_URL or ZEN_BASE_URL
+    paid_key = LLM_PAID_API_KEY or _api_key()
+    if tier == "premium" and LLM_PREMIUM_MODEL:
+        return {"base_url": paid_base, "api_key": paid_key, "model": LLM_PREMIUM_MODEL, "fallback": LLM_PAID_MODEL or LLM_FREE_MODEL}
+    if tier in ("paid", "premium") and LLM_PAID_MODEL:
+        return {"base_url": paid_base, "api_key": paid_key, "model": LLM_PAID_MODEL, "fallback": LLM_FREE_MODEL}
+    return free
+
+
 LANG_NAMES = {
     "it": "italiano",
     "en": "English",
@@ -112,17 +139,20 @@ async def ask(
     model: Optional[str] = None,
     timeout: Optional[float] = None,
     lang: str = "it",
+    base_url: Optional[str] = None,
+    api_key: Optional[str] = None,
 ) -> Optional[str]:
-    """Interroga l'LLM via API HTTP OpenAI-compatibile (OpenCode Zen).
-    `model` permette di usare un modello diverso da quello di default (es. fallback).
-    `timeout` limita l'attesa (oltre il quale si ripiega sul fallback).
+    """Interroga l'LLM via API HTTP OpenAI-compatibile (OpenCode Zen o altro endpoint).
+    `model`/`base_url`/`api_key` permettono di usare un provider diverso per tier
+    (es. Claude a pagamento). `timeout` limita l'attesa.
     Ritorna il testo, oppure None su errore (il worker decide il fallback)."""
-    key = _api_key()
+    key = api_key or _api_key()
     if not key:
-        log.error("OPENCODE_API_KEY mancante: impossibile interrogare l'LLM")
+        log.error("Chiave LLM mancante: impossibile interrogare l'LLM")
         return None
 
-    model = model or ZEN_MODEL
+    model = model or LLM_FREE_MODEL
+    base = base_url or ZEN_BASE_URL
     payload = {
         "model": model,
         "messages": [
@@ -137,18 +167,18 @@ async def ask(
     try:
         async with httpx.AsyncClient(timeout=timeout or LLM_TIMEOUT) as client:
             r = await client.post(
-                f"{ZEN_BASE_URL}/chat/completions",
+                f"{base}/chat/completions",
                 headers={"Authorization": f"Bearer {key}"},
                 json=payload,
             )
         if r.status_code != 200:
-            log.warning("Zen API HTTP %s: %s", r.status_code, r.text[:200])
+            log.warning("LLM API HTTP %s: %s", r.status_code, r.text[:200])
             return None
         data = r.json()
         content = _strip_cjk((data["choices"][0]["message"].get("content") or "").strip())
         return content or None
     except Exception:
-        log.exception("Errore nella chiamata all'API Zen")
+        log.exception("Errore nella chiamata all'API LLM")
         return None
 
 
@@ -158,15 +188,18 @@ async def ask_stream(
     model: Optional[str] = None,
     timeout: Optional[float] = None,
     lang: str = "it",
+    base_url: Optional[str] = None,
+    api_key: Optional[str] = None,
 ):
     """Come ask() ma in streaming: yield i pezzi di testo (delta) man mano che arrivano.
     Su errore non produce nulla (il worker decide il fallback)."""
-    key = _api_key()
+    key = api_key or _api_key()
     if not key:
-        log.error("OPENCODE_API_KEY mancante: impossibile interrogare l'LLM")
+        log.error("Chiave LLM mancante: impossibile interrogare l'LLM")
         return
 
-    model = model or ZEN_MODEL
+    model = model or LLM_FREE_MODEL
+    base = base_url or ZEN_BASE_URL
     payload = {
         "model": model,
         "messages": [
@@ -182,13 +215,13 @@ async def ask_stream(
         async with httpx.AsyncClient(timeout=timeout or LLM_TIMEOUT) as client:
             async with client.stream(
                 "POST",
-                f"{ZEN_BASE_URL}/chat/completions",
+                f"{base}/chat/completions",
                 headers={"Authorization": f"Bearer {key}"},
                 json=payload,
             ) as r:
                 if r.status_code != 200:
                     body = await r.aread()
-                    log.warning("Zen API HTTP %s (stream): %s", r.status_code, body[:200])
+                    log.warning("LLM API HTTP %s (stream): %s", r.status_code, body[:200])
                     return
                 async for line in r.aiter_lines():
                     line = line.strip()

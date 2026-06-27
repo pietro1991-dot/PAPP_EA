@@ -73,6 +73,23 @@ def _scope(q, col, user: User):
         return q.where(or_(col == user.id, col.is_(None)))
     return q.where(col == user.id)
 
+
+async def _user_tier(user: User) -> str:
+    """Tier LLM dal piano della licenza: pro→paid, elite→premium, altrimenti free.
+    Decide quale modello usa l'assistente (free Zen vs Claude a pagamento)."""
+    if not getattr(user, "license_key", None):
+        return "free"
+    async with AsyncSession() as session:
+        lk = (
+            await session.execute(select(LicenseKey).where(LicenseKey.key == user.license_key))
+        ).scalar_one_or_none()
+    plan = ((lk.plan if lk else "") or "").lower()
+    if plan == "elite":
+        return "premium"
+    if plan == "pro":
+        return "paid"
+    return "free"
+
 # Domande "comuni" servite dal riassunto condiviso precalcolato (0 quota LLM).
 COMMON_KEYWORDS = (
     "come va", "come sta andando", "com'è andata", "comè andata",
@@ -1181,9 +1198,10 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
     # (conto, performance per simbolo/pattern, periodo, ultimi segnali) → niente
     # numeri inventati. La firma include l'ultimo snapshot conto, così la cache si
     # invalida quando i dati (anche il P/L flottante) cambiano.
+    tier = await _user_tier(user)             # free|paid|premium → modello LLM per piano
     digest = await metrics.build_digest(symbol, user.id, _owner_id())
     context = digest["text"]
-    context_sig = digest["sig"] + ":" + lang  # la cache distingue per utente e lingua
+    context_sig = digest["sig"] + ":" + lang + ":" + tier  # cache distinta per utente, lingua e modello
     recent_count = digest["recent_count"]
 
     # Domande comuni → riassunto condiviso precalcolato, 0 quota LLM.
@@ -1201,7 +1219,7 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
             yield "data: " + json.dumps({"text": full}) + "\n\n"
         else:
             parts = []
-            async for chunk in llm_worker.submit_stream(question, context, context_sig, user.id, lang):
+            async for chunk in llm_worker.submit_stream(question, context, context_sig, user.id, lang, tier):
                 parts.append(chunk)
                 yield "data: " + json.dumps({"delta": chunk}) + "\n\n"
             full = "".join(parts)

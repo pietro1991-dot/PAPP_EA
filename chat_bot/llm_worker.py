@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 
 from db import AsyncSession, LlmCache
-from chat_logic import ask, ask_stream
+from chat_logic import ask, ask_stream, resolve_llm
 
 log = logging.getLogger("papp.llm")
 
@@ -45,6 +45,7 @@ class _Job:
     key: str
     future: "asyncio.Future | None" = None
     lang: str = "it"
+    tier: str = "free"                        # free|paid|premium → modello LLM per piano
     stream_q: "asyncio.Queue | None" = None   # se valorizzata → job in streaming
 
 
@@ -147,6 +148,7 @@ async def submit(
     context_sig: str | None,
     user_id: int | None = None,
     lang: str = "it",
+    tier: str = "free",
 ) -> str:
     """Punto d'ingresso per gli endpoint. Cache-hit → risposta immediata (0 quota);
     altrimenti applica la fairness per-utente, accoda e attende il worker.
@@ -175,7 +177,7 @@ async def submit(
     try:
         loop = asyncio.get_running_loop()
         fut: asyncio.Future = loop.create_future()
-        await _queue.put(_Job(question=question, context=context, key=key, future=fut, lang=lang))
+        await _queue.put(_Job(question=question, context=context, key=key, future=fut, lang=lang, tier=tier))
         return await fut
     finally:
         if user_id is not None:
@@ -188,6 +190,7 @@ async def submit_stream(
     context_sig: str | None,
     user_id: int | None = None,
     lang: str = "it",
+    tier: str = "free",
 ):
     """Come submit() ma in streaming: async-generator che produce i pezzi (delta) della
     risposta man mano. Mantiene cache, fairness per-utente, coda e rate-limit globale.
@@ -218,7 +221,7 @@ async def submit_stream(
     # 3) Accoda un job di streaming e drena la sua coda fino al sentinel None.
     try:
         q: asyncio.Queue = asyncio.Queue()
-        await _queue.put(_Job(question=question, context=context, key=key, lang=lang, stream_q=q))
+        await _queue.put(_Job(question=question, context=context, key=key, lang=lang, tier=tier, stream_q=q))
         while True:
             chunk = await q.get()
             if chunk is None:
@@ -240,18 +243,22 @@ async def _handle_stream_job(job: _Job):
         await q.put(None)
         return
 
+    cfg = resolve_llm(job.tier)   # modello/endpoint in base al piano del cliente
     full = ""
     try:
         await _bucket.acquire()
-        async for delta in ask_stream(job.question, job.context, timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang):
+        async for delta in ask_stream(job.question, job.context, model=cfg["model"],
+                                      base_url=cfg["base_url"], api_key=cfg["api_key"],
+                                      timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang):
             if delta:
                 full += delta
                 await q.put(delta)
         # Niente output (es. free tier vuoto o errore): prova il modello di riserva (non-stream).
-        if not full and LLM_FALLBACK_MODEL:
-            log.warning("Stream primario vuoto, provo il fallback %s", LLM_FALLBACK_MODEL)
+        if not full and cfg["fallback"]:
+            log.warning("Stream primario vuoto, provo il fallback %s", cfg["fallback"])
             await _bucket.acquire()
-            ans = await ask(job.question, job.context, model=LLM_FALLBACK_MODEL, lang=job.lang)
+            ans = await ask(job.question, job.context, model=cfg["fallback"],
+                            base_url=cfg["base_url"], api_key=cfg["api_key"], lang=job.lang)
             if ans:
                 full = ans
                 await q.put(ans)
@@ -285,10 +292,13 @@ async def _worker():
 
             # Il free tier può restituire risposte vuote in modo transitorio:
             # ritenta qualche volta prima di mostrare il fallback all'utente.
+            cfg = resolve_llm(job.tier)   # modello/endpoint in base al piano del cliente
             answer = None
             for attempt in range(LLM_RETRIES + 1):
                 await _bucket.acquire()
-                answer = await ask(job.question, job.context, timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang)
+                answer = await ask(job.question, job.context, model=cfg["model"],
+                                   base_url=cfg["base_url"], api_key=cfg["api_key"],
+                                   timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang)
                 if answer:
                     break
                 if attempt < LLM_RETRIES:
@@ -298,11 +308,12 @@ async def _worker():
                     )
                     await asyncio.sleep(LLM_RETRY_DELAY)
 
-            # Primario fallito (es. deepseek in 500): prova il modello di riserva.
-            if not answer and LLM_FALLBACK_MODEL:
-                log.warning("Primario fallito, provo il fallback %s", LLM_FALLBACK_MODEL)
+            # Primario fallito: prova il modello di riserva del tier.
+            if not answer and cfg["fallback"]:
+                log.warning("Primario fallito, provo il fallback %s", cfg["fallback"])
                 await _bucket.acquire()
-                answer = await ask(job.question, job.context, model=LLM_FALLBACK_MODEL, lang=job.lang)
+                answer = await ask(job.question, job.context, model=cfg["fallback"],
+                                   base_url=cfg["base_url"], api_key=cfg["api_key"], lang=job.lang)
 
             if answer:
                 _lru_put(job.key, answer)
