@@ -49,6 +49,7 @@ risponde alle domande di mercato — in italiano, inglese, francese, spagnolo.
 | [13_SCALABILITA_HOSTING.md](13_SCALABILITA_HOSTING.md) | **Scalabilità: VPS MetaTrader (PC spento), controllo centrale, perché non costruire VPS** |
 | [14_GUIDA_INSTALLAZIONE_CLIENTE.md](14_GUIDA_INSTALLAZIONE_CLIENTE.md) | **Guida cliente "PHAI in 5 minuti": passi semplici + troubleshooting** |
 | [15_SCALABILITA_LLM_ASSISTENTE.md](15_SCALABILITA_LLM_ASSISTENTE.md) | **L'assistente AI regge coi clienti? LLM free vs a pagamento, quota, costi, scala** |
+| [16_STRATEGIA_RIVISTA_SAAS.md](16_STRATEGIA_RIVISTA_SAAS.md) | **Strategia marketing riallineata al modello abbonamento: attivazione, retention, metriche, budget** |
 
 ## Come usare questa cartella
 1. Parti da **strategia** e **avatar** (capisci a chi e perché).
