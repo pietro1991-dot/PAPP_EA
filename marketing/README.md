@@ -48,6 +48,7 @@ risponde alle domande di mercato — in italiano, inglese, francese, spagnolo.
 | [12_DELIVERY_ONBOARDING.md](12_DELIVERY_ONBOARDING.md) | **Come PHAI gira sui conti dei clienti: delivery, licenza, telemetria, onboarding** |
 | [13_SCALABILITA_HOSTING.md](13_SCALABILITA_HOSTING.md) | **Scalabilità: VPS MetaTrader (PC spento), controllo centrale, perché non costruire VPS** |
 | [14_GUIDA_INSTALLAZIONE_CLIENTE.md](14_GUIDA_INSTALLAZIONE_CLIENTE.md) | **Guida cliente "PHAI in 5 minuti": passi semplici + troubleshooting** |
+| [15_SCALABILITA_LLM_ASSISTENTE.md](15_SCALABILITA_LLM_ASSISTENTE.md) | **L'assistente AI regge coi clienti? LLM free vs a pagamento, quota, costi, scala** |
 
 ## Come usare questa cartella
 1. Parti da **strategia** e **avatar** (capisci a chi e perché).
