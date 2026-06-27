@@ -117,51 +117,88 @@ def pexels_clip(query, out_path):
         return False
 
 
+# --- sfondo brand (senza caption: il testo è nei sottotitoli animati) ---
+def _bg_html():
+    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>{FRAME_CSS}</style></head>
+<body><div class="grid"></div>{CHART_SVG}
+<div class="top"><div class="brand"><span class="mk">P</span>PHAI <i>TRADING</i></div></div>
+<div class="disc">Il trading comporta rischi. Nessun rendimento è garantito.</div></body></html>"""
+
+
+def _render_bg(path):
+    html = path + ".html"
+    open(html, "w", encoding="utf-8").write(_bg_html())
+    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+                    "--virtual-time-budget=4000", f"--window-size={W},{H}", f"--screenshot={path}", "file://" + html],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.remove(html)
+
+
+# --- sottotitoli animati (ASS karaoke) dai word-timing di edge-tts ---
+def _ass_t(t):
+    cs = int(round(max(0, t) * 100)); h = cs // 360000; cs %= 360000
+    m = cs // 6000; cs %= 6000; s = cs // 100; cs %= 100
+    return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
+
+
+def _ass_esc(w):
+    return w.replace("\\", "").replace("{", "").replace("}", "")
+
+
+def build_ass(marks, path):
+    head = (
+        "[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nWrapStyle: 0\nScaledBorderAndShadow: yes\n\n"
+        "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
+        "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, "
+        "MarginL, MarginR, MarginV, Encoding\n"
+        # PrimaryColour=oro (parola 'cantata'), SecondaryColour=bianco (prima)
+        "Style: Cap,DejaVu Sans,92,&H005CA6CB,&H00FFFFFF,&H00140E08,&H64000000,-1,0,0,0,100,100,0,0,1,7,5,5,80,80,0,1\n\n"
+        "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    )
+    n = len(marks)
+
+    def kdur(i):
+        return (marks[i + 1]["start"] - marks[i]["start"]) if i + 1 < n else marks[i]["dur"]
+
+    rows = []
+    i = 0
+    while i < n:
+        chunk = []
+        chars = 0
+        while i < n and len(chunk) < 4 and chars < 20:
+            chunk.append(i)
+            chars += len(marks[i]["word"]) + 1
+            brk = marks[i]["word"][-1:] in ".?!,;:"
+            i += 1
+            if brk:
+                break
+        start = marks[chunk[0]]["start"]
+        end = marks[chunk[-1]]["start"] + max(0.05, kdur(chunk[-1]))
+        text = "".join("{\\k%d}%s " % (max(1, round(kdur(g) * 100)), _ass_esc(marks[g]["word"])) for g in chunk).strip()
+        rows.append(f"Dialogue: 0,{_ass_t(start)},{_ass_t(end)},Cap,,0,0,0,,{{\\pos(540,840)}}{text}")
+    open(path, "w", encoding="utf-8").write(head + "\n".join(rows) + "\n")
+
+
 def make_short(slug, lines, lang="it"):
     if not (CHROME and FFMPEG and FFPROBE):
         raise SystemExit("Servono Chrome + ffmpeg + ffprobe.")
     d = os.path.join(OUT, "short_" + slug)
     os.makedirs(d, exist_ok=True)
-
-    # 1) Voce (concatena le righe)
     vo_text = " ".join(l.replace("<b>", "").replace("</b>", "") for l in lines)
     voice = os.path.join(d, "voice.mp3")
-    voiceover.speak(vo_text, voice, lang=lang)
+    marks = voiceover.synth_marks(vo_text, voice, lang=lang)   # voce + timing per parola
     total = _audio_dur(voice) or (len(lines) * 2.5)
-
-    # 2) Frame per riga, durata pesata sulla lunghezza del testo
-    weights = [max(8, len(l)) for l in lines]
-    sw = sum(weights)
-    durs = [max(1.4, total * w / sw) for w in weights]
-    # riscala per combaciare con l'audio
-    k = total / sum(durs)
-    durs = [x * k for x in durs]
-
-    frames_txt = os.path.join(d, "frames.txt")
-    with open(frames_txt, "w") as ft:
-        for i, (line, dur) in enumerate(zip(lines, durs)):
-            kind = "hook" if i == 0 else ("cta" if i == len(lines) - 1 else "mid")
-            png = os.path.join(d, f"f{i:02d}.png")
-            _render_frame(line, kind, png, i + 1, len(lines))
-            ft.write(f"file '{png}'\nduration {dur:.3f}\n")
-        ft.write(f"file '{png}'\n")  # ultimo frame ripetuto (quirk concat)
-
-    # 3) Sfondo b-roll Pexels (opzionale) o solo i frame brand
+    ass = os.path.join(d, "subs.ass")
+    build_ass(marks, ass)
+    bg = os.path.join(d, "bg.png")
+    _render_bg(bg)
     out = os.path.join(OUT, f"short_{slug}.mp4")
-    bg = os.path.join(d, "broll.mp4")
-    has_broll = pexels_clip(lines[0][:40], bg)
-
-    if has_broll:
-        # b-roll sotto, frame brand (con trasparenza) sopra: per semplicità qui usiamo
-        # i frame brand pieni; il b-roll resta come opzione avanzata (overlay) futura.
-        pass
-
     subprocess.run([
-        FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", frames_txt, "-i", voice,
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", "-vf", f"scale={W}:{H},fps=30",
-        "-c:a", "aac", "-b:a", "128k", "-shortest", out
+        FFMPEG, "-y", "-loop", "1", "-i", bg, "-i", voice, "-t", f"{total:.2f}",
+        "-vf", f"ass={ass},format=yuv420p", "-r", "30",
+        "-c:v", "libx264", "-c:a", "aac", "-b:a", "128k", "-shortest", out
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"  ✓ short → {out}  ({total:.1f}s, {len(lines)} frame)")
+    print(f"  ✓ short → {out}  ({total:.1f}s, {len(marks)} parole, sottotitoli animati)")
     return out
 
 

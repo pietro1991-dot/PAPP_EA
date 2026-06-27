@@ -28,6 +28,28 @@ async def _edge(text, out_path, voice):
     await edge_tts.Communicate(text, voice).save(out_path)
 
 
+async def _edge_marks(text, out_path, voice):
+    """Sintetizza e cattura i word boundary (timing per parola) da edge-tts.
+    Ritorna [{'word','start','dur'}] in secondi. Niente Whisper: timing esatto."""
+    import edge_tts
+    marks = []
+    with open(out_path, "wb") as f:
+        async for ch in edge_tts.Communicate(text, voice, boundary="WordBoundary").stream():
+            if ch["type"] == "audio":
+                f.write(ch["data"])
+            elif ch["type"] == "WordBoundary":
+                marks.append({"word": ch["text"], "start": ch["offset"] / 1e7, "dur": ch["duration"] / 1e7})
+    return marks
+
+
+def synth_marks(text, out_path, voice=None, lang="it"):
+    """Genera l'audio E i tempi di ogni parola (solo edge-tts). Per i sottotitoli animati."""
+    voice = voice or VOICES.get(lang, VOICES["it"])
+    marks = asyncio.run(_edge_marks(text, out_path, voice))
+    print(f"  ✓ voce+timing → {out_path}  ({len(marks)} parole, {voice})")
+    return marks
+
+
 def _piper(text, out_path):
     pbin = os.getenv("PIPER_BIN", "piper")
     model = os.getenv("PIPER_MODEL", "")
