@@ -47,6 +47,15 @@ opposto), tutti con disaster stop 100 pip e TP cap 200 pip. Pattern: P1 MA182 SE
   Redditizio ma volatile — profilo opposto a EURUSD (lì win 97% e DD 20%).
 - Parametri: RiskPct 15%, FallbackRiskPips 500, MaxPerPattern 0, SL dinamico ON.
 
+## Backtest USDCHF (2010-2025, deposito 10.000 €) — config rivista
+Config con **2 soli pattern SELL-trend**: P1 (MA14 SELL→crossMA182) + P7 (Median SELL→crossMA182),
+TP cap 500 pip, **MaxPerPattern=3** (impilamento controllato), niente GRID.
+- **Net Profit +19.786 €** (311 trade, win ~48%), **Max Drawdown ~24,5%**.
+- È la versione **corretta dopo un blow-up**: la config precedente (impilamento illimitato, MaxPos=0)
+  era esplosa con margin call (−1.291 €, DD 90%) perché i SELL senza stop si accatastavano a 22 posizioni
+  in un uptrend dove l'uscita (crossMA182) era irraggiungibile. Fix: MaxPerPattern=3 + tolto il GRID P3.
+- **USDCHF è il simbolo più debole**: edge sottile, per fare profitto serve accettare drawdown maggiori.
+
 ## Caratteristiche chiave
 - **SL dinamico**: lo stop viene trascinato sul valore corrente della linea MA ad ogni nuova
   barra D1 (sulla barra chiusa, senza look-ahead). Il TP resta fisso.

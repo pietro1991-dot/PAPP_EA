@@ -42,6 +42,10 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .tab .tdot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.85}
 .user{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);flex-shrink:0}
 .user .email{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-badge{font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:6px;background:#2a3550;color:#9fb3d8;text-transform:uppercase}
+.plan-badge.pro,.plan-badge.elite{background:rgba(61,220,151,.15);color:var(--green)}
+.plan-badge.demo{background:#3a2a2a;color:#d8a39f}
+.sig-locked{padding:26px 18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.55}
 .user .logout{cursor:pointer;color:var(--accent);font-weight:600}
 .user .logout:hover{text-decoration:underline}
 .lang-sel{background:#1a2236;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 7px;font-size:12px;font-weight:600;cursor:pointer;outline:none;flex-shrink:0}
@@ -271,6 +275,7 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
     <button class="notif-btn" id="notif-btn" title="Attiva notifiche" onclick="toggleNotifications()" aria-label="Notifiche">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </button>
+    <span class="plan-badge" id="plan-badge"></span>
     <span class="email" id="user-email"></span>
     <span class="logout" onclick="logout()" data-i18n="logout">Esci</span>
   </div>
@@ -577,6 +582,7 @@ function showEmpty(){
   signalList.appendChild(e);
 }
 async function loadRecent(){
+  if(window.ENT && window.ENT.signals===false){ showSignalsLocked(); return; }
   const q='?limit=60'+(activeSymbol?('&symbol='+encodeURIComponent(activeSymbol)):'');
   const r=await fetch('/api/signals'+q); if(r.status===401){location.href='/';return;}
   const list=await r.json();
@@ -843,9 +849,17 @@ function renderMarkdown(src){
 }
 
 /* ---------- Init ---------- */
+window.ENT={};
+function showSignalsLocked(){
+  signalList.innerHTML='<div class="sig-locked">🔒 I segnali in tempo reale sono inclusi dal piano <b>Starter</b>.<br>Abbonati per riceverli.</div>';
+}
 async function loadUser(){
   const r=await fetch('/api/me'); if(r.status===401){location.href='/';return;}
   const d=await r.json(); $('user-email').textContent=d.email||'';
+  window.ENT=d.entitlements||{};
+  const b=$('plan-badge');
+  if(b){ b.textContent=d.plan?d.plan.toUpperCase():'DEMO'; b.className='plan-badge '+(d.plan||'demo'); }
+  if(window.ENT.signals===false) showSignalsLocked();
 }
 const _ls=$('lang-sel'); if(_ls)_ls.value=lang;
 applyI18n();

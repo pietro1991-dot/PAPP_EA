@@ -35,6 +35,7 @@ import auth
 import metrics
 import notifications
 import licensing
+import entitlements
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("papp")
@@ -74,21 +75,26 @@ def _scope(q, col, user: User):
     return q.where(col == user.id)
 
 
-async def _user_tier(user: User) -> str:
-    """Tier LLM dal piano della licenza: pro→paid, elite→premium, altrimenti free.
-    Decide quale modello usa l'assistente (free Zen vs Claude a pagamento)."""
+async def _user_plan(user: User) -> str:
+    """Piano EFFETTIVO dell'utente ('starter'|'pro'|'elite'), '' se nessuno o
+    abbonamento non valido (revocato/inattivo/scaduto). Così uno scaduto perde
+    gli accessi (segnali/EA/chatbot tornano al livello demo)."""
     if not getattr(user, "license_key", None):
-        return "free"
+        return ""
     async with AsyncSession() as session:
         lk = (
             await session.execute(select(LicenseKey).where(LicenseKey.key == user.license_key))
         ).scalar_one_or_none()
-    plan = ((lk.plan if lk else "") or "").lower()
-    if plan == "elite":
-        return "premium"
-    if plan == "pro":
-        return "paid"
-    return "free"
+    if not lk or lk.revoked or lk.active is False:
+        return ""
+    if lk.expires_at is not None and lk.expires_at < datetime.utcnow():
+        return ""
+    return (lk.plan or "").lower()
+
+
+async def _user_tier(user: User) -> str:
+    """Tier LLM dal piano (free/paid/premium): quale modello usa l'assistente."""
+    return entitlements.chatbot_tier(await _user_plan(user))
 
 # Domande "comuni" servite dal riassunto condiviso precalcolato (0 quota LLM).
 COMMON_KEYWORDS = (
@@ -198,6 +204,30 @@ async def _broadcast(payload: dict, user_id: int | None):
         clients.pop(ws, None)
 
 
+async def _signal_subscriber_ids() -> "set[int]":
+    """user_id degli utenti con un piano che dà diritto ai SEGNALI e licenza attiva.
+    Le push dei segnali vanno SOLO a questi (abbonati paganti)."""
+    now = datetime.utcnow()
+    async with AsyncSession() as session:
+        rows = (
+            await session.execute(
+                select(
+                    User.id, LicenseKey.plan, LicenseKey.active,
+                    LicenseKey.revoked, LicenseKey.expires_at,
+                ).join(LicenseKey, LicenseKey.key == User.license_key)
+            )
+        ).all()
+    ids: set[int] = set()
+    for uid, plan, active, revoked, exp in rows:
+        if revoked or active is False:
+            continue
+        if exp is not None and exp < now:
+            continue
+        if entitlements.can_signals(plan):
+            ids.add(uid)
+    return ids
+
+
 async def process_event(data: dict, user_id: int | None = None):
     """Ingestione di un evento dell'EA (da bridge locale o da /api/ea/ingest),
     taggato con il tenant `user_id`. Gestisce account, market e segnali."""
@@ -292,8 +322,9 @@ async def process_event(data: dict, user_id: int | None = None):
                 body += f"PnL {sig.pnl_pt:+.1f}pt. "
             if sig.reason:
                 body += sig.reason
+        sub_ids = await _signal_subscriber_ids()
         asyncio.create_task(
-            notifications.dispatch(title, body or "Nuovo evento sull'EA", tag=f"sig{sig.id}")
+            notifications.dispatch(title, body or "Nuovo evento sull'EA", tag=f"sig{sig.id}", user_ids=sub_ids)
         )
 
 
@@ -448,6 +479,10 @@ async def ea_validate(request: Request):
         lk.last_seen = datetime.utcnow()
         plan = lk.plan or "pro"
         await session.commit()
+    # Gate EA: solo i piani con EA (pro/elite) possono far girare l'Expert Advisor.
+    # Starter = solo segnali: licenza valida ma l'EA non opera.
+    if not entitlements.can_ea(plan):
+        return PlainTextResponse(_kv({"ok": 0, "plan": plan, "reason": "plan_no_ea"}))
     cfg = _load_ea_config()
     dft = cfg.get("default", {})
     sym_cfg = (cfg.get("symbols") or {}).get(symbol) or dft
@@ -733,7 +768,8 @@ async def api_logout():
 
 @app.get("/api/me")
 async def api_me(user: User = Depends(auth.current_user)):
-    return {"email": user.email}
+    plan = await _user_plan(user)
+    return {"email": user.email, "plan": plan or None, "entitlements": entitlements.features(plan)}
 
 
 @app.get("/api/signals")
@@ -743,6 +779,9 @@ async def get_signals(
     symbol: str = "",
     user: User = Depends(auth.current_user),
 ):
+    # Prodotto SEGNALI: visibili solo agli abbonati con diritto (starter+).
+    if not entitlements.can_signals(await _user_plan(user)):
+        return []
     async with AsyncSession() as session:
         q = select(Signal).order_by(desc(Signal.id))
         if action:

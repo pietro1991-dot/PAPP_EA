@@ -28,8 +28,8 @@ input int     InpMaxSpreadPips = 5;             // Spread massimo in PIP (0=disa
 input int     InpMinSLDistPips = 5;             // Distanza SL minima in PIP
 input double  InpFallbackRiskPips = 600.0;      // Risk distance pips senza SL (P1/P2 no-stop: ~escursione avversa reale -> sizing corretto)
 input bool    InpDynamicSL     = true;          // true=SL trascina sulla linea MA ogni D1; false=SL statico all'entry
-input int     InpMaxPos        = 20;            // Max posizioni totali (0=illimitato)
-input int     InpMaxPerPattern = 1;             // Max posizioni per pattern (0=illimitato)
+input int     InpMaxPos        = 6;             // Max posizioni totali (2 pattern x K3 = 6)
+input int     InpMaxPerPattern = 3;             // Max posizioni per pattern (impilamento CONTROLLATO; 0=illimitato era il blow-up)
 input int     InpMagic         = 20260625;
 input string  InpLogFile       = "papp_ea_log.jsonl"; // File log decisioni (vuoto=disabilita)
 input int     InpMarketInterval = 300;           // Intervallo market snapshot secondi (0=disabilita)
@@ -77,7 +77,7 @@ input int     InpP2_TP     = 0;
 input int     InpP2_Dir    = 1;
 
 input group "==  P3 - MA14 BUY, SL=MA121, TP=12pip [BUY mean-revert, win 82%]  =="
-input bool    InpP3_On    = true;    // ATTIVA (stile diverso; 68% corr. con P2)
+input bool    InpP3_On    = false;   // OFF: GRID perde (Ret/DD -0.92; TP 12pip << SL+costi, expectancy negativa)
 input int     InpP3_Entry = 14;
 input int     InpP3_Exit  = 0;
 input int     InpP3_SL     = 121;
@@ -121,7 +121,7 @@ input int     InpP6_TP     = 500;   // TP in PIP: 500 pip
 input int     InpP6_Dir    = 2;
 
 input group "==  P7 - Median SELL -> crossMA182, TP=500 [variante SELL, Ret/DD 2.03]  =="
-input bool    InpP7_On    = true;    // ATTIVA: Median SELL forte (OOS +27072) - col combinato P1+P3+P7 domina
+input bool    InpP7_On    = true;    // ATTIVA: Median SELL (Ret/DD 3.16 da solo); con P1 e MaxPerPattern=3
 input int     InpP7_Entry = 0;       // 0 = Median
 input int     InpP7_Exit  = 182;
 input int     InpP7_SL     = 0;
@@ -177,6 +177,8 @@ int      g_logHandle = -1;
 datetime g_lastMarketLog;
 bool     g_licensed     = true;   // se server OFF, opera con gli input locali
 datetime g_lastValidate = 0;
+datetime g_lastOkValidate = 0;    // ultimo contatto col server con licenza valida (per la grazia)
+#define  LICENSE_GRACE_SEC 604800 // grazia se il server e' irraggiungibile: 7 giorni, poi pausa
 
 CTrade        g_trade;
 CPositionInfo g_pos;
@@ -562,10 +564,21 @@ bool PhaiValidate()              // valida licenza+conto; aggiorna g_licensed (+
       IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + "\",\"broker\":\"" +
       PhaiEsc(AccountInfoString(ACCOUNT_COMPANY)) + "\",\"symbol\":\"" + _Symbol + "\"}";
    string resp = PhaiHttpPost("/api/ea/validate", body);
-   if(resp == "") { Print("PHAI: server non raggiungibile, mantengo lo stato licenza precedente."); return g_licensed; }
+   if(resp == "")
+   {
+      if(g_lastOkValidate > 0 && TimeCurrent() - g_lastOkValidate > LICENSE_GRACE_SEC)
+      {
+         g_licensed = false;
+         Print("PHAI: server irraggiungibile da >", LICENSE_GRACE_SEC/86400, " giorni: licenza in pausa.");
+      }
+      else
+         Print("PHAI: server non raggiungibile, mantengo lo stato licenza (grazia).");
+      return g_licensed;
+   }
    bool ok      = (PhaiKv(resp, "ok") == "1");
    bool enabled = (PhaiKv(resp, "enabled") != "0");
    g_licensed = ok && enabled;
+   if(g_licensed) g_lastOkValidate = TimeCurrent();   // contatto valido: resetta la grazia
    if(!ok)           Print("PHAI: LICENZA NON VALIDA (", PhaiKv(resp,"reason"), "). Nessuna nuova operazione.");
    else if(!enabled) Print("PHAI: strategia disattivata dal server per ", _Symbol, ". Nessuna nuova operazione.");
    else              Print("PHAI: licenza OK (piano ", PhaiKv(resp,"plan"), ", rischio ", PhaiKv(resp,"risk"), "%).");
@@ -682,11 +695,7 @@ void OpenPatternTrade(int pi)
    if(InpLog)
       Print(StringFormat(">>> APERTURA [%d] %s lot=%.2f entry=%.5f sl=%.5f tp=%.5f %s",
           pi, (wantDir==1?"BUY":"SELL"), lot, entry, sl, tp, cmt));
-   if(g_trade.PositionOpen(_Symbol, (wantDir==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
-                            lot, entry, sl, tp, cmt))
-      LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), PatternSetupStr(pi), entry, sl, tp, lot);
-   else if(InpLog)
-      Print(">>> ERR entrata [", pi, "] retcode=", g_trade.ResultRetcode());
+   TrySendEntry(pi, wantDir, lot, sl, tp, cmt);
 }
 
 //+------------------------------------------------------------------+
@@ -1080,9 +1089,137 @@ bool IsNewBar()
 }
 
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//  Entrate differite: se il broker rifiuta l'ordine per una causa
+//  transitoria (es. 10018 "mercato chiuso" al primo tick della barra a
+//  mezzanotte server, requote, off-quotes), l'entrata viene messa in
+//  coda e ritentata a ogni tick finche' il mercato apre, ma solo entro
+//  la stessa barra D1. Senza questo, su broker con sessione chiusa a
+//  mezzanotte (es. ICMarkets) ~meta' dei segnali venivano persi e il
+//  backtest risultava completamente falsato rispetto ad altri broker.
+//+------------------------------------------------------------------+
+#define MAX_PENDING 64
+struct PendingEntry
+{
+   bool     active;
+   int      pi;
+   int      wantDir;   // +1 BUY, -1 SELL
+   double   lot;
+   double   sl;
+   double   tp;
+   string   cmt;
+   datetime d1bar;
+   int      attempts;
+};
+PendingEntry g_pending[MAX_PENDING];
+
+bool IsRetryableRetcode(uint rc)
+{
+   switch(rc)
+   {
+      case 10004: // requote
+      case 10006: // richiesta rifiutata
+      case 10018: // mercato chiuso
+      case 10021: // nessuna quotazione (off quotes)
+      case 10024: // troppe richieste
+      case 10031: // nessuna connessione
+         return true;
+   }
+   return false;
+}
+
+void EnqueuePending(int pi, int wantDir, double lot, double sl, double tp, string cmt, datetime d1bar)
+{
+   for(int i = 0; i < MAX_PENDING; i++)
+      if(!g_pending[i].active)
+      {
+         g_pending[i].active   = true;
+         g_pending[i].pi       = pi;
+         g_pending[i].wantDir  = wantDir;
+         g_pending[i].lot      = lot;
+         g_pending[i].sl       = sl;
+         g_pending[i].tp       = tp;
+         g_pending[i].cmt      = cmt;
+         g_pending[i].d1bar    = d1bar;
+         g_pending[i].attempts = 0;
+         return;
+      }
+   if(InpLog) Print("   Coda entrate piena: P", pi, " scartata");
+}
+
+void TrySendEntry(int pi, int wantDir, double lot, double sl, double tp, string cmt)
+{
+   double px = (wantDir == 1) ? SymbolInfoDouble(_Symbol, SYMBOL_ASK)
+                              : SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   if(g_trade.PositionOpen(_Symbol, (wantDir==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
+                            lot, px, sl, tp, cmt))
+   {
+      LogDecision("open", pi, (wantDir==1?"BUY":"SELL"), PatternSetupStr(pi), px, sl, tp, lot);
+      return;
+   }
+   uint rc = g_trade.ResultRetcode();
+   if(IsRetryableRetcode(rc))
+   {
+      EnqueuePending(pi, wantDir, lot, sl, tp, cmt, iTime(_Symbol, PERIOD_D1, 0));
+      if(InpLog) Print(">>> entrata [", pi, "] differita (retcode=", rc, "): mercato non disponibile, riprovo");
+   }
+   else if(InpLog)
+      Print(">>> ERR entrata [", pi, "] retcode=", rc, " (non ritentabile)");
+}
+
+void RetryPending()
+{
+   datetime d1now = iTime(_Symbol, PERIOD_D1, 0);
+   for(int i = 0; i < MAX_PENDING; i++)
+   {
+      if(!g_pending[i].active) continue;
+
+      // Segnale scaduto: barra D1 cambiata -> non e' piu' valido
+      if(g_pending[i].d1bar != d1now)
+      {
+         if(InpLog) Print("   Pending P", g_pending[i].pi, " scaduto (nuova barra) dopo ",
+                          g_pending[i].attempts, " tentativi");
+         g_pending[i].active = false;
+         continue;
+      }
+
+      if(InpMaxPos > 0 && PositionsTotal() >= InpMaxPos) { g_pending[i].active = false; continue; }
+
+      g_pending[i].attempts++;
+      int    wd = g_pending[i].wantDir;
+      double px = (wd == 1) ? SymbolInfoDouble(_Symbol, SYMBOL_ASK)
+                            : SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      if(px <= 0.0) continue;
+
+      // L'hard SL deve restare dal lato corretto rispetto al prezzo aggiornato
+      double sl = g_pending[i].sl;
+      if(sl > 0.0 && ((wd == 1 && sl >= px) || (wd == -1 && sl <= px))) continue;
+
+      if(g_trade.PositionOpen(_Symbol, (wd==1)?ORDER_TYPE_BUY:ORDER_TYPE_SELL,
+                               g_pending[i].lot, px, sl, g_pending[i].tp, g_pending[i].cmt))
+      {
+         if(InpLog) Print(">>> entrata [", g_pending[i].pi, "] RIUSCITA al ritentativo #", g_pending[i].attempts);
+         LogDecision("open", g_pending[i].pi, (wd==1?"BUY":"SELL"), PatternSetupStr(g_pending[i].pi),
+                     px, sl, g_pending[i].tp, g_pending[i].lot);
+         g_pending[i].active = false;
+      }
+      else
+      {
+         uint rc = g_trade.ResultRetcode();
+         if(!IsRetryableRetcode(rc))
+         {
+            if(InpLog) Print(">>> ERR pending [", g_pending[i].pi, "] retcode=", rc, " - scartato");
+            g_pending[i].active = false;
+         }
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
 void OnTick()
 {
    if(!WaitIndicator()) return;
+   RetryPending();
    if(!IsNewBar()) return;
 
    datetime d1today = iTime(_Symbol, PERIOD_D1, 0);

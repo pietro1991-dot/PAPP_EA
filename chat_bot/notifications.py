@@ -33,12 +33,19 @@ def _send(sub: PushSubscription, payload: str):
     )
 
 
-async def dispatch(title: str, body: str, *, tag: str = "papp", url: str = "/", data: dict | None = None):
-    """Invia una notifica push a tutti gli iscritti. Non solleva mai; rimuove le
-    iscrizioni scadute (404/410)."""
+async def dispatch(title: str, body: str, *, tag: str = "papp", url: str = "/", data: dict | None = None,
+                   user_ids: "set[int] | None" = None):
+    """Invia una notifica push agli iscritti. Se `user_ids` è valorizzato, invia SOLO
+    a quegli utenti (per i SEGNALI: solo abbonati con diritto). None = tutti.
+    Non solleva mai; rimuove le iscrizioni scadute (404/410)."""
     payload = json.dumps({"title": title, "body": body, "tag": tag, "url": url, "data": data or {}})
     async with AsyncSession() as session:
-        subs = (await session.execute(select(PushSubscription))).scalars().all()
+        q = select(PushSubscription)
+        if user_ids is not None:
+            if not user_ids:
+                return
+            q = q.where(PushSubscription.user_id.in_(user_ids))
+        subs = (await session.execute(q)).scalars().all()
     if not subs:
         return
 
