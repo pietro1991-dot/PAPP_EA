@@ -17,11 +17,8 @@
 
 #include <Trade/Trade.mqh>
 
-// --- Sizing a rischio percentuale (come gli altri EA PaPP) ---
-input double RiskPct        = 2.0;     // rischio % equity per trade (0 con LotFixed)
-input double LotFixed       = 0.0;     // lotto fisso (0 = usa RiskPct)
-input double MaxLot         = 5.0;     // tetto di sicurezza al lotto (0 = max broker)
-input double FallbackRiskPips = 150.0; // distanza di rischio in pip per il sizing quando non c'e' SL hard
+// --- Sizing: lotto fisso ---
+input double Lots        = 0.10;   // lotto fisso
 
 // --- Segnale (H6) ---
 input int    MAPeriod    = 28;     // media della distanza
@@ -58,29 +55,6 @@ int OnInit()
    return INIT_SUCCEEDED;
   }
 void OnDeinit(const int reason){ if(g_hMA!=INVALID_HANDLE) IndicatorRelease(g_hMA); }
-
-//+------------------------------------------------------------------+
-// Lotto dal rischio %: risk = Equity*RiskPct/100; lotto = risk/(ticks*tickVal).
-// riskDist = distanza in PREZZO a cui corrisponde la perdita "1R".
-double CalcLot(double riskDistPrice)
-  {
-   if(LotFixed > 0.0)
-      return (MaxLot>0.0) ? MathMin(LotFixed,MaxLot) : LotFixed;
-   double equity = AccountInfoDouble(ACCOUNT_EQUITY);
-   double risk   = equity * RiskPct / 100.0;
-   if(risk<=0.0 || riskDistPrice<=0.0) return 0.0;
-   double tickVal  = SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_VALUE);
-   double tickSize = SymbolInfoDouble(_Symbol,SYMBOL_TRADE_TICK_SIZE);
-   if(tickVal<=0.0 || tickSize<=0.0) return 0.0;
-   double ticks  = riskDistPrice / tickSize;
-   double lotRaw = risk / (ticks * tickVal);
-   double step   = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
-   double minLot = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);
-   double maxBrk = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MAX);
-   double lot    = MathFloor(lotRaw/step)*step;
-   double cap    = (MaxLot>0.0) ? MathMin(maxBrk,MaxLot) : maxBrk;
-   return MathMax(minLot, MathMin(lot, cap));
-  }
 
 //+------------------------------------------------------------------+
 // osc (0..100) sull'ultima barra H6 CHIUSA. distanza[k]=(close-MA)/MA*100;
@@ -139,21 +113,19 @@ void OnTick()
       return;
      }
 
+   if(Lots<=0.0) return;
    double pip=Pip();
-   double riskDist = ((SafetySLpip>0.0)? SafetySLpip : FallbackRiskPips) * pip;
-   double lot = CalcLot(riskDist);
-   if(lot<=0.0) return;
    double bid=SymbolInfoDouble(_Symbol,SYMBOL_BID), ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK);
 
    if(osc < LoThr)
      {
       double sl = (SafetySLpip>0.0)? ask - SafetySLpip*pip : 0.0;
-      if(trade.Buy(lot,_Symbol,ask,sl,0.0,"relval buy")) g_entryBarTime=bt;
+      if(trade.Buy(Lots,_Symbol,ask,sl,0.0,"relval buy")) g_entryBarTime=bt;
      }
    else if(osc > HiThr)
      {
       double sl = (SafetySLpip>0.0)? bid + SafetySLpip*pip : 0.0;
-      if(trade.Sell(lot,_Symbol,bid,sl,0.0,"relval sell")) g_entryBarTime=bt;
+      if(trade.Sell(Lots,_Symbol,bid,sl,0.0,"relval sell")) g_entryBarTime=bt;
      }
   }
 //+------------------------------------------------------------------+
