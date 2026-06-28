@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!-- Squeeze page: un solo obiettivo = email in cambio del report (HVCO). Per il
+     traffico freddo degli annunci. Niente menu, niente distrazioni (regola di Sabri). -->
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>PHAI — El informe gratuito: Los 6 patrones del Euro/Dólar</title>
+<meta content="Cómo validamos las estrategias con 15 años de mercado — y por qué desactivamos los 4 patrones más rentables. Informe gratuito." name="description"/>
+<meta content="#0a0e18" name="theme-color"/>
+<link href="/static/icon-192.png" rel="icon" type="image/png"/>
+<style>
+:root{--bg:#0a0e18;--panel:#121829;--panel2:#0e1422;--border:#283149;--text:#e9ebf2;--muted:#8b94ab;--accent:#cba65c;--green:#3fcf8e;--red:#f1707b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:radial-gradient(900px 500px at 50% -10%,rgba(203,166,92,.12),transparent),var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px;line-height:1.6}
+.wrap{max-width:560px;width:100%;text-align:center}
+.logo{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;letter-spacing:2px;margin-bottom:24px}
+.logo img{width:36px;height:36px}.logo i{font-style:normal;color:var(--accent);font-size:11px;letter-spacing:3px}
+.badge{display:inline-block;background:rgba(203,166,92,.12);border:1px solid rgba(203,166,92,.35);color:var(--accent);padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:700;margin-bottom:18px}
+h1{font-size:33px;line-height:1.18;letter-spacing:-.5px;margin-bottom:14px}
+h1 b{color:var(--accent)}
+.lead{color:var(--muted);font-size:17px;margin-bottom:8px}
+.bullets{text-align:left;max-width:440px;margin:22px auto;display:grid;gap:10px}
+.b{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.b .c{color:var(--green);font-weight:800;flex:none}
+form{display:flex;gap:10px;max-width:460px;margin:20px auto 0;flex-wrap:wrap}
+input{flex:1;min-width:200px;padding:14px 16px;border-radius:11px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:16px;outline:none}
+input:focus{border-color:var(--accent)}
+button{padding:14px 24px;border-radius:11px;border:none;background:var(--accent);color:#0a0e18;font-weight:700;font-size:15px;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+.msg{font-size:14px;margin-top:12px;min-height:20px}
+.note{font-size:12px;color:#565d6a;margin-top:14px}
+.alt{display:block;margin-top:20px;font-size:14px;color:var(--muted)}
+.alt a{color:var(--accent);text-decoration:none}
+@media(max-width:480px){h1{font-size:26px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="logo"><img alt="PHAI" src="/static/logo-mark.png"/>PHAI <i>TRADING</i></div>
+<span class="badge">📕 Informe gratuito</span>
+<h1>Los 6 patrones del Euro/Dólar que han resistido <b>15 años</b> de mercado</h1>
+<p class="lead">Cómo validamos las estrategias <i>fuera de muestra</i> — Y por qué <b>desactivamos los 4 patrones más rentables</b>. La lección de gestión del riesgo que vale por sí sola la descarga.</p>
+<div class="bullets">
+<div class="b"><span class="c">✓</span><div>Cómo reconocer un robot estafador <b>antes</b> de pagarlo</div></div>
+<div class="b"><span class="c">✓</span><div>Los 6 patrones PHAI explicados de forma sencilla</div></div>
+<div class="b"><span class="c">✓</span><div>¿Qué es la validación out-of-sample (y por qué importa)?</div></div>
+<div class="b"><span class="c">✓</span><div>Las cifras del backtest 2010–2025 <i>(simulación histórica)</i></div></div>
+</div>
+<form onsubmit="return sendLead(event)">
+<input autocomplete="email" id="email" placeholder="Tu correo electrónico" required="" type="email"/>
+<button type="submit">Envíame el informe</button>
+</form>
+<div class="msg" id="msg"></div>
+<div class="note">Sin spam. El trading conlleva riesgos: no se garantiza ningún rendimiento.</div>
+<span class="alt">¿Prefieres verlo en vivo? <a href="/demo">▶ Abre la Demo</a></span>
+</div>
+<script>
+async function sendLead(e){
+  e.preventDefault();
+  const email=document.getElementById('email').value.trim();
+  const msg=document.getElementById('msg');
+  try{
+    const r=await fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,source:'report',lang:'it'})});
+    if(r.ok){ msg.style.color='var(--green)'; msg.textContent='✓ Fatto! Controlla la tua email (anche lo spam).'; document.getElementById('email').value=''; }
+    else{ const d=await r.json(); msg.style.color='var(--red)'; msg.textContent=d.error||'Riprova.'; }
+  }catch(_){ msg.style.color='var(--red)'; msg.textContent='Errore di rete, riprova.'; }
+  return false;
+}
+</script>
+</body>
+</html>

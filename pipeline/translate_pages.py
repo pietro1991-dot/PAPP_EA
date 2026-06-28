@@ -13,7 +13,7 @@ import re
 import sys
 import time
 import httpx
-from bs4 import BeautifulSoup, Comment
+from bs4 import BeautifulSoup, Comment, Doctype
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TPL = os.path.join(ROOT, "chat_bot", "templates")
@@ -74,7 +74,7 @@ def translate_page(name, lang):
     # raccogli i nodi/attributi traducibili
     nodes = []   # (kind, obj, original)
     for el in soup.find_all(string=True):
-        if isinstance(el, Comment) or el.parent.name in ("script", "style"):
+        if isinstance(el, (Comment, Doctype)) or el.parent.name in ("script", "style"):
             continue
         if HAS_LETTER.search(el):
             nodes.append(("text", el, str(el)))

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>PHAI Trading — Checkout</title>
+<meta content="#0a0e18" name="theme-color"/>
+<link href="/static/icon-192.png" rel="icon" type="image/png"/>
+<style>
+:root{--bg:#0a0e18;--panel:#121829;--panel2:#0e1422;--border:#283149;--text:#e9ebf2;--muted:#8b94ab;--accent:#cba65c;--green:#3fcf8e;--red:#f1707b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:radial-gradient(900px 500px at 50% -10%,rgba(203,166,92,.10),transparent),var(--bg);color:var(--text);min-height:100vh;line-height:1.6;padding:24px 16px}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:480px;margin:0 auto}
+.logo{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;letter-spacing:2px;margin-bottom:22px}
+.logo img{width:34px;height:34px}.logo i{font-style:normal;color:var(--accent);font-size:11px;letter-spacing:3px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:26px 24px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+h1{font-size:21px;margin-bottom:4px}
+.plan-pill{display:inline-block;background:rgba(203,166,92,.12);border:1px solid rgba(203,166,92,.35);color:var(--accent);padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;margin-bottom:16px}
+.price{font-size:34px;font-weight:800;margin:6px 0 2px}.price small{font-size:14px;color:var(--muted);font-weight:600}
+.muted{color:var(--muted);font-size:14px}
+label{display:block;font-size:13px;color:var(--muted);margin:18px 0 6px}
+input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:16px;outline:none}
+input:focus{border-color:var(--accent)}
+#paypal-container{margin-top:18px;min-height:50px}
+.msg{font-size:13.5px;margin-top:12px;min-height:18px;text-align:center}
+.note{font-size:11.5px;color:#565d6a;margin-top:16px;text-align:center;line-height:1.6}
+.ok-box{background:rgba(63,207,142,.08);border:1px solid rgba(63,207,142,.35);border-radius:12px;padding:18px;text-align:center;margin-top:8px}
+.keybox{font-family:ui-monospace,Menlo,monospace;font-size:18px;font-weight:700;letter-spacing:1px;background:var(--panel2);border:1px dashed var(--accent);border-radius:10px;padding:12px;margin:12px 0;color:var(--accent)}
+.btn{display:inline-block;width:100%;text-align:center;padding:13px;border-radius:10px;background:var(--accent);color:#0a0e18;font-weight:700;font-size:15px;border:none;cursor:pointer;margin-top:6px}
+.back{display:block;text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
+.spinner{text-align:center;color:var(--muted);font-size:14px;padding:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="logo"><img alt="PHAI" src="/static/logo-mark.png"/>PHAI <i>TRADING</i></div>
+<div class="card" id="card">
+<div class="spinner" id="loading">Loading checkout...</div>
+<div id="content" style="display:none">
+<span class="plan-pill" id="plan-pill">Plan</span>
+<div class="price" id="price"></div>
+<div class="muted" id="plan-desc"></div>
+<label for="email">Your email (this is where you'll receive the license key)</label>
+<input autocomplete="email" id="email" placeholder="your@email.com" required="" type="email"/>
+<div id="paypal-container"></div>
+<div class="msg" id="msg"></div>
+<div class="note">Secure payment via PayPal (cards accepted, even without a PayPal account).<br/>Trading involves risks. No returns are guaranteed.</div>
+</div>
+<div id="success" style="display:none"></div>
+<div id="fallback" style="display:none">
+<h1>Checkout is being set up</h1>
+<p class="muted" style="margin-top:8px">Online payment is not yet active. Want to get started right away? Contact us and we'll send you the license (also via bank transfer).</p>
+<a class="btn" href="mailto:supporto@phai.io?subject=Voglio%20iniziare%20con%20PHAI" style="margin-top:16px">Contact us to get started</a>
+</div>
+</div>
+<a class="back" href="/#prezzi">← Back to plans</a>
+</div>
+<script>
+const PLAN = (new URLSearchParams(location.search).get('plan') || 'pro').toLowerCase();
+const $ = id => document.getElementById(id);
+const emailVal = () => ($('email').value || '').trim();
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+function showFallback(){ $('loading').style.display='none'; $('content').style.display='none'; $('fallback').style.display='block'; }
+function showSuccess(key){
+  $('content').style.display='none';
+  const reg = '/login?mode=register' + (key ? ('&key=' + encodeURIComponent(key)) : '');
+  $('success').style.display='block';
+  $('success').innerHTML =
+    '<div class="ok-box"><div style="font-size:34px">🎉</div><h1>Pagamento riuscito!</h1>'
+    + '<p class="muted" style="margin-top:6px">Ecco la tua license key (te l\'abbiamo inviata anche via email):</p>'
+    + (key ? ('<div class="keybox">'+key+'</div>') : '<p class="muted">Controlla la tua email tra poco.</p>')
+    + '<a class="btn" href="'+reg+'">Registra il tuo account ora →</a></div>';
+}
+
+async function confirmPayment(payload){
+  $('msg').textContent = 'Confermo il pagamento…'; $('msg').style.color = 'var(--muted)';
+  payload.plan = PLAN; payload.email = emailVal();
+  try{
+    const r = await fetch('/api/pay/paypal/confirm', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const d = await r.json();
+    if(d.ok){ showSuccess(d.key); }
+    else{ $('msg').style.color='var(--red)'; $('msg').textContent='Pagamento ricevuto: la tua key arriverà via email a breve. (rif: '+(d.reason||'')+')'; }
+  }catch(_){ $('msg').style.color='var(--red)'; $('msg').textContent='Pagamento ricevuto: la key arriverà via email a breve.'; }
+}
+
+function loadSdk(clientId, currency, subscription){
+  return new Promise((res, rej)=>{
+    const s = document.createElement('script');
+    let url = 'https://www.paypal.com/sdk/js?client-id='+encodeURIComponent(clientId)+'&currency='+currency;
+    if(subscription) url += '&vault=true&intent=subscription';
+    s.src = url; s.onload = res; s.onerror = rej; document.head.appendChild(s);
+  });
+}
+
+function requireEmail(){ const e=emailVal(); if(!validEmail(e)){ $('msg').style.color='var(--red)'; $('msg').textContent='Inserisci prima un\'email valida.'; return false;} return true; }
+
+(async function init(){
+  let cfg;
+  try{ cfg = await (await fetch('/api/pay/config')).json(); }catch(_){ return showFallback(); }
+  if(!cfg.configured || !cfg.client_id){ return showFallback(); }
+
+  const plans = cfg.plans || {};
+  const p = plans[PLAN];
+  if(!p){ return showFallback(); }
+  const isSub = p.kind === 'subscription';
+  if(isSub && !p.plan_id){ return showFallback(); }   // plan id PayPal mancante
+
+  // UI piano
+  $('plan-pill').textContent = (PLAN.charAt(0).toUpperCase()+PLAN.slice(1));
+  if(isSub){ $('price').innerHTML = (PLAN==='starter'?'9€':PLAN==='elite'?'197€':'97€') + ' <small>/mese</small>'; $('plan-desc').textContent='Abbonamento, disdici quando vuoi. Garanzia 30 giorni.'; }
+  else{ $('price').innerHTML = (p.price||'97')+'€ <small>una volta</small>'; $('plan-desc').textContent='Pagamento unico. Garanzia 30 giorni.'; }
+  $('loading').style.display='none'; $('content').style.display='block';
+
+  try{ await loadSdk(cfg.client_id, cfg.currency || 'EUR', isSub); }
+  catch(_){ return showFallback(); }
+
+  const buttons = isSub ? {
+    style:{shape:'pill',color:'gold',layout:'vertical',label:'subscribe'},
+    createSubscription:function(data, actions){
+      if(!requireEmail()) return actions.reject();
+      return actions.subscription.create({ plan_id: p.plan_id, custom_id: emailVal() });
+    },
+    onApprove:function(data){ confirmPayment({subscription_id: data.subscriptionID}); }
+  } : {
+    style:{shape:'pill',color:'gold',layout:'vertical'},
+    createOrder:function(data, actions){
+      if(!requireEmail()) return actions.reject();
+      return actions.order.create({ purchase_units:[{ amount:{value:(p.price||'97'), currency_code: cfg.currency||'EUR'}, custom_id: emailVal(), description:'PHAI Trading' }] });
+    },
+    onApprove:function(data){ confirmPayment({order_id: data.orderID}); }
+  };
+  buttons.onError = function(){ $('msg').style.color='var(--red)'; $('msg').textContent='Errore col pagamento. Riprova o scrivici.'; };
+  buttons.onCancel = function(){ $('msg').style.color='var(--muted)'; $('msg').textContent='Pagamento annullato.'; };
+  paypal.Buttons(buttons).render('#paypal-container');
+})();
+</script>
+</body>
+</html>
