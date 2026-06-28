@@ -242,3 +242,39 @@ async def ask_stream(
     except Exception:
         log.exception("Errore nello streaming dall'API Zen")
         return
+
+
+async def translate(text: str, target_lang: str) -> Optional[str]:
+    """Traduce copy marketing nella lingua target, preservando i segnaposto
+    ([Nome], {{...}}) e la formattazione. Usato per generare le email multilingua."""
+    cfg = resolve_llm("free")
+    key = cfg["api_key"]
+    if not key:
+        return None
+    langname = LANG_NAMES.get(target_lang, target_lang)
+    sysmsg = (
+        f"Sei un traduttore professionista di copy marketing. Traduci il testo in {langname} "
+        "mantenendo tono persuasivo, naturale e scorrevole. REGOLE FERREE: non tradurre né "
+        "modificare i segnaposto tra doppie graffe come {{demo}}, {{sblocca}}, {{app}}, "
+        "{{license_key}}, {{unsubscribe}} e non toccare [Nome]: lasciali identici. Mantieni "
+        "la stessa formattazione, gli a-capo e i marcatori [SUBJECT]/[BODY] se presenti. "
+        "Rispondi SOLO con la traduzione, senza commenti."
+    )
+    payload = {
+        "model": cfg["model"],
+        "messages": [{"role": "system", "content": sysmsg}, {"role": "user", "content": text}],
+        "max_tokens": LLM_MAX_TOKENS,
+    }
+    if LLM_REASONING_EFFORT and "deepseek" in cfg["model"]:
+        payload["reasoning_effort"] = LLM_REASONING_EFFORT
+    try:
+        async with httpx.AsyncClient(timeout=LLM_TIMEOUT) as client:
+            r = await client.post(f"{cfg['base_url']}/chat/completions",
+                                  headers={"Authorization": f"Bearer {key}"}, json=payload)
+        if r.status_code != 200:
+            log.warning("translate HTTP %s: %s", r.status_code, r.text[:160])
+            return None
+        return _strip_cjk((r.json()["choices"][0]["message"].get("content") or "").strip()) or None
+    except Exception:
+        log.exception("translate fallita")
+        return None

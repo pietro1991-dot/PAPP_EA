@@ -31,8 +31,26 @@ from db import AsyncSession, Lead, User, LicenseKey, Signal, AccountSnapshot, Ch
 log = logging.getLogger("papp.drip")
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-CAMPAIGN = json.load(open(os.path.join(BASE, "email_campaign.json"), encoding="utf-8"))
-BYID = {e["id"]: e for e in CAMPAIGN}
+
+
+def _load_lang(lang):
+    """Carica i contenuti email per una lingua: email_campaign.json (it) o
+    email_campaign.<lang>.json. Ritorna {id: email} o None se il file non c'è."""
+    fn = "email_campaign.json" if lang == "it" else f"email_campaign.{lang}.json"
+    p = os.path.join(BASE, fn)
+    if os.path.exists(p):
+        return {e["id"]: e for e in json.load(open(p, encoding="utf-8"))}
+    return None
+
+
+CAMPAIGN = json.load(open(os.path.join(BASE, "email_campaign.json"), encoding="utf-8"))  # struttura/sequenze (IT)
+CAMP_LANG = {lg: d for lg in ("it", "en", "fr", "es") if (d := _load_lang(lg))}
+
+
+def content(lang, eid):
+    """Email nella lingua del contatto; fallback all'italiano se manca la traduzione."""
+    d = CAMP_LANG.get(lang) or CAMP_LANG["it"]
+    return d.get(eid) or CAMP_LANG["it"][eid]
 APP = os.getenv("APP_PUBLIC_URL", "https://app.phai.io").rstrip("/")
 SKIP_OLDER_HOURS = int(os.getenv("DRIP_SKIP_OLDER_HOURS", "36"))
 VALID_PLANS = ("starter", "pro", "elite")
@@ -109,6 +127,7 @@ async def tick(dry=False):
         month = now.strftime("%Y-%m")
         leads = (await s.execute(select(Lead))).scalars().all()
         unsub = {l.email for l in leads if l.unsubscribed}   # disiscrizione globale (lead o cliente)
+        lang_map = {l.email: (l.lang or "it") for l in leads}  # lingua per contatto
         customer_emails = set((await s.execute(select(User.email))).scalars().all())
         done = {(r.email, r.email_id) for r in (await s.execute(select(EmailSent))).scalars().all()}
         cust_rows = (await s.execute(
@@ -116,6 +135,8 @@ async def tick(dry=False):
                    LicenseKey.plan, LicenseKey.active, LicenseKey.revoked, LicenseKey.expires_at)
             .join(LicenseKey, LicenseKey.key == User.license_key)
         )).all()
+
+        cur_lang = "it"   # lingua del contatto corrente (impostata nei loop)
 
         async def emit(email, base_id, store_id, due_at, name="", lk="", skip_guard=True):
             """Invia (o logga) un'email se dovuta e non già inviata. Ritorna True se inviata."""
@@ -129,7 +150,7 @@ async def tick(dry=False):
                     await _record(email, store_id, "skipped")
                 stats["skipped"] += 1
                 return False
-            e = BYID[base_id]
+            e = content(cur_lang, base_id)
             body = _personalize(e["body"], email, name, lk)
             if dry:
                 print(f"  [DRY] → {email:30} {store_id:26} | {e['subject']}")
@@ -146,6 +167,7 @@ async def tick(dry=False):
         for lead in leads:
             if lead.unsubscribed:
                 continue
+            cur_lang = lead.lang or "it"
             base = lead.created_at or now
             converted = lead.email in customer_emails
             for e in nurture:
@@ -159,6 +181,7 @@ async def tick(dry=False):
 
         # ---------- ONBOARDING + RETENTION (dai clienti) ----------
         for uid, email, ucreated, lkey, plan, active, revoked, expires in cust_rows:
+            cur_lang = lang_map.get(email, "it")   # lingua del cliente (dal lead) o IT
             plan = (plan or "").lower()
             valid = plan in VALID_PLANS and active is not False and not revoked and \
                     (expires is None or expires >= now)
