@@ -4,11 +4,17 @@ Usa l'LLM (chat_logic.translate), preserva i segnaposto. Ri-eseguibile quando ca
   python3 translate_campaign.py en      # (o fr / es)
 """
 import os
+import re
 import sys
 import json
 import asyncio
 
 import chat_logic
+
+
+def _norm(t):
+    """Normalizza i segnaposto nome tradotti ([Name]/[Nom]/[Nombre]) → [Nome]."""
+    return re.sub(r"\[(?:Name|Nom|Nombre|name)\]", "[Nome]", t or "")
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 SRC = json.load(open(os.path.join(BASE, "email_campaign.json"), encoding="utf-8"))
@@ -28,7 +34,7 @@ async def run(lang):
             body = tr.strip()
         else:
             print(f"  ! {e['id']}: traduzione fallita, resto in IT")
-        out.append({**e, "subject": subj, "body": body})
+        out.append({**e, "subject": _norm(subj), "body": _norm(body)})
         print(f"  ✓ {e['id']:24} → {subj[:46]}")
         await asyncio.sleep(0.4)
     p = os.path.join(BASE, f"email_campaign.{lang}.json")

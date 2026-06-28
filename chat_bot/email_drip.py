@@ -62,12 +62,21 @@ LINKS = {
 }
 
 
+_NAME_PH = r"\[(?:Nome|Name|Nom|Nombre|nome)\]"
+
+
 def _personalize(text, email, name="", license_key=""):
     for k, v in LINKS.items():
         text = text.replace(k, v)
     text = text.replace("{{unsubscribe}}", f"{APP}/unsub?e={email}")
     text = text.replace("{{license_key}}", license_key or "")
-    text = text.replace("[Nome]", name or "ciao")
+    # Nome del contatto: se non lo conosciamo (abbiamo solo l'email), togliamo il
+    # segnaposto lasciando un saluto naturale ("Ciao [Nome]," → "Ciao,"; "[Nome], x" → "x").
+    if name:
+        text = re.sub(_NAME_PH, name, text)
+    else:
+        text = re.sub(r"\s*" + _NAME_PH, "", text)
+        text = re.sub(r"(?m)^[ \t]*,[ \t]*", "", text)
     return re.sub(r"\{\{[^}]+\}\}", "", text)
 
 

@@ -1,0 +1,252 @@
+[
+  {
+    "sequence": "nurture",
+    "id": "nurture-1",
+    "step": 1,
+    "delay_days": 0,
+    "trigger": "opt-in",
+    "subject": "Here's your PHAI access 👀 (and something nobody tells you)",
+    "preview": "Apri questo prima di guardare qualsiasi cosa.",
+    "body": "Hi [Nome],\n\nhere it is: your access to PHAI 👉 {{demo}}\n\nA quick tip before you open it: look for the part about **why we SWITCHED OFF the 4 most profitable patterns** in our system. It seems like madness… until you understand the risk lesson behind it.\n\nIn the coming days, I'll tell you something that 90% of trading 'gurus' will never tell you — because it exposes how their business really works.\n\nTalk tomorrow.\n\n— The PHAI Team\n---\nTrading involves risks: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests and are not indicative of future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "nurture",
+    "id": "nurture-2",
+    "step": 2,
+    "delay_days": 1,
+    "trigger": "opt-in",
+    "subject": "Why I Stopped Trusting EAs (And What I Did Instead)",
+    "preview": "Una storia veloce. Forse ti ci ritrovi.",
+    "body": "[Nome], a quick story.\n\nLike many of you, I bought trading robots that promised wonders. They were black boxes: I had no idea what they were doing, why they entered trades, or when they exited.\n\nAnd when they lost money, I was left in the dark. That’s the real nightmare: watching your account balance drop and not understanding why.\n\nSo, I decided to build the opposite. A system that shows **everything**: every trade explained, the real history, even the years with losses. And an AI that answers every question, in your own language.\n\nTomorrow, I’ll explain the concept that separates a real strategy from one that’s simply “pasted” onto past data. It’s the difference between a serious system and a scam.\n\n— The PHAI Team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests and do not indicate future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "nurture",
+    "id": "nurture-3",
+    "step": 3,
+    "delay_days": 2,
+    "trigger": "opt-in",
+    "subject": "The Noise That Tricks 90% of Traders",
+    "preview": "Stai guardando il grafico sbagliato.",
+    "body": "[Nome], most look at 5-minute charts. Result? **Pure noise**: emotional decisions, missed stops, panic.\n\nWe work on the **daily chart**. Few signals, but clean. PHAI watches the crosses between price and 8 key lines: when the price crosses them in a certain way, a pattern triggers.\n\nSimple to understand. Hard to execute with discipline — and that's why a machine does it, not your emotions.\n\nTomorrow: the part no one ever shows you. The losses.\n\n— The PHAI Team\n---\nTrading involves risks: you can lose part or all of your capital. No returns are guaranteed. The cited data are historical backtests, not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "nurture",
+    "id": "nurture-4",
+    "step": 4,
+    "delay_days": 3,
+    "trigger": "opt-in",
+    "subject": "I’ll even show you the losing years",
+    "preview": "Chiunque ti mostra solo i mesi belli. Io no.",
+    "body": "[Nome], anyone else will only show you the good months. I’ll show you everything.\n\nIn our backtest on EURUSD 2010–2025 *(historical simulation)* the system generated 783 trades with a 96.9% win rate. But it also had **years in the red** (2017, 2023, 2025) and a maximum drawdown of around 20%.\n\nWhy am I telling you this? Because **a system that never loses doesn’t exist**, and anyone who tells you otherwise is lying.\n\nThe difference is that with PHAI, you see everything clearly, on the dashboard, in real time. Check the history with your own eyes 👉 {{demo}}\n\nTomorrow, I’ll reveal something counterintuitive about our system.\n\n— The PHAI team\n---\nTrading involves risks: you can lose part or all of your capital. No performance is guaranteed. The data cited are historical backtests and not indicative of future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "nurture",
+    "id": "nurture-5",
+    "step": 5,
+    "delay_days": 4,
+    "trigger": "opt-in",
+    "subject": "Why PHAI sometimes does NOTHING (and that’s a good thing)",
+    "preview": "Confessione contro-intuitiva.",
+    "body": "[Nome], confession: there are weeks when PHAI **doesn’t open any trades**. And that’s perfectly fine.\n\nPHAI waits for the right setup instead of forcing trades just to “do something.” Losing traders need constant action. Lasting systems need **patience**.\n\nAnd here’s the best part: you don’t have to sit through the waiting with anxiety. Open the app, see what the system is watching, ask the AI — and get back to living.\n\nIf you’re looking for a daily thrill, we’re not for you. If you want a serious system that works quietly, keep reading tomorrow.\n\n— The PHAI Team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests and are not indicative of future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "nurture",
+    "id": "nurture-6",
+    "step": 6,
+    "delay_days": 5,
+    "trigger": "opt-in",
+    "subject": "What PHAI does while you live your life",
+    "preview": "Una giornata tipo (e i piani).",
+    "body": "[Nome], here's what a day with PHAI looks like:\n\n• The EA monitors EURUSD, GBPUSD, and USDCHF and opens/closes trades according to validated patterns.\n• Every move is sent to your phone with a notification and an **explanation**.\n• You open the app (available in 4 languages) and see your account, signals, and history. Have a question? Ask the AI assistant, which responds instantly.\n\nNo more black boxes. No more \"but why did it do that?\".\n\nYou can get started in 3 ways: **Free Demo** (you see it live), **Starter at €49/month**, or **Pro at €97/month**. Check it out yourself first 👉 {{demo}}\n\nTomorrow I'll answer the 6 questions I get asked most often.\n\n— The PHAI team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests, not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "nurture",
+    "id": "nurture-7",
+    "step": 7,
+    "delay_days": 6,
+    "trigger": "opt-in",
+    "subject": "Does it really work? Your 6 Questions",
+    "preview": "Risposte oneste, senza giri di parole.",
+    "body": "[Nome], the 6 questions I always get — honest answers:\n\n1. **Is it a scam?** No, and that's why we show history, drawdown, and a live Demo. Scams hide; we show.\n2. **Are profits guaranteed?** No, and beware of anyone who does. We guarantee the software: 30 days, satisfied or refunded.\n3. **I don't understand trading.** The AI explains everything, simply, in your language.\n4. **What if I lose?** Cautious profile, risk education, everything transparent. But trading involves losses: invest only what you can afford.\n5. **Is it hard to install?** There's a 5-minute guide; or we do it for you.\n6. **How much does it cost?** You try it free with the Demo. Tomorrow I show you the full offer.\n\n— The PHAI team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The cited data are historical backtests, not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "nurture",
+    "id": "nurture-8",
+    "step": 8,
+    "delay_days": 7,
+    "trigger": "opt-in",
+    "subject": "50 spots. Then a waitlist (and a higher price).",
+    "preview": "Ci siamo. Oggi puoi sbloccare PHAI.",
+    "body": "[Nome], here we are.\n\nToday, you can unlock the full **PHAI** package: the EA on 3 pairs, the multi-language app, your **24/7 AI assistant**, the indicator, historical data and backtesting, notifications—plus 4 bonuses (over €900 in value).\n\nTotal value ~€3,888. Today: **€97/month** (or **€49** to start; **€997** once if you prefer the Lifetime option). Protected by the **30-Day Peace-of-Mind Guarantee**: if it’s not up to par, you get a full refund. I’ll take that risk.\n\nWe’re opening **50 spots** this month: the AI assistant runs on a shared server, and beyond that number, quality would drop. Once they’re gone, it’s a waitlist—and next time around, the price goes up.\n\n👉 {{sblocca}}\n\nWant to see it first? 👉 {{demo}}\n\nP.S. In trading, the one thing they’ve never given you is the truth. That’s where we start.\n\n— The PHAI Team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests, not indicative of future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "onboarding",
+    "id": "onboarding-1",
+    "step": 1,
+    "delay_days": 0,
+    "trigger": "acquisto",
+    "subject": "Welcome to PHAI 🎉 (your license + 5 minutes)",
+    "preview": "Tutto pronto. Ecco il primo passo.",
+    "body": "Welcome to PHAI, [Nome]! 🎉\n\nYour **License Key**: {{license_key}}\n\nNow there's just one step left: **install PHAI** (it takes about 5 minutes). The step-by-step guide, with screenshots, is here 👉 {{guida}}\n\nThe step that blocks everyone is authorizing the PHAI address in MetaTrader: I'll explain it with pictures, it's a 30-second thing.\n\nDon't want to do it alone? We'll set it up for you 👉 {{dfy}}\n\nReply to this email if you need a hand: I'll help you out.\n\n— The PHAI Team\n---\nTrading involves risks: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests, not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "onboarding",
+    "id": "onboarding-2",
+    "step": 2,
+    "delay_days": 1,
+    "trigger": "nessun_dato_24h",
+    "subject": "Have you installed PHAI? (I'll help you in 5 minutes)",
+    "preview": "Vedo che il tuo conto non sta ancora inviando dati.",
+    "body": "[Nome], I see that PHAI is not yet receiving data from your account — no problem, it happens. Two options:\n\n1) **Do it yourself in 5 minutes**: guide with screenshot 👉 {{guida}}. The step that stops everyone is authorizing the PHAI address in MetaTrader (Tools → Options → Expert Advisors).\n2) **We do it for you**: with PHAI Done-For-You, we configure broker, server, and installation. You don't touch anything 👉 {{dfy}}\n\nReply to this email and I'll give you a hand personally. I want to see you operational.\n\n— The PHAI Team\n---\nTrading involves risks: you may lose part or all of your capital. No returns are guaranteed. The cited data are historical backtests, not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "onboarding",
+    "id": "onboarding-3",
+    "step": 3,
+    "delay_days": 0,
+    "trigger": "primo_dato",
+    "subject": "🎉 PHAI is active on your account",
+    "preview": "Ci siamo: ora lavora per te.",
+    "body": "[Nome], we're live: PHAI is now monitoring your account. ✅\n\nFrom now on, every move is sent straight to your phone **with an explanation**, and you can ask the AI assistant anything.\n\nImagine the next time you're out for dinner: PHAI is working, and if it opens or closes a position, you'll know immediately—including why. No more staring at charts in a panic.\n\nOpen the app and ask the AI your first question: \"How is my account doing?\" 👉 {{app}}\n\n— The PHAI Team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests, not indicative of future results.\nDon’t want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "onboarding",
+    "id": "onboarding-4",
+    "step": 4,
+    "delay_days": 3,
+    "trigger": "primo_dato",
+    "subject": "3 things you might not know you can do with PHAI",
+    "preview": "Piccoli trucchi, grande comodità.",
+    "body": "[Nome], 3 things that make PHAI even more yours:\n\n1. **Change language** with a tap (IT/EN/FR/ES): the AI responds in your chosen language.\n2. **Turn on push notifications**: know about every open/close, even when the app is closed.\n3. **Open the History**: every operation, year by year, with the reason why.\n\nAnd remember: when the market is quiet and PHAI is waiting, that's normal. Open the app and ask the AI what it's observing 👉 {{app}}\n\n— The PHAI team\n---\nTrading involves risk: you may lose some or all of your capital. No returns are guaranteed. The data cited are historical backtests, not indicative of future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "onboarding",
+    "id": "onboarding-5",
+    "step": 5,
+    "delay_days": 7,
+    "trigger": "primo_dato",
+    "subject": "Expect Patience (It's the Right Thing)",
+    "preview": "Una settimana con PHAI: cosa è normale.",
+    "body": "[Nome], one week with PHAI. Let's set the right expectations:\n\nThere will be **days, sometimes weeks, without trades**. It’s not a glitch: it's the system waiting for the right setup instead of forcing.\n\nAccounts blow up when you trade out of boredom. They last when you have patience. Meanwhile, you have PHAI monitoring 3 markets 24/7 on your behalf.\n\nDoubts about what's happening? The AI assistant explains it to you at any moment 👉 {{app}}\n\n— The PHAI Team\n---\nTrading involves risks: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests and are not indicative of future results.\nYou no longer wish to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "onboarding",
+    "id": "onboarding-6",
+    "step": 6,
+    "delay_days": 14,
+    "trigger": "primo_dato",
+    "subject": "How’s it going with PHAI? (And a quick reminder)",
+    "preview": "Due settimane insieme.",
+    "body": "[Nome], it’s been two weeks. How are you finding it?\n\nEven a one-word reply to this email helps—I want to know your experience so I can improve it.\n\nAnd a gentle reminder: you’re covered by the **30-Day Peace of Mind Guarantee**. You’re here to try things out, no pressure. My job is to make sure PHAI is truly useful for you.\n\nGot an AI question you haven’t tried yet? Give it a go 👉 {{app}}\n\n— The PHAI Team\n---\nTrading involves risk: you can lose some or all of your capital. No returns are guaranteed. The data mentioned are historical backtests and not indicative of future results.\nDon’t want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-weekly",
+    "step": 1,
+    "delay_days": 7,
+    "trigger": "ricorrente_settimanale",
+    "subject": "Market Pulse of PHAI 📊",
+    "preview": "Cosa sta osservando il sistema questa settimana.",
+    "body": "[Nome], this week's pulse 📊\n\nHere's what PHAI is observing on your markets and operations (if any have occurred), each with its why. Open the summary 👉 {{app}}\n\nWant to understand a move in detail? Ask the AI assistant: it's always there, 24/7.\n\n— The PHAI Team\n---\nTrading involves risks: you can lose part or all of your capital. No returns are guaranteed. The data mentioned are historical backtests, not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-win",
+    "step": 2,
+    "delay_days": 0,
+    "trigger": "trade_chiuso_profit",
+    "subject": "How did the last trade go (and why)",
+    "preview": "Trasparenza, anche sulle vittorie.",
+    "body": "[Nomē], PHAI just closed a profitable trade.\n\nBut more than the result, it's the **why** that matters: the pattern, the entry, the exit. You'll find it explained in your dashboard 👉 {{app}}\n\nThis is how trust is built: not with a number, but by understanding every move.\n\n— The PHAI Team\n---\nTrading involves risk: you may lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests, not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-flat",
+    "step": 3,
+    "delay_days": 0,
+    "trigger": "mese_piatto",
+    "subject": "This month PHAI waited. Here’s why that’s a good thing.",
+    "preview": "La disciplina che stai pagando.",
+    "body": "[Nome], this month the system didn’t find any setups that met its criteria, and **it forced no trades**.\n\nI know the temptation is to think, ‘So why am I paying?’ I’ll flip the perspective: you’re paying exactly for **this discipline**.\n\nAccounts blow up when you trade out of boredom; they last when you wait for the right moment. Meanwhile, PHAI has been watching 3 markets 24/7 for you.\n\nHere’s what it’s observing right now 👉 {{app}}\n\n— The PHAI Team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests and are not indicative of future results.\nDon’t want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-monthly",
+    "step": 4,
+    "delay_days": 30,
+    "trigger": "ricorrente_mensile",
+    "subject": "Your Month in PHAI",
+    "preview": "Riepilogo + un insight dall'AI.",
+    "body": "[Nome], here's your month in PHAI: a summary of your account and activity, plus an AI assistant insight on how your markets are doing 👉 {{app}}\n\nGot a question for the system this month? It’s there waiting for you.\n\n— The PHAI Team\n\n---\nTrading involves risk: you may lose some or all of your capital. No returns are guaranteed. Data referenced are historical backtests and not indicative of future results.\nNo longer wish to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-upsell-pro",
+    "step": 5,
+    "delay_days": 0,
+    "trigger": "starter_limite_coppie",
+    "subject": "Unlock the other 2 pairs (Upgrade to Pro)",
+    "preview": "Stai usando 1 coppia su 3.",
+    "body": "[Nome], with the Starter plan, PHAI operates on **1 pair**. However, the system is also validated on **GBPUSD** and **USDCHF**.\n\nWith **Pro**, you unlock all 3 pairs + the full AI assistant + priority support. Monitor more markets, catch more opportunities — without lifting a finger.\n\nUpgrade to Pro 👉 {{sblocca}}\n\n— The PHAI Team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests and do not indicate future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-upsell-annual",
+    "step": 6,
+    "delay_days": 90,
+    "trigger": "pro_attivo_3mesi",
+    "subject": "Want 2 months free?",
+    "preview": "Un'idea per chi resta.",
+    "body": "[Nome], you've been with us for a few months now — thank you. 🙏\n\nIf PHAI is part of your routine, switching to the **Annual** plan gets you **2 months free** compared to monthly. Same Pro access, less cost, and nothing to remember each month.\n\nUpgrade to Annual 👉 {{sblocca}}\n\n— The PHAI Team\n---\nTrading involves risk: you could lose part or all of your capital. No returns are guaranteed. The data cited are historical backtests and not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-elite",
+    "step": 7,
+    "delay_days": 0,
+    "trigger": "heavy_user_ai",
+    "subject": "For Heavy AI Users: PHAI Elite",
+    "preview": "AI premium, priorità, pattern in anteprima.",
+    "body": "[Nome], you use the AI assistant often — perfect, it's built for that.\n\nIf you want the best, **PHAI Elite** gives you a **more powerful, priority AI** (no queues during peak hours) and **new patterns in preview**.\n\nDiscover Elite 👉 {{unlock}}\n\n— The PHAI Team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data mentioned is from historical backtests and is not indicative of future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-winback",
+    "step": 8,
+    "delay_days": 0,
+    "trigger": "pre_disdetta_o_carta_fallita",
+    "subject": "Before you go…",
+    "preview": "Una proposta, e una domanda.",
+    "body": "[Nome], I see you're about to leave PHAI (or there was an issue with payment).\n\nBefore we say goodbye: what didn't work for you? Reply to this email — it really helps me improve.\n\nAnd if you'd like to give it another chance, I'm offering **1 month at half price** so you can reconsider at your own pace 👉 {{sblocca}}\n\nEither way, thanks for trying PHAI.\n\n— The PHAI Team\n---\nTrading involves risk: you may lose part or all of your capital. No returns are guaranteed. The data mentioned are historical backtests and are not indicative of future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "retention",
+    "id": "retention-referral",
+    "step": 9,
+    "delay_days": 0,
+    "trigger": "cliente_soddisfatto",
+    "subject": "Refer a friend, get a free month for both of you 🎁",
+    "preview": "Il modo migliore per dire grazie.",
+    "body": "[Nome], if PHAI is useful to you, you probably know someone tired of black boxes just like you were.\n\nInvite them with your link: when they join, **you both get a free month** 🎁\n\nYour referral link 👉 {{referral}}\n\nThanks for helping grow PHAI with the right people.\n\n— The PHAI Team\n---\nTrading involves risk: you could lose part or all of your capital. No returns are guaranteed. The data mentioned are backtests and do not indicate future results.\nDon't want to receive these emails anymore? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "postseq",
+    "id": "post-1",
+    "step": 1,
+    "delay_days": 9,
+    "trigger": "no_acquisto",
+    "subject": "Did you check out the Demo? (2 minutes)",
+    "preview": "Nessuna pressione, solo curiosità.",
+    "body": "[Nome], I'm not here to sell. I'm asking: did you open the Demo? It's right there, free, no sign-up required 👉 {{demo}}\n\nWatch it for 2 minutes. If it's not for you, no worries — I'll keep sending you only useful content on transparent trading.\n\n— The PHAI Team\n---\nTrading involves risks: you can lose part or all of your capital. No performance is guaranteed. The data cited are historical backtests, not indicative of future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  },
+  {
+    "sequence": "postseq",
+    "id": "post-2",
+    "step": 2,
+    "delay_days": 13,
+    "trigger": "no_acquisto",
+    "subject": "Last call: this month's spots are running out",
+    "preview": "Poi lista d'attesa e prezzo più alto.",
+    "body": "[Nome], the **50 spots** for this month are about to run out. After that: waiting list, and next round the launch price goes up.\n\nIf you've been thinking about it, now is the moment — with all the risk on my side (30-day guarantee) 👉 {{sblocca}}\n\nStill prefer to just watch? 👉 {{demo}}\n\n— The PHAI Team\n---\nTrading involves risk: you can lose part or all of your capital. No returns are guaranteed. The data mentioned are historical backtests and are not indicative of future results.\nNo longer want to receive these emails? Unsubscribe here: {{unsubscribe}}"
+  }
+]
