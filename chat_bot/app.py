@@ -66,6 +66,33 @@ def _load_ea_config():
         return {"default": {"enabled": True, "risk": 10}, "symbols": {}}
 
 
+# --- Report MT5 originali (HTML + grafici) archiviati in backtests/ReportTester_<SIM>_* ---
+BACKTESTS_DIR = os.path.join(os.path.dirname(__file__), "..", "backtests")
+
+
+def _report_dir(symbol: str):
+    """Cartella del report MT5 per il simbolo, o None."""
+    import glob
+    for d in sorted(glob.glob(os.path.join(BACKTESTS_DIR, f"ReportTester_{symbol.upper()}_*"))):
+        if os.path.isdir(d):
+            return d
+    return None
+
+
+def _symbol_reports() -> dict:
+    """{SIMBOLO: url_html} per i simboli con un report MT5 archiviato."""
+    import glob, re
+    out: dict = {}
+    for d in sorted(glob.glob(os.path.join(BACKTESTS_DIR, "ReportTester_*"))):
+        m = re.search(r"ReportTester_([A-Z]{6})", os.path.basename(d))
+        if not (m and os.path.isdir(d)):
+            continue
+        htmls = glob.glob(os.path.join(d, "*.html"))
+        if htmls:
+            out.setdefault(m.group(1), f"/api/backtest/report/{m.group(1)}/{os.path.basename(htmls[0])}")
+    return out
+
+
 def _scope(q, col, user: User):
     """Filtra una query per tenant: ogni utente vede i propri dati. L'owner (e la
     modalità demo senza owner) vede anche i dati condivisi (user_id NULL)."""
@@ -412,6 +439,27 @@ async def login_page():
 async def report_page():
     """Squeeze page HVCO (opt-in report) per il traffico freddo degli annunci."""
     return HTMLResponse(open("templates/squeeze.html").read())
+
+
+@app.get("/unsub", response_class=HTMLResponse)
+async def unsub(e: str = ""):
+    """Disiscrizione email marketing. Segna l'indirizzo come unsubscribed (crea il
+    record lead se non esiste, così vale anche per i clienti). Usata dal footer email."""
+    em = (e or "").strip().lower()
+    if em and "@" in em:
+        async with AsyncSession() as session:
+            row = (await session.execute(select(Lead).where(Lead.email == em))).scalar_one_or_none()
+            if row:
+                row.unsubscribed = True
+            else:
+                session.add(Lead(email=em, source="unsub", unsubscribed=True))
+            await session.commit()
+    return HTMLResponse(
+        "<div style='font-family:system-ui;background:#0a0e18;color:#e9ebf2;min-height:100vh;"
+        "display:flex;align-items:center;justify-content:center;text-align:center;padding:24px'>"
+        "<div><h2 style='color:#cba65c'>Disiscrizione completata</h2>"
+        "<p>Non riceverai più email di marketing da PHAI. Mi dispiace vederti andare.</p></div></div>"
+    )
 
 
 @app.get("/demo")
@@ -910,13 +958,77 @@ async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_
         yr["growth_pct"] = round(yr["pnl_money"] / cap * 100, 2) if cap else 0.0
         cap = round(cap + yr["pnl_money"], 2)
         yr["end_capital"] = cap
+    # Crescita media annua composta (CAGR): rende confrontabile il "per anno".
+    n_years = max(1, len(by_year))
+    final_cap = base + totals["pnl_money"]
+    cagr = ((final_cap / base) ** (1.0 / n_years) - 1) * 100 if base > 0 and final_cap > 0 else 0.0
     return {
         "available": True,
         "symbols": sorted(s for s in symbols if s),
         "initial_capital": base,
         "accounts": n_acc,
-        "totals": {**totals, "growth_pct": round(totals["pnl_money"] / base * 100, 2)},
+        "years": n_years,
+        "totals": {
+            **totals,
+            "growth_pct": round(totals["pnl_money"] / base * 100, 2),
+            "cagr_pct": round(cagr, 2),
+        },
         "by_year": by_year,
+        "reports": _symbol_reports(),
+    }
+
+
+@app.get("/api/backtest/report/{symbol}/{fname}")
+async def backtest_report(symbol: str, fname: str, user: User = Depends(auth.current_user)):
+    """Serve i file del report MT5 originale (HTML + grafici PNG). Path-safe."""
+    d = _report_dir(symbol)
+    if not d:
+        return JSONResponse({"error": "report non disponibile"}, status_code=404)
+    path = os.path.join(d, os.path.basename(fname))   # basename: niente traversal
+    if not os.path.isfile(path):
+        return JSONResponse({"error": "file non trovato"}, status_code=404)
+    return FileResponse(path)
+
+
+@app.get("/api/public/track-record")
+async def public_track_record():
+    """Sintesi backtest PUBBLICA (senza login) per la landing: KPI + curva equity +
+    dettaglio per simbolo. È materiale di prova/marketing, quindi non gated."""
+    async with AsyncSession() as session:
+        symbols = (
+            await session.execute(select(BacktestTrade.symbol).where(BacktestTrade.symbol.isnot(None)).distinct())
+        ).scalars().all()
+        symbols = sorted(s for s in symbols if s)
+        if not symbols:
+            return {"available": False}
+        totals = _row_stats((await session.execute(_bt_scope(select(*_bt_agg()), ""))).first())
+        years = (
+            await session.execute(
+                _bt_scope(select(extract("year", BacktestTrade.exit_time).label("y"), *_bt_agg()), "")
+                .group_by("y").order_by("y")
+            )
+        ).all()
+        per_sym = []
+        for s in symbols:
+            r = _row_stats((await session.execute(_bt_scope(select(*_bt_agg()), s))).first())
+            per_sym.append({
+                "symbol": s, "pnl_money": r["pnl_money"], "winrate": r["winrate"],
+                "growth_pct": round(r["pnl_money"] / INITIAL_CAPITAL * 100, 2),
+            })
+    by_year = [{"year": int(y[0]), **_row_stats(y[1:])} for y in years]
+    base = INITIAL_CAPITAL * max(1, len(symbols))
+    cap = base
+    curve = []
+    for yr in by_year:
+        cap = round(cap + yr["pnl_money"], 2)
+        curve.append({"year": yr["year"], "end_capital": cap})
+    n_years = max(1, len(by_year))
+    final = base + totals["pnl_money"]
+    cagr = ((final / base) ** (1.0 / n_years) - 1) * 100 if base > 0 and final > 0 else 0.0
+    return {
+        "available": True, "initial_capital": base, "years": n_years, "symbols": symbols,
+        "totals": {**totals, "growth_pct": round(totals["pnl_money"] / base * 100, 2), "cagr_pct": round(cagr, 2)},
+        "curve": curve, "per_symbol": per_sym,
     }
 
 

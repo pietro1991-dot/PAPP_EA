@@ -4,15 +4,21 @@ La campagna email parte **da sola**, pilotata dal nostro stack, con **Brevo** co
 di consegna (ottima inbox placement). Codice: [`chat_bot/email_drip.py`](../chat_bot/email_drip.py)
 + contenuti in `chat_bot/email_campaign.json` (sorgente: `pipeline/email_campaign.py`).
 
-## Cosa automatizza ORA
-- **NURTURE (8 email)**: parte quando un lead lascia l'email (`leads.created_at`), una email
-  per giorno secondo il piano. Si **ferma** se il lead diventa cliente.
-- **CODA (2 email)**: re-engagement solo a chi NON ha ancora acquistato.
-- Ogni email inviata **una volta sola** (tabella `email_sent`), con **disiscrizione** e
-  disclaimer di rischio nel footer.
+## Cosa automatizza ORA (tutte e 3 le sequenze)
+Tutto è **derivato dallo stato del DB** — nessun hook nel resto dell'app.
+- **NURTURE (8)**: da `leads.created_at`, una al giorno; si ferma se il lead diventa cliente.
+- **CODA (2)**: re-engagement solo a chi NON ha acquistato.
+- **ONBOARDING (1–6)**: per ogni cliente (User+licenza valida). 'primo dato' = primo
+  Signal/AccountSnapshot del cliente; 'nessun dato 24h' = niente dati dopo l'acquisto.
+- **RETENTION**: settimanale + recap mensile (dedup per periodo), **mese-piatto** (0 trade
+  in 30g), **upsell** (Starter→Pro a +7g, Pro→Annuale a +90g, Elite per heavy-user AI),
+  **referral** (+30g), **win-back** (licenza scaduta).
+- **Disiscrizione**: rotta `GET /unsub?e=<email>` (già attiva) → vale anche per i clienti.
+- Ogni email **una volta sola** (`email_sent`); le ricorrenti ripartono ogni periodo.
+- Anti-raffica: le email a tempo arretrate >36h vengono saltate (niente blast al primo avvio).
 
-> Onboarding e retention dipendono da **eventi dell'app** (acquisto, primo dato, mese piatto):
-> si agganciano in un secondo momento (vedi "Fase 2").
+> Nota: `retention-win` (email a ogni trade in profitto) è l'unica NON automatizzata via cron
+> (troppo per-evento/rumorosa); si aggancia se serve da `process_event`.
 
 ## Attivazione (3 passi)
 1. **Crea un account Brevo** (free: 300 email/giorno) → Impostazioni → SMTP & API →
@@ -42,13 +48,6 @@ Al primo avvio NON spara tutte le email arretrate: salta quelle in ritardo oltre
 `DRIP_SKIP_OLDER_HOURS` (default 36h). I lead nuovi ricevono la sequenza dal giorno 0 in poi.
 
 ## Disiscrizione
-Le email contengono `{{unsubscribe}}` → `…/unsub?e=<email>`. Va aggiunta una rotta
-`GET /unsub` che setta `leads.unsubscribed=true` (1 endpoint, da fare prima del live).
-In alternativa, usando Brevo come **marketing email**, la disiscrizione è gestita da Brevo.
-
-## Fase 2 (quando vuoi): onboarding + retention
-Agganciare gli eventi dell'app al drip:
-- **acquisto** (`licensing.issue_license`) → avvia onboarding;
-- **primo dato EA** (`process_event` primo segnale utente) → "Sei LIVE";
-- **mese piatto / disdetta** → email dedicate.
-Si fa chiamando `email_drip` (o l'API Brevo) da quei punti. Te lo costruisco quando arriviamo lì.
+Le email contengono `{{unsubscribe}}` → `…/unsub?e=<email>`. La rotta `GET /unsub` **è già
+attiva**: segna l'indirizzo come `unsubscribed` (crea il record lead se non esiste, così la
+soppressione vale anche per i clienti). Il drip salta sempre gli indirizzi disiscritti.
