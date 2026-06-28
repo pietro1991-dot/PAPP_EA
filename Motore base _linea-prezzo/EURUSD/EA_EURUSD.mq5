@@ -783,8 +783,14 @@ void UpdateDynamicSL()
             if(InpLog) Print(">>> CHIUSO [", pi, "] SL dinamico ", MAPeriodStr(p.slLine),
                              " pnl=", DoubleToString(pnlPt,1), "pt #", ticket);
          }
-         else if(InpLog)
-            Print(">>> ERR chiusura SL dinamico [", pi, "] retcode=", g_trade.ResultRetcode());
+         else
+         {
+            uint rc = g_trade.ResultRetcode();
+            if(IsRetryableRetcode(rc))
+               EnqueuePendingSL(ticket, true, 0, 0, pi, buy, entryPr, p.slLine);
+            else if(InpLog)
+               Print(">>> ERR chiusura SL dinamico [", pi, "] retcode=", rc);
+         }
          continue;
       }
 
@@ -796,8 +802,14 @@ void UpdateDynamicSL()
             if(InpLog) Print("   SL trail [", pi, "] -> ", DoubleToString(lineVal, _Digits),
                              " (", MAPeriodStr(p.slLine), ")");
          }
-         else if(InpLog)
-            Print("   ERR SL trail [", pi, "] retcode=", g_trade.ResultRetcode());
+         else
+         {
+            uint rc = g_trade.ResultRetcode();
+            if(IsRetryableRetcode(rc))
+               EnqueuePendingSL(ticket, false, lineVal, curTP, pi, buy, entryPr, p.slLine);
+            else if(InpLog)
+               Print("   ERR SL trail [", pi, "] retcode=", rc);
+         }
       }
    }
 }
@@ -1120,10 +1132,101 @@ void RetryPending()
 }
 
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//  Stessa logica di retry per le operazioni sullo stop dinamico
+//  (chiusura su linea raggiunta e trailing dello SL): se a mezzanotte
+//  il broker rifiuta con "market closed", l'operazione viene accodata e
+//  ritentata a ogni tick entro la stessa barra. La DECISIONE resta
+//  congelata alla valutazione di nuova barra: nessuna uscita intraday,
+//  cambia solo il momento in cui l'ordine viene effettivamente eseguito.
+//+------------------------------------------------------------------+
+struct PendingSL
+{
+   bool     active;
+   ulong    ticket;
+   bool     isClose;   // true = chiusura a mercato, false = modifica SL
+   double   sl;
+   double   tp;
+   int      pi;
+   bool     buy;
+   double   entryPr;
+   int      slLine;
+   datetime d1bar;
+   int      attempts;
+};
+PendingSL g_pendSL[MAX_PENDING];
+
+void EnqueuePendingSL(ulong ticket, bool isClose, double sl, double tp,
+                      int pi, bool buy, double entryPr, int slLine)
+{
+   datetime d1 = iTime(_Symbol, PERIOD_D1, 0);
+   // Una sola operazione pendente per ticket: l'ultima decisione vince
+   int slot = -1;
+   for(int i = 0; i < MAX_PENDING; i++)
+      if(g_pendSL[i].active && g_pendSL[i].ticket == ticket) { slot = i; break; }
+   if(slot < 0)
+      for(int i = 0; i < MAX_PENDING; i++)
+         if(!g_pendSL[i].active) { slot = i; break; }
+   if(slot < 0) return;
+   g_pendSL[slot].active   = true;
+   g_pendSL[slot].ticket   = ticket;
+   g_pendSL[slot].isClose  = isClose;
+   g_pendSL[slot].sl       = sl;
+   g_pendSL[slot].tp       = tp;
+   g_pendSL[slot].pi       = pi;
+   g_pendSL[slot].buy      = buy;
+   g_pendSL[slot].entryPr  = entryPr;
+   g_pendSL[slot].slLine   = slLine;
+   g_pendSL[slot].d1bar    = d1;
+   g_pendSL[slot].attempts = 0;
+}
+
+void RetryPendingSL()
+{
+   datetime d1now = iTime(_Symbol, PERIOD_D1, 0);
+   for(int i = 0; i < MAX_PENDING; i++)
+   {
+      if(!g_pendSL[i].active) continue;
+      if(g_pendSL[i].d1bar != d1now)                  { g_pendSL[i].active = false; continue; } // scaduta
+      if(!PositionSelectByTicket(g_pendSL[i].ticket)) { g_pendSL[i].active = false; continue; } // gia' chiusa (TP/SL)
+
+      g_pendSL[i].attempts++;
+
+      if(g_pendSL[i].isClose)
+      {
+         MqlTick tk;
+         if(!SymbolInfoTick(_Symbol, tk)) continue;
+         double exitPr = g_pendSL[i].buy ? tk.bid : tk.ask;
+         if(g_trade.PositionClose(g_pendSL[i].ticket))
+         {
+            double pnlPt = g_pendSL[i].buy ? (exitPr - g_pendSL[i].entryPr) / _Point
+                                           : (g_pendSL[i].entryPr - exitPr) / _Point;
+            LogDecision("close", g_pendSL[i].pi, g_pendSL[i].buy?"BUY":"SELL",
+                        "R|sldyn:" + IntegerToString(g_pendSL[i].slLine),
+                        g_pendSL[i].entryPr, 0, 0, 0, exitPr, pnlPt);
+            if(InpLog) Print(">>> CHIUSO [", g_pendSL[i].pi, "] SL dinamico al ritentativo #", g_pendSL[i].attempts);
+            g_pendSL[i].active = false;
+         }
+         else if(!IsRetryableRetcode(g_trade.ResultRetcode())) g_pendSL[i].active = false;
+      }
+      else
+      {
+         if(g_trade.PositionModify(g_pendSL[i].ticket, g_pendSL[i].sl, g_pendSL[i].tp))
+         {
+            if(InpLog) Print("   SL trail [", g_pendSL[i].pi, "] eseguito al ritentativo #", g_pendSL[i].attempts);
+            g_pendSL[i].active = false;
+         }
+         else if(!IsRetryableRetcode(g_trade.ResultRetcode())) g_pendSL[i].active = false;
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
 void OnTick()
 {
    if(!WaitIndicator()) return;
    RetryPending();
+   RetryPendingSL();
    if(!IsNewBar()) return;
 
    datetime d1today = iTime(_Symbol, PERIOD_D1, 0);

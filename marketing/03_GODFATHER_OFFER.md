@@ -20,14 +20,14 @@ Sabri: dai più "veicoli" d'acquisto e fai entrare con **micro-impegni**. La sca
 | Gradino | Cosa | Prezzo | Ruolo psicologico |
 |---|---|---|---|
 | **Demo** | Dashboard read-only con dati reali + assistente AI a domande limitate | **Gratis** | *Value-in-advance*: vedi il prodotto prima di pagare → fiducia |
-| **Starter** | EA su **1 coppia** (EURUSD) + app + AI base + notifiche | **49 €/mese** | *Micro-impegno*: "provo, disdico quando voglio" |
-| **Pro** ⭐ | EA su **3 coppie** + AI completa + storico/backtest + priorità | **97 €/mese** | Il piano-cuore (la maggioranza) |
-| **Annuale** | Pro pagato annuale (**2 mesi gratis**) | **970 €/anno** | Anti-churn + cassa anticipata |
-| **Lifetime** | Tutto il Pro **a vita**, nessun canone | **997 € una tantum** | **Ancora di prezzo** (rende 97€/mese un affare) |
+| **PHAI Signals** | **Solo segnali** in tempo reale + app + AI base + notifiche (li esegui tu, niente PC acceso) | **37 €/mese** | *Micro-impegno*: "provo, disdico quando voglio" |
+| **PHAI Autopilot** ⭐ | **EA automatico** su 3 coppie + AI completa + storico/backtest + priorità | **97 €/mese** | Il piano-cuore (la maggioranza) |
+| **PHAI Elite** | Tutto l'Autopilot + AI premium + onboarding + VPS inclusa | **197 €/mese** | *Decoy*: fa scegliere l'Autopilot |
+| **Annuale Autopilot** | Autopilot pagato annuale (**2 mesi gratis**) | **970 €/anno** | **Ancora** + anti-churn + cassa anticipata |
 
-> **Trucco di ancoraggio (Sabri):** mostra **prima** il Lifetime (valore stack
-> ~3.888 €, §3). Dopo quell'ancora, **97 €/mese** sembra niente e **49 €** un
-> no-brainer. L'ordine di presentazione *è* persuasione.
+> **Trucco di ancoraggio (Sabri):** mostra **prima** il value stack (~3.888 €, §3) e
+> l'Annuale (970 €). Dopo quell'ancora, **97 €/mese** sembra niente e **37 €** (i soli
+> segnali) un no-brainer. L'ordine di presentazione *è* persuasione.
 
 ## 2. La USP in una frase (componente 1)
 > **"Il primo sistema di trading automatico che ti SPIEGA ogni mossa — in tempo
@@ -38,7 +38,7 @@ Il meccanismo unico (il *Price-Line Pattern Engine*, doc 01) ci rende **non
 confrontabili sul prezzo**: non vendi "un EA", vendi un metodo con un nome.
 
 ## 3. Lo stack di valore (componente 2: valore enorme)
-Cosa riceve un abbonato **Pro**, con valore assegnato a ciascun pezzo:
+Cosa riceve un abbonato **Autopilot**, con valore assegnato a ciascun pezzo:
 
 | Cosa riceve | Valore percepito |
 |---|---|
@@ -54,9 +54,9 @@ Cosa riceve un abbonato **Pro**, con valore assegnato a ciascun pezzo:
 | **BONUS 4** — Community privata PHAI (aggiornamenti, nuovi pattern) | 247 € |
 | **VALORE TOTALE** | **~3.888 €** |
 
-> **Pitch:** "Tutto questo — valore oltre 3.800 € — non a 3.888 €, non a 997 €.
-> Lo sblocchi da **97 €/mese** (o **49 €** per iniziare). E se odi gli abbonamenti,
-> **997 € una volta e l'app è tua per sempre.**"
+> **Pitch:** "Tutto questo — valore oltre 3.800 € — non a 3.888 €.
+> Lo sblocchi con **PHAI Autopilot a 97 €/mese** (o **970 €/anno**, 2 mesi gratis).
+> E se per ora vuoi solo i segnali da eseguire a mano: **PHAI Signals a 37 €/mese.**"
 
 ## 4. ROI dimostrato (componente 3) — con prova e disclaimer
 Sabri: dimostra il ritorno, non affermarlo. La nostra prova è la **trasparenza**:
@@ -100,7 +100,7 @@ Sabri: l'urgenza deve essere **reale**, o brucia la fiducia. Le nostre fonti one
 
 ## 7. Il "reason why" (perché è così conveniente)
 Sabri: spiega PERCHÉ, o sembra una fregatura.
-> "Perché 49 € e non 300? Perché il nostro obiettivo è far girare PHAI su **tanti
+> "Perché 37-97 € e non 300? Perché il nostro obiettivo è far girare PHAI su **tanti
 > conti reali**: più utenti usano il sistema, più dati raccogliamo, più miglioriamo i
 > pattern. Tu ottieni lo strumento a un prezzo onesto, noi costruiamo la rete PHAI.
 > Win-win."
@@ -109,19 +109,19 @@ Sabri: spiega PERCHÉ, o sembra una fregatura.
 Dopo l'ingresso, la value ladder sale (doc 11 §3):
 - **Setup "Fatto-Per-Te"** (broker+VPS+install): **+297 €** — *e risolve la frizione
   d'installazione*, salvando l'attivazione (doc 16 §5).
-- **PHAI Elite**: coppie extra + **AI prioritaria** (nessuna coda, doc 15) + nuovi
-  pattern in anteprima: **+30 €/mese** sopra il Pro.
+- **PHAI Elite** (197 €/mese): **AI premium** (nessuna coda, doc 15) + onboarding +
+  VPS inclusa + nuovi pattern in anteprima — **+100 €/mese** sopra l'Autopilot.
 - **Community/coaching premium**: call mensili, analisi: **+497 €/anno**.
-- **Upgrade Starter→Pro→Annuale→Lifetime**: percorso naturale di crescita del cliente.
+- **Upgrade Signals→Autopilot→Annuale→Elite**: percorso naturale di crescita del cliente.
 
 ## 9. L'offerta completa in formato "pitch" (per VSL/sales page, doc 08)
-> **Ecco cosa sblocchi oggi con PHAI Trading Pro:**
+> **Ecco cosa sblocchi oggi con PHAI Autopilot:**
 > il sistema PHAI completo (EA su 3 coppie) + l'app multilingua + il tuo **assistente
 > AI personale 24/7** + l'indicatore + storico/backtest consultabili + notifiche su
 > ogni mossa — **più 4 bonus** (Risk & Sizing, mini-corso pattern, guida setup,
 > community) per oltre 900 €.
-> Valore totale **~3.888 €**. Oggi: **97 €/mese** (o **49 €** per iniziare; **997 €**
-> una volta se preferisci il Lifetime).
+> Valore totale **~3.888 €**. Oggi: **97 €/mese** (o **970 €/anno**, 2 mesi gratis).
+> Vuoi solo i segnali da eseguire a mano? **PHAI Signals a 37 €/mese.**
 > Protetto dalla **Garanzia Sereno 30 giorni** (rimborso totale sul software).
 > **50 posti questo mese. Poi lista d'attesa e prezzo più alto.**
 > *Puoi vederlo dal vivo adesso: apri la **Demo gratuita**.*
@@ -132,9 +132,9 @@ Dopo l'ingresso, la value ladder sale (doc 11 §3):
 - [x] **ROI dimostrato** con prova/trasparenza (backtest + Demo) e disclaimer
 - [x] **Motivo per agire ORA** reale (50 posti, server AI, prezzo di lancio, bonus)
 - [x] **Inversione del rischio** (garanzia 30gg "meglio che gratis")
-- [x] **Più veicoli di prezzo** (Demo/Starter/Pro/Annuale/Lifetime)
+- [x] **Più veicoli di prezzo** (Demo/Signals/Autopilot/Elite/Annuale)
 - [x] **Reason why** credibile
-- [x] **Barriera d'ingresso bassa** (Demo gratis + Starter 49€)
+- [x] **Barriera d'ingresso bassa** (Demo gratis + Signals 37€)
 - [x] **Ascensione** definita (DFY/Elite/community/upgrade)
 
 ---

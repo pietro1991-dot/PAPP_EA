@@ -89,6 +89,16 @@ header{position:sticky;top:0;z-index:50;background:rgba(10,14,24,.82);backdrop-f
 .plan li{padding:5px 0 5px 22px;position:relative}
 .plan li:before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800}
 .plan .btn{width:100%;justify-content:center;margin-top:auto}
+.urgency{text-align:center;background:rgba(241,112,123,.10);border:1px solid rgba(241,112,123,.35);color:#ffd3d6;border-radius:12px;padding:11px 16px;font-size:14px;max-width:660px;margin:0 auto 22px}
+.vstack{max-width:660px;margin:0 auto 28px;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px 22px 18px}
+.vstack-h{font-weight:800;font-size:16px;margin-bottom:12px;text-align:center}
+.vstack-list{list-style:none;margin:0;padding:0;font-size:14px}
+.vstack-list li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed var(--border);color:var(--muted)}
+.vstack-list li b{color:var(--text);font-weight:700;white-space:nowrap}
+.vstack-tot{margin-top:14px;text-align:center;font-size:16px}
+.vstack-tot .hot-price{color:var(--accent);font-size:21px;font-weight:800}
+.annual-note{text-align:center;margin-top:18px;font-size:14.5px;color:var(--muted)}
+.annual-note b{color:var(--accent)}
 .guarantee{display:flex;gap:16px;align-items:center;background:rgba(63,207,142,.07);border:1px solid rgba(63,207,142,.3);border-radius:14px;padding:20px 24px;margin-top:22px}
 .guarantee .g-ic{font-size:34px;flex:none}
 /* faq */
@@ -197,13 +207,15 @@ footer{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font
   <div class="eyebrow">La prova</div>
   <h2>Niente screenshot finti. Ti mostriamo tutto — anche le perdite.</h2>
   <div class="proof" style="margin-top:24px">
-    <p style="color:var(--muted)">Backtest ufficiale su <b>EURUSD 2010–2025</b>, deposito simulato 10.000 € (configurazione canonica, solo i 6 pattern validati):</p>
-    <div class="statgrid">
+    <p id="tr-intro" style="color:var(--muted)">Backtest ufficiale su <b>EURUSD 2010–2025</b>, deposito simulato 10.000 € (configurazioni validate fuori campione):</p>
+    <div id="tr-chart"></div>
+    <div class="statgrid" id="tr-stats">
       <div class="stat"><div class="n">+92.236 €</div><div class="c">Profitto netto (backtest)</div></div>
-      <div class="stat"><div class="n">96,9%</div><div class="c">Win rate (759/783)</div></div>
+      <div class="stat"><div class="n">96,9%</div><div class="c">Win rate</div></div>
       <div class="stat"><div class="n">2,34</div><div class="c">Profit Factor</div></div>
       <div class="stat"><div class="n">~20%</div><div class="c">Max drawdown</div></div>
     </div>
+    <div class="statgrid" id="tr-syms" style="margin-top:12px"></div>
     <p style="color:var(--muted);font-size:14.5px">E te lo diciamo chiaro: ci sono stati <b>anni in perdita</b> (2017, 2023, 2025). Un sistema che non perde mai non esiste — chi te lo racconta sta mentendo. La differenza è che con PHAI <b>vedi tutto</b>, dalla dashboard, in tempo reale.</p>
     <p class="disc">⚠️ Risultati di backtest su dati storici con parametri specifici. Simulazione, non operazioni reali: <b>le performance passate non sono indicative di risultati futuri</b> e non garantiscono alcun rendimento.</p>
   </div>
@@ -234,7 +246,24 @@ footer{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font
 <section class="sec" id="prezzi"><div class="wrap">
   <div class="eyebrow center">Piani</div>
   <h2 class="center">Inizia gratis. Sblocca quando sei pronto.</h2>
-  <p class="lead center" style="margin:0 auto 32px;max-width:620px">Barriera bassa, rischio zero. L'app è inclusa in ogni piano a pagamento.</p>
+  <p class="lead center" style="margin:0 auto 24px;max-width:620px">Barriera bassa, rischio zero. La Demo è gratis e ogni piano ha la Garanzia Sereno 30 giorni.</p>
+  <div class="urgency">🔥 Prezzo <b>FOUNDING</b>: bloccato a vita per i primi <b>100 abbonati</b>. Dopo, sale.</div>
+  <div class="vstack">
+    <div class="vstack-h">Tutto quello che sblocchi con <b>PHAI Autopilot</b></div>
+    <ul class="vstack-list">
+      <li>PHAI Autopilot — EA su 3 coppie, pattern validati fuori campione <b>1.200€</b></li>
+      <li>App PHAI multilingua (conto, segnali, performance live) <b>600€</b></li>
+      <li>Assistente AI 24/7 che ti spiega ogni mossa <b>480€</b></li>
+      <li>Indicatore PaPP_Median (le 8 linee sul D1) <b>200€</b></li>
+      <li>Storico + backtest consultabili <b>150€</b></li>
+      <li>Notifiche push su ogni operazione <b>120€</b></li>
+      <li>🎁 Guida "Risk &amp; Position Sizing PHAI" <b>197€</b></li>
+      <li>🎁 Mini-corso "Capire i pattern sul D1" <b>297€</b></li>
+      <li>🎁 Setup broker + VPS passo-passo <b>197€</b></li>
+      <li>🎁 Community privata PHAI <b>247€</b></li>
+    </ul>
+    <div class="vstack-tot">Valore totale <b>3.888€</b> — oggi da <span class="hot-price">97€/mese</span></div>
+  </div>
   <div class="price-grid">
     <div class="plan">
       <div class="pn">Demo</div><div class="pp">0€</div>
@@ -242,22 +271,23 @@ footer{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font
       <a class="btn btn-ghost" href="/demo">Apri la Demo</a>
     </div>
     <div class="plan">
-      <div class="pn">Starter</div><div class="pp">49€ <small>/mese</small></div>
-      <ul><li>EA su 1 coppia (EURUSD)</li><li>App + notifiche</li><li>Assistente AI base</li><li>Disdici quando vuoi</li></ul>
-      <a class="btn btn-ghost" href="/checkout?plan=starter">Inizia</a>
+      <div class="pn">PHAI Signals</div><div class="pp">37€ <small>/mese</small></div>
+      <ul><li>Tutti i segnali in tempo reale</li><li>Notifiche su telefono e app</li><li>Storico, backtest e assistente AI</li><li>Li esegui tu a mano · nessun PC acceso</li></ul>
+      <a class="btn btn-ghost" href="/checkout?plan=starter">Ricevi i segnali</a>
     </div>
     <div class="plan hot">
       <div class="pop">PIÙ SCELTO</div>
-      <div class="pn">Pro</div><div class="pp">97€ <small>/mese</small></div>
-      <ul><li>EA su 3 coppie</li><li>Assistente AI completo</li><li>Storico + backtest + priorità</li><li>4 bonus inclusi (valore &gt;900€)</li></ul>
-      <a class="btn btn-gold" href="/checkout?plan=pro">Sblocca PHAI Pro</a>
+      <div class="pn">PHAI Autopilot</div><div class="pp">97€ <small>/mese</small></div>
+      <ul><li>EA automatico su 3 coppie</li><li>Segnali inclusi</li><li>Assistente AI completo</li><li>Disdici quando vuoi</li></ul>
+      <a class="btn btn-gold" href="/checkout?plan=pro">Attiva l'Autopilot</a>
     </div>
     <div class="plan">
-      <div class="pn">Lifetime</div><div class="pp">997€ <small>una volta</small></div>
-      <ul><li>Tutto il Pro, a vita</li><li>Nessun canone mensile</li><li>Aggiornamenti inclusi</li><li>L'app è tua per sempre</li></ul>
-      <a class="btn btn-ghost" href="/checkout?plan=lifetime">Scegli Lifetime</a>
+      <div class="pn">PHAI Elite</div><div class="pp">197€ <small>/mese</small></div>
+      <ul><li>Tutto il Pro</li><li>Assistente AI premium (modello migliore)</li><li>Priorità + onboarding assistito</li><li>Installazione su VPS inclusa</li></ul>
+      <a class="btn btn-ghost" href="/checkout?plan=elite">Scegli Elite</a>
     </div>
   </div>
+  <div class="annual-note">💡 Preferisci risparmiare? <b>Autopilot Annuale 970€/anno</b> = 2 mesi gratis.</div>
   <div class="guarantee">
     <div class="g-ic">🛡️</div>
     <div><b>Garanzia Sereno 30 giorni.</b> Prova PHAI per 30 giorni. Se il software e l'assistente non sono all'altezza di quanto promesso, ti rimborsiamo il 100%. Senza domande. <span style="color:var(--muted)">(Garanzia sul software e sul servizio, non sui risultati di mercato.)</span></div>
@@ -274,7 +304,7 @@ footer{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font
     <details><summary>Non capisco niente di trading.</summary><p>Perfetto: l'assistente AI ti spiega ogni cosa in parole semplici, nella tua lingua, quando vuoi.</p></details>
     <details><summary>E se perdo?</summary><p>Il profilo è prudente (abbiamo spento i pattern più rischiosi) e tutto è trasparente. Ti diamo anche una guida sulla gestione del rischio. Ma il trading può comportare perdite: investi solo ciò che puoi permetterti.</p></details>
     <details><summary>È complicato installarlo?</summary><p>C'è una guida "5 minuti" passo-passo. E se non vuoi toccare niente, con l'opzione Fatto-Per-Te lo configuriamo noi. Gira 24/7 anche col tuo PC spento.</p></details>
-    <details><summary>Quanto costa?</summary><p>Provi gratis con la Demo. Poi parti da 49€/mese (Starter) o 97€/mese (Pro), oppure 997€ una volta (Lifetime). Disdici quando vuoi.</p></details>
+    <details><summary>Quanto costa?</summary><p>Provi gratis con la Demo. Poi: <b>PHAI Signals 37€/mese</b> (solo segnali, li esegui tu), <b>PHAI Autopilot 97€/mese</b> (EA automatico) o <b>PHAI Elite 197€/mese</b>. C'è anche l'<b>annuale a 970€</b> (2 mesi gratis). Tutto in abbonamento, disdici quando vuoi.</p></details>
   </div>
 </div></section>
 
@@ -329,6 +359,37 @@ async function sendLead(e){
   }catch(_){ msg.style.color='var(--red)'; msg.textContent='Errore di rete, riprova.'; }
   return false;
 }
+</script>
+<script>
+// Prova DINAMICA: carica i numeri reali del backtest (tutti i simboli) + curva equity.
+(async()=>{
+  try{
+    const d=await (await fetch('/api/public/track-record')).json();
+    if(!d||!d.available) return;
+    const t=d.totals;
+    const fm=v=>Number(v).toLocaleString('it-IT',{maximumFractionDigits:0});
+    const pct=v=>(v>=0?'+':'')+Number(v).toFixed(1)+'%';
+    const intro=document.getElementById('tr-intro');
+    if(intro) intro.innerHTML=`Backtest ufficiale su <b>${d.symbols.join(', ')}</b> (${d.years} anni), capitale simulato ${fm(d.initial_capital)}€ — configurazioni validate fuori campione. Ti mostriamo i numeri veri, anche le perdite:`;
+    const st=document.getElementById('tr-stats');
+    if(st) st.innerHTML=
+      `<div class="stat"><div class="n">${pct(t.cagr_pct)}</div><div class="c">Crescita media annua</div></div>`+
+      `<div class="stat"><div class="n">+${fm(t.pnl_money)} €</div><div class="c">Profitto netto (backtest)</div></div>`+
+      `<div class="stat"><div class="n">${t.winrate}%</div><div class="c">Win rate</div></div>`+
+      `<div class="stat"><div class="n">${pct(t.growth_pct)}</div><div class="c">Crescita totale</div></div>`;
+    const cc=document.getElementById('tr-chart');
+    if(cc && d.curve && d.curve.length>1){
+      const pts=[d.initial_capital].concat(d.curve.map(p=>p.end_capital));
+      const W=600,H=170,P=8,n=pts.length,mn=Math.min(...pts),mx=Math.max(...pts),rg=(mx-mn)||1;
+      const X=i=>P+i*(W-2*P)/(n-1),Y=v=>H-P-((v-mn)/rg)*(H-2*P);
+      const line=pts.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+      const area=`M${X(0).toFixed(1)},${H-P} `+pts.map((v,i)=>`L${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')+` L${X(n-1).toFixed(1)},${H-P} Z`;
+      cc.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:180px;display:block;margin:10px 0 16px"><path d="${area}" fill="rgba(63,207,142,.13)"/><path d="${line}" fill="none" stroke="#3fcf8e" stroke-width="2.5"/></svg>`;
+    }
+    const sy=document.getElementById('tr-syms');
+    if(sy) sy.innerHTML=d.per_symbol.map(s=>`<div class="stat"><div class="n">+${fm(s.pnl_money)} €</div><div class="c">${s.symbol} · win ${s.winrate}%</div></div>`).join('');
+  }catch(_){}
+})();
 </script>
 </body>
 </html>
