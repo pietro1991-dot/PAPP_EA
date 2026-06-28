@@ -63,27 +63,37 @@ const $ = id => document.getElementById(id);
 const emailVal = () => ($('email').value || '').trim();
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
+/* i18n dei messaggi JS: la lingua viene da <html lang> (impostata per ogni file tradotto) */
+const L = (function(){var l=(document.documentElement.lang||'it').slice(0,2).toLowerCase();return ['it','en','fr','es'].indexOf(l)>=0?l:'it';})();
+const I18N = {
+ it:{confirming:'Confermo il pagamento…',received:'Pagamento ricevuto: la tua key arriverà via email a breve.',needEmail:"Inserisci prima un'email valida.",payError:'Errore col pagamento. Riprova o scrivici.',cancelled:'Pagamento annullato.',successTitle:'Pagamento riuscito!',keyIntro:"Ecco la tua license key (te l'abbiamo inviata anche via email):",checkEmail:'Controlla la tua email tra poco.',registerNow:'Registra il tuo account ora →',subDesc:'Abbonamento, disdici quando vuoi. Garanzia 30 giorni.',orderDesc:'Pagamento unico. Garanzia 30 giorni.',perMonth:'/mese',once:'una volta'},
+ en:{confirming:'Confirming your payment…',received:'Payment received: your key will arrive by email shortly.',needEmail:'Please enter a valid email first.',payError:'Payment error. Try again or contact us.',cancelled:'Payment cancelled.',successTitle:'Payment successful!',keyIntro:"Here's your license key (we've also sent it by email):",checkEmail:'Check your email shortly.',registerNow:'Register your account now →',subDesc:'Subscription, cancel anytime. 30-day guarantee.',orderDesc:'One-time payment. 30-day guarantee.',perMonth:'/month',once:'one-time'},
+ fr:{confirming:'Confirmation du paiement…',received:'Paiement reçu : votre clé arrivera par e-mail sous peu.',needEmail:"Saisissez d'abord un e-mail valide.",payError:'Erreur de paiement. Réessayez ou contactez-nous.',cancelled:'Paiement annulé.',successTitle:'Paiement réussi !',keyIntro:"Voici votre clé de licence (nous vous l'avons aussi envoyée par e-mail) :",checkEmail:'Vérifiez votre e-mail sous peu.',registerNow:'Créez votre compte maintenant →',subDesc:'Abonnement, annulable à tout moment. Garantie 30 jours.',orderDesc:'Paiement unique. Garantie 30 jours.',perMonth:'/mois',once:'une fois'},
+ es:{confirming:'Confirmando el pago…',received:'Pago recibido: tu clave llegará por correo en breve.',needEmail:'Introduce primero un correo válido.',payError:'Error en el pago. Inténtalo de nuevo o escríbenos.',cancelled:'Pago cancelado.',successTitle:'¡Pago realizado!',keyIntro:'Aquí tienes tu clave de licencia (también te la hemos enviado por correo):',checkEmail:'Revisa tu correo en breve.',registerNow:'Crea tu cuenta ahora →',subDesc:'Suscripción, cancela cuando quieras. Garantía de 30 días.',orderDesc:'Pago único. Garantía de 30 días.',perMonth:'/mes',once:'pago único'}
+};
+const t = k => (I18N[L]||I18N.it)[k] || k;
+
 function showFallback(){ $('loading').style.display='none'; $('content').style.display='none'; $('fallback').style.display='block'; }
 function showSuccess(key){
   $('content').style.display='none';
   const reg = '/login?mode=register' + (key ? ('&key=' + encodeURIComponent(key)) : '');
   $('success').style.display='block';
   $('success').innerHTML =
-    '<div class="ok-box"><div style="font-size:34px">🎉</div><h1>Pagamento riuscito!</h1>'
-    + '<p class="muted" style="margin-top:6px">Ecco la tua license key (te l\'abbiamo inviata anche via email):</p>'
-    + (key ? ('<div class="keybox">'+key+'</div>') : '<p class="muted">Controlla la tua email tra poco.</p>')
-    + '<a class="btn" href="'+reg+'">Registra il tuo account ora →</a></div>';
+    '<div class="ok-box"><div style="font-size:34px">🎉</div><h1>'+t('successTitle')+'</h1>'
+    + '<p class="muted" style="margin-top:6px">'+t('keyIntro')+'</p>'
+    + (key ? ('<div class="keybox">'+key+'</div>') : '<p class="muted">'+t('checkEmail')+'</p>')
+    + '<a class="btn" href="'+reg+'">'+t('registerNow')+'</a></div>';
 }
 
 async function confirmPayment(payload){
-  $('msg').textContent = 'Confermo il pagamento…'; $('msg').style.color = 'var(--muted)';
+  $('msg').textContent = t('confirming'); $('msg').style.color = 'var(--muted)';
   payload.plan = PLAN; payload.email = emailVal();
   try{
     const r = await fetch('/api/pay/paypal/confirm', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
     const d = await r.json();
     if(d.ok){ showSuccess(d.key); }
-    else{ $('msg').style.color='var(--red)'; $('msg').textContent='Pagamento ricevuto: la tua key arriverà via email a breve. (rif: '+(d.reason||'')+')'; }
-  }catch(_){ $('msg').style.color='var(--red)'; $('msg').textContent='Pagamento ricevuto: la key arriverà via email a breve.'; }
+    else{ $('msg').style.color='var(--red)'; $('msg').textContent=t('received'); }
+  }catch(_){ $('msg').style.color='var(--red)'; $('msg').textContent=t('received'); }
 }
 
 function loadSdk(clientId, currency, subscription){
@@ -95,7 +105,7 @@ function loadSdk(clientId, currency, subscription){
   });
 }
 
-function requireEmail(){ const e=emailVal(); if(!validEmail(e)){ $('msg').style.color='var(--red)'; $('msg').textContent='Inserisci prima un\'email valida.'; return false;} return true; }
+function requireEmail(){ const e=emailVal(); if(!validEmail(e)){ $('msg').style.color='var(--red)'; $('msg').textContent=t('needEmail'); return false;} return true; }
 
 (async function init(){
   let cfg;
@@ -110,8 +120,8 @@ function requireEmail(){ const e=emailVal(); if(!validEmail(e)){ $('msg').style.
 
   // UI piano
   $('plan-pill').textContent = (PLAN.charAt(0).toUpperCase()+PLAN.slice(1));
-  if(isSub){ $('price').innerHTML = (PLAN==='starter'?'49€':'97€') + ' <small>/mese</small>'; $('plan-desc').textContent='Abbonamento, disdici quando vuoi. Garanzia 30 giorni.'; }
-  else{ $('price').innerHTML = (p.price||'997')+'€ <small>una volta</small>'; $('plan-desc').textContent='Pagamento unico, accesso a vita. Garanzia 30 giorni.'; }
+  if(isSub){ $('price').innerHTML = (PLAN==='starter'?'9€':PLAN==='elite'?'197€':'97€') + ' <small>'+t('perMonth')+'</small>'; $('plan-desc').textContent=t('subDesc'); }
+  else{ $('price').innerHTML = (p.price||'97')+'€ <small>'+t('once')+'</small>'; $('plan-desc').textContent=t('orderDesc'); }
   $('loading').style.display='none'; $('content').style.display='block';
 
   try{ await loadSdk(cfg.client_id, cfg.currency || 'EUR', isSub); }
@@ -128,12 +138,12 @@ function requireEmail(){ const e=emailVal(); if(!validEmail(e)){ $('msg').style.
     style:{shape:'pill',color:'gold',layout:'vertical'},
     createOrder:function(data, actions){
       if(!requireEmail()) return actions.reject();
-      return actions.order.create({ purchase_units:[{ amount:{value:(p.price||'997'), currency_code: cfg.currency||'EUR'}, custom_id: emailVal(), description:'PHAI Trading Lifetime' }] });
+      return actions.order.create({ purchase_units:[{ amount:{value:(p.price||'97'), currency_code: cfg.currency||'EUR'}, custom_id: emailVal(), description:'PHAI Trading' }] });
     },
     onApprove:function(data){ confirmPayment({order_id: data.orderID}); }
   };
-  buttons.onError = function(){ $('msg').style.color='var(--red)'; $('msg').textContent='Errore col pagamento. Riprova o scrivici.'; };
-  buttons.onCancel = function(){ $('msg').style.color='var(--muted)'; $('msg').textContent='Pagamento annullato.'; };
+  buttons.onError = function(){ $('msg').style.color='var(--red)'; $('msg').textContent=t('payError'); };
+  buttons.onCancel = function(){ $('msg').style.color='var(--muted)'; $('msg').textContent=t('cancelled'); };
   paypal.Buttons(buttons).render('#paypal-container');
 })();
 </script>
