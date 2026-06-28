@@ -422,12 +422,57 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 DEMO_EMAIL = os.getenv("DEMO_EMAIL", "demo@phai.io")
 
 
+PAGE_LANGS = ("it", "en", "fr", "es")
+
+
+def _req_lang(request: Request) -> str:
+    """Lingua della pagina: ?lang=… → cookie → Accept-Language → it."""
+    q = (request.query_params.get("lang") or "").lower()
+    if q in PAGE_LANGS:
+        return q
+    c = (request.cookies.get("lang") or "").lower()
+    if c in PAGE_LANGS:
+        return c
+    al = (request.headers.get("accept-language", "")[:2]).lower()
+    return al if al in ("en", "fr", "es") else "it"
+
+
+def _lang_selector(cur: str) -> str:
+    opts = "".join(
+        f'<option value="{c}"{" selected" if c == cur else ""}>{flag} {c.upper()}</option>'
+        for c, flag in (("it", "🇮🇹"), ("en", "🇬🇧"), ("fr", "🇫🇷"), ("es", "🇪🇸"))
+    )
+    return (
+        '<div style="position:fixed;top:12px;right:12px;z-index:9999;font-family:system-ui">'
+        '<select aria-label="Lingua" onchange="(function(v){document.cookie=\'lang=\'+v+\';path=/;max-age=31536000\';'
+        'var u=new URL(location);u.searchParams.set(\'lang\',v);location=u})(this.value)" '
+        'style="background:#11141b;color:#e9ebf2;border:1px solid #283149;border-radius:8px;'
+        'padding:5px 7px;font-size:12px;font-weight:600;cursor:pointer;outline:none">'
+        f'{opts}</select></div>'
+    )
+
+
+def _serve_page(name: str, request: Request) -> HTMLResponse:
+    """Serve la pagina nella lingua del visitatore (file <name>.<lang>.html, fallback IT)
+    e inietta il selettore lingua. Le traduzioni si generano con pipeline/translate_pages.py."""
+    lang = _req_lang(request)
+    path = f"templates/{name}.{lang}.html" if lang != "it" else f"templates/{name}.html"
+    if not os.path.exists(path):
+        path = f"templates/{name}.html"
+        lang = "it"
+    html_c = open(path, encoding="utf-8").read().replace("</body>", _lang_selector(lang) + "</body>", 1)
+    resp = HTMLResponse(html_c)
+    if (request.query_params.get("lang") or "").lower() in PAGE_LANGS:
+        resp.set_cookie("lang", lang, max_age=31536000, samesite="lax")
+    return resp
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     token = request.cookies.get(auth.COOKIE_NAME)
     if token and auth.verify_session_token(token):
         return HTMLResponse(open("templates/index.html").read())
-    return HTMLResponse(open("templates/landing.html").read())   # pubblico → landing marketing
+    return _serve_page("landing", request)   # pubblico → landing marketing multilingua
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -436,9 +481,9 @@ async def login_page():
 
 
 @app.get("/report", response_class=HTMLResponse)
-async def report_page():
+async def report_page(request: Request):
     """Squeeze page HVCO (opt-in report) per il traffico freddo degli annunci."""
-    return HTMLResponse(open("templates/squeeze.html").read())
+    return _serve_page("squeeze", request)
 
 
 @app.get("/unsub", response_class=HTMLResponse)
@@ -773,8 +818,8 @@ async def paypal_confirm(request: Request):
 
 
 @app.get("/checkout", response_class=HTMLResponse)
-async def checkout_page():
-    return HTMLResponse(open("templates/checkout.html").read())
+async def checkout_page(request: Request):
+    return _serve_page("checkout", request)
 
 
 @app.post("/api/register")
