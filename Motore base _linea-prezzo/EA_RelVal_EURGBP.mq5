@@ -17,8 +17,14 @@
 
 #include <Trade/Trade.mqh>
 
-// --- Sizing: lotto fisso ---
-input double Lots        = 0.10;   // lotto fisso
+// --- Sizing: percentuale di capitale, scala col BALANCE attuale ---
+// PctCapitale = 100 -> 1 lotto ogni 10.000 di balance corrente. Cresce col conto:
+//   10k -> 1 lotto, 20k -> 2 lotti, 40k -> 4. 50 = meta' size, 200 = doppia.
+// NB: scalando col conto COMPONE -> amplifica il drawdown%. Default 25 = punto di
+//   equilibrio validato (con SAR=80: ~+215% in 16 anni, DD ~33%). 100 = leva piena
+//   (+1613% ma DD ~85%, non tradabile). Alza solo se accetti piu' drawdown.
+input double PctCapitale = 25.0;    // % di capitale (25 = compounding sostenibile, DD ~33%)
+input double MaxLot      = 0.0;     // tetto di sicurezza al lotto (0 = nessuno)
 
 // --- Segnale (H6) ---
 input int    MAPeriod    = 28;     // media della distanza
@@ -27,7 +33,8 @@ input double LoThr       = 20.0;   // osc sotto = BUY (cross sottovalutato)
 input double HiThr       = 80.0;   // osc sopra = SELL (cross sopravvalutato)
 input double ExitLevel   = 50.0;   // esci al ritorno al centro
 input int    MaxHoldBars = 48;     // uscita di sicurezza (barre H6)
-input double SafetySLpip = 0.0;    // SL di protezione in pip (0 = nessuno, come backtest; ~150 consigliato live)
+input double SafetySLpip = 0.0;    // SL di protezione in pip (0 = nessuno)
+input double SARpip      = 80.0;   // Stop-and-Reverse: se la reversione perde SARpip, chiudi e INVERTI sul trend (0 = off). H6:~80, D1:~120
 input long   MagicNumber = 770077;
 
 #define ANCHOR_TF PERIOD_H6
@@ -36,11 +43,28 @@ CTrade   trade;
 datetime g_lastBar = 0;
 int      g_hMA = INVALID_HANDLE;
 datetime g_entryBarTime = 0;
+bool     g_reversed = false;        // true se in questa sequenza abbiamo gia' invertito (SAR)
 
 //+------------------------------------------------------------------+
 double Pip()
   {
    return (_Digits==3 || _Digits==5) ? 10*_Point : _Point;
+  }
+
+//+------------------------------------------------------------------+
+// Lotto = % del BALANCE attuale. PctCapitale=100 -> 1 lotto ogni 10.000 di balance,
+// quindi cresce col conto (20k -> 2 lotti). NB: compone -> il DD% si amplifica.
+double CalcLot()
+  {
+   double cap = AccountInfoDouble(ACCOUNT_BALANCE);
+   double raw = (cap/10000.0) * (PctCapitale/100.0);
+   double step   = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
+   double minLot = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);
+   double maxBrk = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MAX);
+   double lotCap = (MaxLot>0.0) ? MathMin(maxBrk,MaxLot) : maxBrk;
+   if(step<=0.0) step=0.01;
+   double lot = MathFloor(raw/step)*step;
+   return MathMax(minLot, MathMin(lot, lotCap));
   }
 
 //+------------------------------------------------------------------+
@@ -103,29 +127,50 @@ void OnTick()
    double osc;
    if(!ComputeOsc(osc)) return;
 
+   double pip=Pip();
+   double bid=SymbolInfoDouble(_Symbol,SYMBOL_BID), ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+
    long dir=0;
-   if(HasPosition(dir))
+   if(HasPosition(dir))   // HasPosition seleziona la posizione: posso leggerne il prezzo d'entrata
      {
+      double entryPx = PositionGetDouble(POSITION_PRICE_OPEN);
+      double lc   = iClose(_Symbol,ANCHOR_TF,1);          // ultima barra chiusa
+      double move = (lc-entryPx)/pip*dir;                 // pip a favore (negativo = in perdita)
+
+      // STOP-AND-REVERSE: la reversione sta trendando contro -> chiudi e INVERTI sul trend
+      if(SARpip>0.0 && !g_reversed && move <= -SARpip)
+        {
+         double lot=CalcLot();
+         if(trade.PositionClose(_Symbol) && lot>0.0)
+           {
+            if(dir>0) trade.Sell(lot,_Symbol,bid,0.0,0.0,"relval SAR sell");
+            else      trade.Buy (lot,_Symbol,ask,0.0,0.0,"relval SAR buy");
+            g_reversed=true; g_entryBarTime=bt;
+           }
+         return;
+        }
+
       bool revertDone = (dir>0 && osc>=ExitLevel) || (dir<0 && osc<=ExitLevel);
       int  held = (g_entryBarTime>0)? iBarShift(_Symbol,ANCHOR_TF,g_entryBarTime,false) : 0;
       bool timeOut = (MaxHoldBars>0 && held>=MaxHoldBars);
-      if(revertDone || timeOut){ trade.PositionClose(_Symbol); g_entryBarTime=0; }
+      if(revertDone || timeOut){ trade.PositionClose(_Symbol); g_entryBarTime=0; g_reversed=false; }
       return;
      }
 
-   if(Lots<=0.0) return;
-   double pip=Pip();
-   double bid=SymbolInfoDouble(_Symbol,SYMBOL_BID), ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+   // nessuna posizione: nuova entrata di reversione
+   g_reversed=false;
+   double lot=CalcLot();
+   if(lot<=0.0) return;
 
    if(osc < LoThr)
      {
       double sl = (SafetySLpip>0.0)? ask - SafetySLpip*pip : 0.0;
-      if(trade.Buy(Lots,_Symbol,ask,sl,0.0,"relval buy")) g_entryBarTime=bt;
+      if(trade.Buy(lot,_Symbol,ask,sl,0.0,"relval buy")) g_entryBarTime=bt;
      }
    else if(osc > HiThr)
      {
       double sl = (SafetySLpip>0.0)? bid + SafetySLpip*pip : 0.0;
-      if(trade.Sell(Lots,_Symbol,bid,sl,0.0,"relval sell")) g_entryBarTime=bt;
+      if(trade.Sell(lot,_Symbol,bid,sl,0.0,"relval sell")) g_entryBarTime=bt;
      }
   }
 //+------------------------------------------------------------------+
