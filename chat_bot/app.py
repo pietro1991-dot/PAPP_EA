@@ -865,7 +865,8 @@ async def api_login(request: Request):
 @app.post("/api/logout")
 async def api_logout():
     resp = JSONResponse({"ok": True})
-    resp.delete_cookie(auth.COOKIE_NAME)
+    # gli attributi devono combaciare con set_cookie, o alcuni browser non lo cancellano
+    resp.delete_cookie(auth.COOKIE_NAME, path="/", samesite="lax", secure=auth.COOKIE_SECURE)
     return resp
 
 

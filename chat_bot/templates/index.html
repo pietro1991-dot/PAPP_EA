@@ -417,6 +417,12 @@ function setLang(l){
   if($('history-view')&&!$('history-view').hidden)loadConversations();
 }
 
+/* Logout: chiude la sessione e torna alla pagina di accesso */
+async function logout(){
+  try{ await fetch('/api/logout',{method:'POST'}); }catch(_){}
+  location.href='/login';
+}
+
 /* traduzione dei codici neutri dei segnali (SETUP|… e R|…) scritti dall'EA */
 const SIG_I18N={
  it:{entry:'Ingresso',exit:'Uscita',dyn:'dinamico',trail:'+trail',manual:'gestione manuale',r_tp:'TP raggiunto',r_sl:'SL colpito',r_stopout:'Chiusura forzata',r_exit:'Uscita su cross',r_sldyn:'SL dinamico toccato',skip_perpat:'Limite per-pattern raggiunto',skip_spread:'Spread troppo alto',skip_slunplace:'SL non piazzabile',skip_riskdist:'Distanza di rischio troppo piccola'},
