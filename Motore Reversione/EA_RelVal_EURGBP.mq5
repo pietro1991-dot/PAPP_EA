@@ -26,15 +26,24 @@
 input double PctCapitale = 25.0;    // % di capitale (25 = compounding sostenibile, DD ~33%)
 input double MaxLot      = 0.0;     // tetto di sicurezza al lotto (0 = nessuno)
 
+// --- Vol-targeting: size piu' piccola quando la volatilita' e' alta (rimpicciolisce gli anni-disastro tipo 2016) ---
+input bool   VolTarget   = true;    // true = scala la size con la volatilita' (validato: R/DD 4.5->5.4, 2016 -458->-245)
+input int    VolFast     = 40;      // barre per la vol corrente
+input int    VolSlow     = 2000;    // barre per la vol di RIFERIMENTO (lungo: ~1.4 anni). 480 era troppo corto: si adattava al regime e non proteggeva il 2016. 2000 -> R/DD 4.5->5.5, 2016 -458->-273
+input double VolFloor    = 0.30;    // fattore minimo (vol molto alta)
+input double VolCap      = 2.50;    // fattore massimo (vol molto bassa)
+
 // --- Segnale (H6) ---
 input int    MAPeriod    = 28;     // media della distanza
 input int    PctWindow   = 280;    // finestra del percentile
-input double LoThr       = 20.0;   // osc sotto = BUY (cross sottovalutato)
-input double HiThr       = 80.0;   // osc sopra = SELL (cross sopravvalutato)
+input double LoThr       = 10.0;   // osc sotto = BUY (validato: 10/90 meglio di 15 e 20; oltre=5/95 troppo pochi trade)
+input double HiThr       = 90.0;   // osc sopra = SELL
 input double ExitLevel   = 50.0;   // esci al ritorno al centro
 input int    MaxHoldBars = 48;     // uscita di sicurezza (barre H6)
+input double TPlongPip   = 0.0;    // TP fisso sulle BUY in pip (0 = esci a osc=50). NB: alza il win% ma abbassa profitto/RDD
+input double TPshortPip  = 0.0;    // TP fisso sulle SELL in pip (0 = esci a osc=50). Utile per lisciare il 2016 (costa in RDD)
 input double SafetySLpip = 0.0;    // SL di protezione in pip (0 = nessuno)
-input double SARpip      = 80.0;   // Stop-and-Reverse: se la reversione perde SARpip, chiudi e INVERTI sul trend (0 = off). H6:~80, D1:~120
+input double SARpip      = 0.0;    // Stop-and-Reverse (0 = OFF). Test onesto su dati reali: PEGGIORA (whipsaw). Lasciare 0.
 input long   MagicNumber = 770077;
 
 #define ANCHOR_TF PERIOD_H6
@@ -52,12 +61,36 @@ double Pip()
   }
 
 //+------------------------------------------------------------------+
-// Lotto = % del BALANCE attuale. PctCapitale=100 -> 1 lotto ogni 10.000 di balance,
-// quindi cresce col conto (20k -> 2 lotti). NB: compone -> il DD% si amplifica.
+// Fattore vol-targeting: rif/corrente, limitato a [VolFloor,VolCap].
+// Vol alta -> fattore < 1 (size piu' piccola); vol bassa -> fattore > 1.
+double VolFactor()
+  {
+   if(!VolTarget) return 1.0;
+   int need = VolSlow+2;
+   double cl[]; ArraySetAsSeries(cl,true);
+   if(CopyClose(_Symbol,ANCHOR_TF,0,need,cl) < need) return 1.0;
+   double r[]; ArrayResize(r,VolSlow);
+   for(int k=0;k<VolSlow;k++) r[k] = (cl[k+1]>0)? MathLog(cl[k]/cl[k+1]) : 0.0;  // log-rendimenti
+   double mf=0,ms=0;
+   for(int k=0;k<VolFast;k++) mf+=r[k]; mf/=VolFast;
+   for(int k=0;k<VolSlow;k++) ms+=r[k]; ms/=VolSlow;
+   double sf=0,ss=0;
+   for(int k=0;k<VolFast;k++){ double d=r[k]-mf; sf+=d*d; }
+   for(int k=0;k<VolSlow;k++){ double d=r[k]-ms; ss+=d*d; }
+   double fast=MathSqrt(sf/MathMax(1,VolFast-1));
+   double slow=MathSqrt(ss/MathMax(1,VolSlow-1));
+   if(fast<=0.0) return 1.0;
+   double f = slow/fast;
+   return MathMax(VolFloor, MathMin(VolCap, f));
+  }
+
+//+------------------------------------------------------------------+
+// Lotto = % del BALANCE attuale x fattore vol-targeting. PctCapitale=100 ->
+// 1 lotto ogni 10.000 di balance; la vol alta riduce la size (e viceversa).
 double CalcLot()
   {
    double cap = AccountInfoDouble(ACCOUNT_BALANCE);
-   double raw = (cap/10000.0) * (PctCapitale/100.0);
+   double raw = (cap/10000.0) * (PctCapitale/100.0) * VolFactor();
    double step   = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
    double minLot = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MIN);
    double maxBrk = SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_MAX);
@@ -150,7 +183,11 @@ void OnTick()
          return;
         }
 
-      bool revertDone = (dir>0 && osc>=ExitLevel) || (dir<0 && osc<=ExitLevel);
+      // uscita: in reversione esci quando l'osc torna al centro; dopo un SAR (gamba-trend)
+      // esci quando l'osc RITORNA dall'estremo verso il centro (logica invertita).
+      bool revertDone;
+      if(!g_reversed) revertDone = (dir>0 && osc>=ExitLevel) || (dir<0 && osc<=ExitLevel);
+      else            revertDone = (dir>0 && osc<=ExitLevel) || (dir<0 && osc>=ExitLevel);
       int  held = (g_entryBarTime>0)? iBarShift(_Symbol,ANCHOR_TF,g_entryBarTime,false) : 0;
       bool timeOut = (MaxHoldBars>0 && held>=MaxHoldBars);
       if(revertDone || timeOut){ trade.PositionClose(_Symbol); g_entryBarTime=0; g_reversed=false; }
@@ -165,12 +202,14 @@ void OnTick()
    if(osc < LoThr)
      {
       double sl = (SafetySLpip>0.0)? ask - SafetySLpip*pip : 0.0;
-      if(trade.Buy(lot,_Symbol,ask,sl,0.0,"relval buy")) g_entryBarTime=bt;
+      double tp = (TPlongPip >0.0)? ask + TPlongPip *pip : 0.0;
+      if(trade.Buy(lot,_Symbol,ask,sl,tp,"relval buy")) g_entryBarTime=bt;
      }
    else if(osc > HiThr)
      {
       double sl = (SafetySLpip>0.0)? bid + SafetySLpip*pip : 0.0;
-      if(trade.Sell(lot,_Symbol,bid,sl,0.0,"relval sell")) g_entryBarTime=bt;
+      double tp = (TPshortPip>0.0)? bid - TPshortPip*pip : 0.0;
+      if(trade.Sell(lot,_Symbol,bid,sl,tp,"relval sell")) g_entryBarTime=bt;
      }
   }
 //+------------------------------------------------------------------+

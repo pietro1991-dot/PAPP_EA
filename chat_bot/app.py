@@ -443,11 +443,12 @@ def _lang_selector(cur: str) -> str:
         for c, flag in (("it", "🇮🇹"), ("en", "🇬🇧"), ("fr", "🇫🇷"), ("es", "🇪🇸"))
     )
     return (
-        '<div style="position:fixed;top:12px;right:12px;z-index:9999;font-family:system-ui">'
+        '<div style="position:fixed;bottom:16px;right:16px;z-index:9999;font-family:system-ui">'
         '<select aria-label="Lingua" onchange="(function(v){document.cookie=\'lang=\'+v+\';path=/;max-age=31536000\';'
         'var u=new URL(location);u.searchParams.set(\'lang\',v);location=u})(this.value)" '
-        'style="background:#11141b;color:#e9ebf2;border:1px solid #283149;border-radius:8px;'
-        'padding:5px 7px;font-size:12px;font-weight:600;cursor:pointer;outline:none">'
+        'style="background:#11141b;color:#e9ebf2;border:1px solid #283149;border-radius:10px;'
+        'padding:8px 10px;font-size:13px;font-weight:600;cursor:pointer;outline:none;'
+        'box-shadow:0 6px 20px rgba(0,0,0,.45)">'
         f'{opts}</select></div>'
     )
 
