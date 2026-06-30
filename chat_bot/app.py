@@ -477,6 +477,13 @@ async def index(request: Request):
     return _serve_page("landing", request)   # pubblico → landing marketing multilingua
 
 
+@app.get("/landing", response_class=HTMLResponse)
+async def landing_preview(request: Request):
+    """Landing marketing SEMPRE visibile (anche da loggato), per poterla rivedere.
+    Su '/' invece i loggati vedono la dashboard."""
+    return _serve_page("landing", request)
+
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
     return HTMLResponse(open("templates/login.html").read())
@@ -933,7 +940,7 @@ async def sitemap_page(request: Request):
 
     # --- Sezioni ---
     marketing = [
-        card("/", "Landing / Sales", "Porta d'ingresso completa (hero → prova → prezzi → FAQ).", langs=True),
+        card("/landing", "Landing / Sales", "Porta d'ingresso completa (hero → prova → prezzi → FAQ → cosa fa / cosa NON fa). Sempre visibile, anche da loggato.", langs=True),
         card("/report", "Squeeze report", "Pagina a obiettivo unico: email in cambio del report.", langs=True),
         card("/demo", "Demo dal vivo", "Dashboard read-only con dati reali (auto-login demo).", ext=True),
         card("/login", "Login", "Accesso clienti.", ext=True),
@@ -1023,7 +1030,7 @@ td.m{{color:var(--green);font-weight:700;white-space:nowrap;width:120px}}
 </style></head><body><div class="wrap">
 <div class="top"><img src="/static/logo-mark.png" alt="PHAI"><b>PHAI <i>TRADING</i></b></div>
 <div class="lead">Mappa del sito — tutte le pagine e i dati del prodotto, in un colpo d'occhio. Visibile solo a te (owner).</div>
-<div class="actions"><a href="/">← Torna all'app</a><a href="/demo" target="_blank">Apri la Demo</a><a href="/" target="_blank">Apri la Landing</a></div>
+<div class="actions"><a href="/">← Torna all'app</a><a href="/demo" target="_blank">Apri la Demo</a><a href="/landing" target="_blank">Apri la Landing</a></div>
 {section("Pagine pubbliche / Marketing", "Cosa vede un visitatore. Le pagine marketing sono in 4 lingue.", marketing)}
 {section("Checkout (un link per prodotto)", "Ogni SKU della scala di valore: singolo EA, pacchetti, portfolio, signals.", checkout_cards)}
 {section("App cliente (dashboard)", "Le sezioni dell'app dopo il login.", app_pages)}
