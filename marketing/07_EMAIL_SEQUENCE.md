@@ -62,18 +62,18 @@ versione collaudata; qui sotto le chiavi.)*
 - **E4 Prova**: backtest 2010–2025 *(storico)* 783 trade, win 96,9%, **+ anni negativi**
   e drawdown ~20% mostrati → la trasparenza È la prova.
 - **E6 Meccanismo + offerta soft**: la giornata-tipo con PHAI; invito alla **Demo**;
-  i piani (Demo gratis / Starter 49€ / Pro 97€).
+  i piani (Demo gratis / Signals 37€ / singola strategia 49€ / Pacchetti 67-97€ / Portfolio 197€).
 - **E7 Obiezioni**: le 6 del doc 02 (truffa? garantite guadagni? non ci capisco? e se
   perdo? è difficile installarlo? quanto costa?).
 - **E8 Offerta + urgenza**: la Godfather (doc 03), garanzia 30gg, **50 posti**, prezzo di lancio.
 
 ### Email 8 — Offerta + urgenza (Giorno +7)
 **Oggetto:** 50 posti. Poi lista d'attesa (e prezzo più alto).
-> [Nome], ci siamo. Oggi puoi sbloccare **PHAI** completo: EA su 3 coppie, app
+> [Nome], ci siamo. Oggi puoi sbloccare **PHAI** completo: i 5 EA su 2 motori, app
 > multilingua, **assistente AI 24/7**, indicatore, storico/backtest, notifiche — più 4
-> bonus (oltre 900 €). Valore totale ~3.888 €.
-> Oggi: **97 €/mese** (o **49 €** per iniziare; **997 €** una volta se preferisci il
-> Lifetime). Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso
+> bonus (oltre 900 €). Valore totale ~4.500 €.
+> Oggi: **Portfolio 197 €/mese** (o **una singola strategia da 49 €** per iniziare;
+> **Annuale con 2 mesi gratis**). Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso
 > totale. Il rischio me lo prendo io.
 > Apriamo **50 posti** questo mese (l'AI gira su un server condiviso: oltre, la qualità
 > calerebbe). Quando finiscono → lista d'attesa, e al prossimo giro il prezzo sale.
@@ -132,9 +132,9 @@ Continuativa. **Obiettivo: dare valore anche a mercato fermo + far salire di pia
   giusta" + un pezzo educativo → **previene la disdetta da 'non succede niente'**.
 - **Mensile — "Il tuo mese in PHAI"**: riepilogo del conto + 1 insight dall'AI.
 - **Upsell trigger**:
-  - Starter che riempie il limite coppie → "Sblocca le altre 2 coppie con Pro".
-  - Pro attivo da 3 mesi → "Passa all'Annuale: 2 mesi gratis" (anti-churn + cassa).
-  - Heavy user dell'AI → "PHAI Elite: AI prioritaria, niente code, pattern in anteprima".
+  - Possiede qualche EA ma non tutti → "Sblocca altre strategie" (49€ l'una / Pacchetto / Portfolio).
+  - Cliente mensile → "Passa all'Annuale: 2 mesi gratis" (anti-churn + cassa).
+  - Heavy user dell'AI (non ancora Portfolio) → "PHAI Portfolio: AI premium prioritaria, niente code, nuovi EA in anteprima".
 - **Win-back (pre-disdetta / carta fallita)**: "Prima che tu vada… 1 mese a metà prezzo
   per rivalutare" + chiedi il **motivo** (dato d'oro per ridurre il churn).
 - **Referral**: "Porta un amico: un mese gratis a entrambi." → loop virale.

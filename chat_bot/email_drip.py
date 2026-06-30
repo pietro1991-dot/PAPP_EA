@@ -27,6 +27,8 @@ import httpx
 from sqlalchemy import select, func, text
 
 from db import AsyncSession, Lead, User, LicenseKey, Signal, AccountSnapshot, ChatHistory, EmailSent
+import entitlements
+import catalog
 
 log = logging.getLogger("papp.drip")
 
@@ -192,7 +194,8 @@ async def tick(dry=False):
         for uid, email, ucreated, lkey, plan, active, revoked, expires in cust_rows:
             cur_lang = lang_map.get(email, "it")   # lingua del cliente (dal lead) o IT
             plan = (plan or "").lower()
-            valid = plan in VALID_PLANS and active is not False and not revoked and \
+            # "valid" = qualsiasi SKU pagante (signals / singolo EA / pacchetto / portfolio / legacy)
+            valid = entitlements.can_signals(plan) and active is not False and not revoked and \
                     (expires is None or expires >= now)
             purchase = ucreated or now
 
@@ -231,13 +234,14 @@ async def tick(dry=False):
                 if trades30 == 0:
                     await emit(email, "retention-flat", f"retention-flat:{month}", now, skip_guard=False)
 
-            # UPSELL / REFERRAL (una volta, quando idoneo)
-            if plan == "starter":
+            # UPSELL / REFERRAL (una volta, quando idoneo) — basato su EA posseduti e tier
+            owned = entitlements.owned_eas(plan)
+            total = len(catalog.ALL_EA_IDS)
+            if owned and len(owned) < total:        # possiede qualche EA ma non tutti → sblocca altre strategie
                 await emit(email, "retention-upsell-pro", "retention-upsell-pro", purchase + timedelta(days=7), skip_guard=False)
-            if plan == "pro":
-                await emit(email, "retention-upsell-annual", "retention-upsell-annual", purchase + timedelta(days=90), skip_guard=False)
+            await emit(email, "retention-upsell-annual", "retention-upsell-annual", purchase + timedelta(days=90), skip_guard=False)
             chat_n = (await s.execute(select(func.count(ChatHistory.id)).where(ChatHistory.user_id == uid))).scalar() or 0
-            if plan in ("pro", "starter") and chat_n >= 15:
+            if entitlements.chatbot_tier(plan) != "premium" and chat_n >= 15:   # forte uso AI ma non ancora Portfolio
                 await emit(email, "retention-elite", "retention-elite", now, skip_guard=False)
             await emit(email, "retention-referral", "retention-referral", purchase + timedelta(days=30), skip_guard=False)
 
@@ -250,7 +254,7 @@ async def status():
         nunsub = (await s.execute(select(func.count(Lead.id)).where(Lead.unsubscribed.is_(True)))).scalar()
         nsent = (await s.execute(select(func.count(EmailSent.id)).where(EmailSent.status == "sent"))).scalar()
         ncust = (await s.execute(select(func.count(User.id)).join(LicenseKey, LicenseKey.key == User.license_key)
-                                 .where(LicenseKey.plan.in_(VALID_PLANS)))).scalar()
+                                 .where(LicenseKey.plan.isnot(None), LicenseKey.plan != ""))).scalar()
     provider = "Brevo" if os.getenv("BREVO_API_KEY") else ("SMTP" if os.getenv("SMTP_HOST") else "DRY")
     print(f"Lead: {nleads} (disiscritti {nunsub}) · clienti: {ncust} · email inviate: {nsent} · provider: {provider}")
     print(f"Campagna: {len(CAMPAIGN)} email (nurture/onboarding/retention/coda)")

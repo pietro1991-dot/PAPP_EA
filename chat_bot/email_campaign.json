@@ -57,7 +57,7 @@
     "trigger": "opt-in",
     "subject": "Cosa fa PHAI mentre tu vivi la tua vita",
     "preview": "Una giornata tipo (e i piani).",
-    "body": "[Nome], ecco com'è una giornata con PHAI:\n\n• L'EA monitora EURUSD, GBPUSD e USDCHF e apre/chiude secondo i pattern validati.\n• Ogni mossa arriva sul tuo telefono con una notifica e una **spiegazione**.\n• Apri l'app (in 4 lingue) e vedi conto, segnali, storico. Un dubbio? Lo chiedi all'assistente AI, che risponde subito.\n\nNiente più scatole nere. Niente più 'ma perché ha fatto così?'.\n\nPuoi iniziare in 3 modi: **Demo gratis** (la vedi dal vivo), **Starter a 49€/mese** o **Pro a 97€/mese**. Guardala prima tu 👉 {{demo}}\n\nDomani rispondo alle 6 domande che ricevo più spesso.\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
+    "body": "[Nome], ecco com'è una giornata con PHAI:\n\n• Gli EA monitorano fino a 5 coppie su 2 motori (EUR/USD, GBP/USD, USD/CHF + i cross EUR/GBP e GBP/CHF) e aprono/chiudono secondo i pattern validati.\n• Ogni mossa arriva sul tuo telefono con una notifica e una **spiegazione**.\n• Apri l'app (in 4 lingue) e vedi conto, segnali, storico. Un dubbio? Lo chiedi all'assistente AI, che risponde subito.\n\nNiente più scatole nere. Niente più 'ma perché ha fatto così?'.\n\nPuoi iniziare come vuoi: **Demo gratis**, **Signals a 37€/mese** (segnali a mano), una **singola strategia da 49€**, o il **Portfolio completo a 197€**. Guardala prima tu 👉 {{demo}}\n\nDomani rispondo alle 6 domande che ricevo più spesso.\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
   },
   {
     "sequence": "nurture",
@@ -77,7 +77,7 @@
     "trigger": "opt-in",
     "subject": "50 posti. Poi lista d'attesa (e prezzo più alto).",
     "preview": "Ci siamo. Oggi puoi sbloccare PHAI.",
-    "body": "[Nome], ci siamo.\n\nOggi puoi sbloccare **PHAI** completo: l'EA su 3 coppie, l'app multilingua, il tuo **assistente AI 24/7**, l'indicatore, storico e backtest, le notifiche — più 4 bonus (oltre 900€ di valore).\n\nValore totale ~3.888€. Oggi: **97€/mese** (o **49€** per iniziare; **997€** una volta se preferisci il Lifetime). Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso totale. Il rischio me lo prendo io.\n\nApriamo **50 posti** questo mese: l'assistente AI gira su un server condiviso e oltre quel numero la qualità calerebbe. Quando finiscono, lista d'attesa — e al prossimo giro il prezzo sale.\n\n👉 {{sblocca}}\n\nPreferisci vedere prima? 👉 {{demo}}\n\nP.S. Nel trading l'unica cosa che non ti hanno mai dato è la verità. Noi partiamo da lì.\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
+    "body": "[Nome], ci siamo.\n\nOggi puoi sbloccare **PHAI** completo: i 5 EA su 2 motori decorrelati, l'app multilingua, il tuo **assistente AI 24/7**, l'indicatore, storico e backtest, le notifiche — più 4 bonus (oltre 900€ di valore).\n\nValore totale ~4.500€. Oggi: **Portfolio a 197€/mese** (o **una singola strategia da 49€** per iniziare; **Annuale con 2 mesi gratis**). Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso totale. Il rischio me lo prendo io.\n\nApriamo **50 posti** questo mese: l'assistente AI gira su un server condiviso e oltre quel numero la qualità calerebbe. Quando finiscono, lista d'attesa — e al prossimo giro il prezzo sale.\n\n👉 {{sblocca}}\n\nPreferisci vedere prima? 👉 {{demo}}\n\nP.S. Nel trading l'unica cosa che non ti hanno mai dato è la verità. Noi partiamo da lì.\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
   },
   {
     "sequence": "onboarding",
@@ -185,9 +185,9 @@
     "step": 5,
     "delay_days": 0,
     "trigger": "starter_limite_coppie",
-    "subject": "Sblocca le altre 2 coppie (passa a Pro)",
-    "preview": "Stai usando 1 coppia su 3.",
-    "body": "[Nome], col piano Starter PHAI opera su **1 coppia**. Ma il sistema è validato anche su **GBPUSD** e **USDCHF**.\n\nCon **Pro** sblocchi tutte e 3 le coppie + l'assistente AI completo + priorità. Più mercati sorvegliati, più opportunità colte — senza alzare un dito.\n\nPassa a Pro 👉 {{sblocca}}\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
+    "subject": "Hai 1 strategia attiva. Sbloccane altre.",
+    "preview": "Stai usando 1 strategia su 5.",
+    "body": "[Nome], stai usando **1 strategia**. Ma PHAI ne ha **5 su 2 motori decorrelati**: quando un motore fatica, spesso l'altro lavora.\n\nAggiungi altre strategie a **49€** l'una, prendi un **Pacchetto-motore** (Base 97€ · Reversione 67€) o passa al **Portfolio** completo (197€). Più mercati sorvegliati, più opportunità — senza alzare un dito.\n\nSblocca altre strategie 👉 {{sblocca}}\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
   },
   {
     "sequence": "retention",
@@ -197,7 +197,7 @@
     "trigger": "pro_attivo_3mesi",
     "subject": "Vuoi 2 mesi gratis?",
     "preview": "Un'idea per chi resta.",
-    "body": "[Nome], sei con noi da qualche mese — grazie. 🙏\n\nSe PHAI fa parte della tua routine, col piano **Annuale** ottieni **2 mesi gratis** rispetto al mensile. Stesso Pro, meno spesa, e niente da ricordare ogni mese.\n\nPassa all'Annuale 👉 {{sblocca}}\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
+    "body": "[Nome], sei con noi da qualche mese — grazie. 🙏\n\nSe PHAI fa parte della tua routine, col piano **Annuale** ottieni **2 mesi gratis** rispetto al mensile. Stesso piano, meno spesa, e niente da ricordare ogni mese.\n\nPassa all'Annuale 👉 {{sblocca}}\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
   },
   {
     "sequence": "retention",
@@ -205,9 +205,9 @@
     "step": 7,
     "delay_days": 0,
     "trigger": "heavy_user_ai",
-    "subject": "Per chi usa molto l'assistente: PHAI Elite",
+    "subject": "Per chi usa molto l'assistente: il Portfolio",
     "preview": "AI premium, priorità, pattern in anteprima.",
-    "body": "[Nome], usi spesso l'assistente AI — bene, è fatto per questo.\n\nSe vuoi il massimo, **PHAI Elite** ti dà un'**AI più potente e prioritaria** (nessuna coda nei picchi) e i **nuovi pattern in anteprima**.\n\nScopri Elite 👉 {{sblocca}}\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
+    "body": "[Nome], usi spesso l'assistente AI — bene, è fatto per questo.\n\nSe vuoi il massimo, il **PHAI Portfolio** ti dà un'**AI premium e prioritaria** (nessuna coda nei picchi), **tutti i 5 EA** e i **nuovi pattern in anteprima**.\n\nScopri il Portfolio 👉 {{sblocca}}\n\n— Il team PHAI\n---\nIl trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.\nNon vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}"
   },
   {
     "sequence": "retention",
