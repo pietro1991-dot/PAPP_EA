@@ -595,10 +595,10 @@ function setLang(l){
   if($('history-view')&&!$('history-view').hidden)loadConversations();
 }
 
-/* Logout: chiude la sessione e torna alla pagina di accesso */
+/* Logout: chiude la sessione e torna alla LANDING (non al form di login nudo) */
 async function logout(){
   try{ await fetch('/api/logout',{method:'POST'}); }catch(_){}
-  location.href='/login';
+  location.href='/';
 }
 
 /* traduzione dei codici neutri dei segnali (SETUP|… e R|…) scritti dall'EA */
