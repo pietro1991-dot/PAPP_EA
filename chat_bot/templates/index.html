@@ -161,6 +161,22 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .st-tot .c{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
 .st-tot .l{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
 .st-tot .v{font-size:18px;font-weight:700;margin-top:3px}
+/* Legenda dei due motori (sempre visibile nello storico e nell'hero) */
+.eng-legend{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.eng-legend .eng-h{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:7px}
+.eng-pills{display:flex;flex-wrap:wrap;gap:7px}
+.eng-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid var(--border);background:#141b2b;color:#cfd6e6}
+.eng-pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ec)}
+.eng-pill.base{--ec:#5b9dff}
+.eng-pill.rev{--ec:#c9a14a}
+.eng-pill.on{outline:2px solid var(--ec);background:#1a2236}
+.eng-pill.empty{opacity:.6}
+.eng-soon{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;background:#2a3146;color:#aeb7cc;padding:1px 6px;border-radius:6px}
+.eng-note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+.eng-tag{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:1px 6px;border-radius:6px;margin-left:6px;color:#0a0e18}
+.eng-tag.base{background:#5b9dff}
+.eng-tag.rev{background:#c9a14a}
+.brk-eng{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:10px 0 4px;font-weight:700}
 .eq-chart{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 10px 4px;margin-bottom:12px}
 .eq-lbl{font-size:11px;color:var(--muted);margin-bottom:6px}
 .eq-svg{width:100%;height:90px;display:block}
@@ -251,6 +267,103 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
   .input-bar input{font-size:16px}      /* >=16px: evita lo zoom automatico iOS */
   .tab{padding:9px 15px}                 /* target touch piu' ampi */
 }
+/* ---------- App shell: topbar + sidebar + content ---------- */
+.topbar-title{flex:1;font-weight:700;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shell{display:flex;flex:1;min-height:0;overflow:hidden}
+.sidenav{display:flex;flex-direction:column;gap:4px;width:210px;flex-shrink:0;padding:14px 12px;border-right:1px solid var(--border);background:linear-gradient(180deg,#0f1525,#0a0e18);overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;text-align:left;width:100%;transition:.14s;position:relative}
+.nav-item svg{width:19px;height:19px;flex-shrink:0}
+.nav-item:hover{background:#161e30;color:var(--text)}
+.nav-item.active{background:rgba(203,166,92,.14);color:var(--accent);border-color:rgba(203,166,92,.35)}
+.nav-item .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);margin-left:auto;animation:pulse 1.6s infinite;flex-shrink:0}
+.content{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.section{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.section .sec-inner{flex:1;overflow-y:auto;padding:16px 18px 24px;-webkit-overflow-scrolling:touch}
+.sec-head{padding:12px 18px 0;flex-shrink:0}
+.group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:20px 2px 9px}
+.group-title:first-child{margin-top:2px}
+.sec-inner .cards{padding:0;flex-wrap:wrap}
+.sec-inner .cards .card{flex:1 1 130px}
+/* sezioni con un pannello a tutta altezza (segnali/storico/mercato/chat) */
+#sec-signals,#sec-storico,#sec-mercato,#sec-assistant{padding:14px 18px 16px}
+#sec-signals .panel,#sec-storico .panel,#sec-mercato .panel,#sec-assistant .panel{flex:1;min-height:0}
+.chat-panel .panel-head .icon-btn{margin:0}
+/* ---------- Account menu (avatar dropdown) ---------- */
+.acct{position:relative;flex-shrink:0}
+.acct-btn{display:flex;align-items:center;gap:8px;background:transparent;border:none;cursor:pointer;padding:3px}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#a07d3a);color:#0a0e18;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0}
+.acct-menu{position:absolute;top:48px;right:0;width:248px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:8px;box-shadow:0 16px 40px rgba(0,0,0,.5);z-index:70;display:flex;flex-direction:column;gap:3px}
+.acct-id{padding:8px 10px 10px;border-bottom:1px solid var(--border);margin-bottom:4px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.acct-id .email{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-line{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:13px;color:var(--text);background:transparent;border:none;cursor:pointer;text-align:left;width:100%;font-weight:600}
+.acct-line:hover{background:#222c44}
+.acct-line svg{width:18px;height:18px;flex-shrink:0}
+.acct-line.danger{color:var(--red)}
+.acct-line select{margin-left:auto}
+.acct-line.on{color:var(--accent)}
+/* ---------- Showroom Strategie (catalogo EA) ---------- */
+.strat-h{font-size:20px;font-weight:800;margin:2px 2px 2px}
+.strat-sub{font-size:12px;color:var(--muted);margin:0 2px 16px}
+.eng-block{margin-bottom:22px}
+.eng-block-h{display:flex;align-items:center;gap:10px;margin:0 2px 10px}
+.eng-block-h .dot{width:11px;height:11px;border-radius:50%;background:var(--ec)}
+.eng-block-h .nm{font-size:15px;font-weight:800}
+.eng-block-h .tg{font-size:11px;color:var(--muted)}
+.ea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.ea-card{background:linear-gradient(180deg,#161e30,#121829);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.ea-card:hover{border-color:var(--ec);transform:translateY(-2px)}
+.ea-card .ea-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ea-card .ea-nm{font-size:16px;font-weight:800}
+.ea-card .ea-tg{font-size:12px;color:#aeb4c0;line-height:1.45;min-height:34px}
+.ea-spark{height:46px;margin:10px 0 8px}
+.ea-spark svg{width:100%;height:46px;display:block}
+.ea-kpis{display:flex;gap:14px;margin-top:4px}
+.ea-kpis .k{font-size:11px;color:var(--muted)}
+.ea-kpis .k b{display:block;font-size:15px;color:var(--text);margin-top:1px}
+.ea-status{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;border-radius:7px}
+.ea-status.on{background:rgba(61,220,151,.16);color:var(--green)}
+.ea-status.lock{background:rgba(203,166,92,.16);color:var(--accent)}
+.ea-status.soon{background:#2a3146;color:#aeb7cc}
+.ea-eng-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:1px 6px;border-radius:6px;color:#0a0e18;background:var(--ec)}
+/* Pagina-EA (dettaglio) */
+.ea-back{display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;color:var(--accent);font-weight:700;font-size:13px;cursor:pointer;margin-bottom:14px;padding:0}
+.ea-hero{background:linear-gradient(180deg,#161e30,#121829);border:1px solid var(--border);border-radius:16px;padding:18px}
+.ea-hero .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ea-hero .nm{font-size:24px;font-weight:800}
+.ea-hero .tg{font-size:14px;color:#c4c9d2;margin:8px 0 14px}
+.ea-detail .eq-chart{margin-bottom:14px}
+.ea-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 16px}
+.ea-kpi-row .kp{background:#0f1420;border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
+.ea-kpi-row .kp .kn{font-size:18px;font-weight:800}
+.ea-kpi-row .kp .kl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:3px}
+.ea-sec{margin-top:14px}
+.ea-sec h4{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin-bottom:6px}
+.ea-sec p{font-size:13.5px;line-height:1.6;color:#cfd4de}
+.ea-cta{margin-top:18px}
+.ea-cta .owned{display:inline-flex;align-items:center;gap:8px;background:rgba(61,220,151,.14);color:var(--green);border:1px solid rgba(61,220,151,.4);border-radius:12px;padding:12px 18px;font-weight:700;font-size:14px}
+.offer{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:8px}
+.offer-card{background:#0f1420;border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;position:relative}
+.offer-card.rec{border-color:var(--accent);box-shadow:0 0 0 1px rgba(203,166,92,.3)}
+.offer-card .ot{font-size:13px;font-weight:700}
+.offer-card .op{font-size:24px;font-weight:800}.offer-card .op span{font-size:12px;color:var(--muted);font-weight:600}
+.offer-card .obadge{position:absolute;top:-9px;left:14px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;background:var(--accent);color:#0a0e18;padding:2px 8px;border-radius:6px}
+.offer-card .obadge.best{background:var(--green)}
+.offer-card button{margin-top:4px;padding:10px;border:none;border-radius:9px;background:var(--accent);color:#0a0e18;font-weight:800;cursor:pointer;font-size:13px}
+.offer-card.rec button{filter:brightness(1.05)}
+.ea-soon-box{margin-top:16px;background:#0f1420;border:1px dashed var(--border);border-radius:12px;padding:16px;text-align:center;color:var(--muted);font-size:13px}
+.ea-soon-box button{margin-top:10px;padding:10px 16px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:9px;font-weight:700;cursor:pointer}
+/* ===== Tablet/Mobile: la sidebar diventa barra inferiore ===== */
+@media(max-width:760px){
+  .shell{flex-direction:column}
+  .sidenav{flex-direction:row;width:auto;order:2;border-right:none;border-top:1px solid var(--border);padding:6px 6px;padding-bottom:max(6px,env(safe-area-inset-bottom));gap:2px;z-index:40}
+  .nav-item{flex-direction:column;gap:3px;flex:1;padding:7px 3px;font-size:10px;justify-content:center;text-align:center;min-width:0}
+  .nav-item span{font-size:10px;line-height:1.1}
+  .nav-item .live-dot{position:absolute;top:5px;left:calc(50% + 9px);margin:0}
+  .content{order:1}
+  .brand-name{display:none}
+  #sec-signals,#sec-storico,#sec-mercato,#sec-assistant{padding:10px 12px 12px}
+  .section .sec-inner{padding:12px 12px 18px}
+}
 /* ===== Phone ===== */
 @media(max-width:560px){
   header{flex-wrap:wrap;height:auto;gap:9px;padding:9px 12px}
@@ -267,125 +380,185 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
   .msg{max-width:92%}
   .signal-list{max-height:none}
   .input-bar button{padding:12px 16px}
+  .ea-kpi-row{grid-template-columns:1fr 1fr}
+  .offer{grid-template-columns:1fr}
+  .strat-h{font-size:18px}
+  .ea-hero{padding:14px}
+  .ea-hero .nm{font-size:20px}
+  .ea-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
+<!-- ===== Topbar ===== -->
 <header>
   <div class="brand"><img src="/static/logo-mark.png" class="brand-mark" alt="PHAI"><span class="brand-name">PHAI<i>TRADING</i></span></div>
-  <div class="tabs" id="tabs"></div>
-  <button class="hdr-btn" id="mercato-btn" onclick="openMercato()" data-i18n-title="market_title">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
-    <span data-i18n="market">Mercato</span>
-  </button>
-  <button class="hdr-btn" id="storico-btn" onclick="openStorico()" data-i18n-title="storico_title">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="7"/><line x1="18" y1="20" x2="18" y2="10"/></svg>
-    <span data-i18n="history">Storico</span>
-  </button>
-  <div class="user">
-    <select class="lang-sel" id="lang-sel" onchange="setLang(this.value)" aria-label="Lingua">
-      <option value="it">🇮🇹 IT</option>
-      <option value="en">🇬🇧 EN</option>
-      <option value="fr">🇫🇷 FR</option>
-      <option value="es">🇪🇸 ES</option>
-    </select>
-    <button class="install-btn" id="install-btn" hidden data-i18n="install">⤓ Installa</button>
-    <button class="notif-btn" id="notif-btn" title="Attiva notifiche" onclick="toggleNotifications()" aria-label="Notifiche">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  <div class="topbar-title" id="page-title"></div>
+  <div class="acct">
+    <button class="acct-btn" id="acct-btn" aria-label="Account">
+      <span class="plan-badge" id="plan-badge"></span>
+      <span class="avatar" id="avatar">·</span>
     </button>
-    <span class="plan-badge" id="plan-badge"></span>
-    <span class="email" id="user-email"></span>
-    <span class="logout" onclick="logout()" data-i18n="logout">Esci</span>
+    <div class="acct-menu" id="acct-menu" hidden>
+      <div class="acct-id"><span class="email" id="user-email"></span></div>
+      <label class="acct-line">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+        <span data-i18n="language">Lingua</span>
+        <select class="lang-sel" id="lang-sel" onchange="setLang(this.value)" aria-label="Lingua">
+          <option value="it">🇮🇹 IT</option>
+          <option value="en">🇬🇧 EN</option>
+          <option value="fr">🇫🇷 FR</option>
+          <option value="es">🇪🇸 ES</option>
+        </select>
+      </label>
+      <button class="acct-line" id="notif-btn" onclick="toggleNotifications()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span data-i18n="notif_off">Attiva notifiche</span>
+      </button>
+      <button class="acct-line" id="install-btn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="install">Installa l'app</span>
+      </button>
+      <button class="acct-line danger" onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span data-i18n="logout">Esci</span>
+      </button>
+    </div>
   </div>
 </header>
 
-<div class="cards account">
-  <div class="card"><div class="card-label" data-i18n="balance">Balance</div><div class="card-val" id="acc-balance">—</div></div>
-  <div class="card"><div class="card-label" data-i18n="equity">Equity</div><div class="card-val" id="acc-equity">—</div></div>
-  <div class="card"><div class="card-label" data-i18n="free_margin">Margine libero</div><div class="card-val" id="acc-free">—</div></div>
-  <div class="card"><div class="card-label" data-i18n="margin_level">Livello margine</div><div class="card-val" id="acc-level">—</div></div>
-  <div class="card"><div class="card-label" id="acc-pl-label" data-i18n="floating_pl">P/L flottante</div><div class="card-val" id="acc-pl">—</div></div>
+<div class="shell">
+  <!-- ===== Navigazione (sidebar desktop / barra inferiore mobile) ===== -->
+  <nav class="sidenav" id="sidenav">
+    <button class="nav-item active" data-sec="overview" onclick="showSection('overview')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span data-i18n="nav_overview">Panoramica</span>
+    </button>
+    <button class="nav-item" data-sec="signals" onclick="showSection('signals')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+      <span data-i18n="signals">Segnali</span><span class="live-dot"></span>
+    </button>
+    <button class="nav-item" data-sec="strategie" onclick="showSection('strategie')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span data-i18n="strategie">Strategie</span>
+    </button>
+    <button class="nav-item" data-sec="mercato" onclick="showSection('mercato')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
+      <span data-i18n="market">Mercato</span>
+    </button>
+    <button class="nav-item" data-sec="assistant" onclick="showSection('assistant')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <span data-i18n="assistant">Assistente</span>
+    </button>
+  </nav>
+
+  <main class="content">
+    <!-- ===== Panoramica ===== -->
+    <section class="section" id="sec-overview">
+      <div class="sec-inner">
+        <div class="group-title" data-i18n="grp_account">Il tuo conto</div>
+        <div class="cards account">
+          <div class="card"><div class="card-label" data-i18n="balance">Balance</div><div class="card-val" id="acc-balance">—</div></div>
+          <div class="card"><div class="card-label" data-i18n="equity">Equity</div><div class="card-val" id="acc-equity">—</div></div>
+          <div class="card"><div class="card-label" data-i18n="free_margin">Margine libero</div><div class="card-val" id="acc-free">—</div></div>
+          <div class="card"><div class="card-label" data-i18n="margin_level">Livello margine</div><div class="card-val" id="acc-level">—</div></div>
+          <div class="card"><div class="card-label" id="acc-pl-label" data-i18n="floating_pl">P/L flottante</div><div class="card-val" id="acc-pl">—</div></div>
+        </div>
+        <div class="group-title" data-i18n="grp_activity">Attività</div>
+        <div class="cards stats-row">
+          <div class="card sm"><div class="card-label" data-i18n="open_n">Aperte</div><div class="card-val accent" id="stat-open">0</div></div>
+          <div class="card sm"><div class="card-label" data-i18n="closed_n">Chiuse</div><div class="card-val" id="stat-close">0</div></div>
+          <div class="card sm"><div class="card-label" data-i18n="skip_n">Skip</div><div class="card-val" id="stat-skip">0</div></div>
+          <div class="card sm"><div class="card-label" data-i18n="pnl_closed">PnL chiuse (punti)</div><div class="card-val" id="stat-pnl">0</div></div>
+        </div>
+        <div class="group-title" data-i18n="grp_proof">Track record</div>
+        <div id="track-record" hidden></div>
+      </div>
+    </section>
+
+    <!-- ===== Segnali ===== -->
+    <section class="section" id="sec-signals" hidden>
+      <div class="sec-head"><div class="tabs" id="tabs"></div></div>
+      <div class="panel signals-panel">
+        <div class="panel-head"><span data-i18n="signals">Segnali</span> <span class="scope" id="sig-scope">· Tutti</span>
+          <span class="live"><span class="pulse"></span>LIVE</span>
+        </div>
+        <div class="signal-list" id="signal-list"></div>
+      </div>
+    </section>
+
+    <!-- ===== Storico backtest ===== -->
+    <section class="section" id="sec-strategie" hidden>
+      <div class="sec-inner">
+        <div id="strat-list"></div>
+        <div id="ea-detail" hidden></div>
+        <!-- contenitore nascosto: riusa st-body per l'eventuale storico dettagliato -->
+        <div class="st-body" id="st-body" hidden style="padding:0"></div>
+      </div>
+    </section>
+
+    <!-- ===== Stato mercato ===== -->
+    <section class="section" id="sec-mercato" hidden>
+      <div class="panel">
+        <div class="panel-head"><span data-i18n="market_title">Stato mercato</span> <span class="scope" id="mk-scope"></span></div>
+        <div class="st-body" id="mk-body"></div>
+      </div>
+    </section>
+
+    <!-- ===== Assistente ===== -->
+    <section class="section" id="sec-assistant" hidden>
+      <div class="panel chat-panel">
+        <div class="panel-head">
+          <button class="icon-btn" id="hist-btn" data-i18n-title="hist_title">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <span data-i18n="assistant">Assistente</span> <span class="scope" id="chat-scope"></span>
+          <button class="icon-btn primary" id="new-btn" data-i18n-title="new_chat" style="margin-left:auto">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+        <div class="messages" id="chat-messages"></div>
+        <div class="history" id="history-view" hidden></div>
+        <div class="input-bar" id="chat-inputbar">
+          <input type="text" id="chat-input" placeholder="Chiedi qualcosa sull'EA…" data-i18n-ph="chat_ph" autocomplete="off"/>
+          <button class="mic-btn" id="mic-btn" data-i18n-title="dictation" aria-label="Dettatura vocale">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </button>
+          <button id="chat-btn" data-i18n="send">Invia</button>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
-<div class="cards stats-row">
-  <div class="card sm"><div class="card-label" data-i18n="open_n">Aperte</div><div class="card-val accent" id="stat-open">0</div></div>
-  <div class="card sm"><div class="card-label" data-i18n="closed_n">Chiuse</div><div class="card-val" id="stat-close">0</div></div>
-  <div class="card sm"><div class="card-label" data-i18n="skip_n">Skip</div><div class="card-val" id="stat-skip">0</div></div>
-  <div class="card sm"><div class="card-label" data-i18n="pnl_closed">PnL chiuse (punti)</div><div class="card-val" id="stat-pnl">0</div></div>
-</div>
-
-<div class="container">
-  <div class="panel signals-panel">
-    <div class="panel-head"><span data-i18n="signals">Segnali</span> <span class="scope" id="sig-scope">· Tutti</span>
-      <span class="live"><span class="pulse"></span>LIVE</span>
-    </div>
-    <div class="signal-list" id="signal-list"></div>
-  </div>
-</div>
-
-<!-- Pulsante fluttuante per aprire l'assistente -->
-<button class="fab" id="fab" aria-label="Apri assistente">
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-</button>
-
-<!-- Drawer chat con cronologia -->
-<div class="drawer-overlay" id="drawer-overlay"></div>
-<aside class="drawer" id="drawer">
-  <div class="drawer-head">
-    <button class="icon-btn" id="hist-btn" data-i18n-title="hist_title">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-    <div class="drawer-title"><span data-i18n="assistant">Assistente</span> <span class="scope" id="chat-scope"></span></div>
-    <button class="icon-btn primary" id="new-btn" data-i18n-title="new_chat">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    </button>
-    <button class="icon-btn" id="close-btn" data-i18n-title="close">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="messages" id="chat-messages"></div>
-  <div class="history" id="history-view" hidden></div>
-  <div class="input-bar" id="chat-inputbar">
-    <input type="text" id="chat-input" placeholder="Chiedi qualcosa sull'EA…" data-i18n-ph="chat_ph" autocomplete="off"/>
-    <button class="mic-btn" id="mic-btn" data-i18n-title="dictation" aria-label="Dettatura vocale">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-    </button>
-    <button id="chat-btn" data-i18n="send">Invia</button>
-  </div>
-</aside>
-
-<!-- Drawer Storico backtest -->
-<div class="drawer-overlay" id="st-overlay"></div>
-<aside class="drawer left" id="st-drawer">
-  <div class="drawer-head">
-    <div class="drawer-title"><span data-i18n="storico_title">Storico backtest</span> <span class="scope" id="st-scope"></span></div>
-    <button class="icon-btn" id="st-close" data-i18n-title="close">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="st-body" id="st-body"></div>
-</aside>
-
-<!-- Drawer Stato mercato -->
-<div class="drawer-overlay" id="mk-overlay"></div>
-<aside class="drawer left" id="mk-drawer">
-  <div class="drawer-head">
-    <div class="drawer-title"><span data-i18n="market_title">Stato mercato</span> <span class="scope" id="mk-scope"></span></div>
-    <button class="icon-btn" id="mk-close" data-i18n-title="close">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="st-body" id="mk-body"></div>
-</aside>
 
 <script>
 const $=id=>document.getElementById(id);
 
+/* ---------- Router sezioni (sidebar desktop / barra inferiore mobile) ---------- */
+let currentSection='overview';
+const SEC_LABEL={overview:'nav_overview',signals:'signals',strategie:'strategie',mercato:'market_title',assistant:'assistant'};
+function showSection(name){
+  currentSection=name;
+  ['overview','signals','strategie','mercato','assistant'].forEach(s=>{const el=$('sec-'+s);if(el)el.hidden=(s!==name);});
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.sec===name));
+  const pt=$('page-title'); if(pt)pt.textContent=t(SEC_LABEL[name]||'');
+  if(name==='strategie'){if(typeof loadStrategie==='function')loadStrategie();}
+  else if(name==='mercato'){if(typeof loadMercato==='function')loadMercato();}
+  else if(name==='assistant'){if(typeof showChatView==='function')showChatView();setTimeout(()=>{try{$('chat-input').focus();}catch(_){}},150);}
+  try{history.replaceState(null,'','#'+name);}catch(_){}
+}
+(function(){   // dropdown menu account (avatar)
+  const btn=$('acct-btn'), menu=$('acct-menu'); if(!btn||!menu)return;
+  btn.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden;};
+  document.addEventListener('click',e=>{if(!menu.hidden&&!btn.contains(e.target)&&!menu.contains(e.target))menu.hidden=true;});
+})();
+
 /* ===== i18n (IT/EN/FR/ES) ===== */
 const I18N={
- it:{market:'Mercato',history:'Storico',install:'⤓ Installa',logout:'Esci',balance:'Balance',equity:'Equity',free_margin:'Margine libero',margin_level:'Livello margine',floating_pl:'P/L flottante',open_n:'Aperte',closed_n:'Chiuse',skip_n:'Skip',pnl_closed:'PnL chiuse (punti)',signals:'Segnali',all:'Tutti',assistant:'Assistente',chat_ph:"Chiedi qualcosa sull'EA…",send:'Invia',hist_title:'Cronologia',new_chat:'Nuova chat',close:'Chiudi',dictation:'Dettatura vocale',storico_title:'Storico backtest',market_title:'Stato mercato',loading:'Carico…',trades:'Trade',winrate:'Win rate',pnl_pts:'PnL punti',pnl_cur:'PnL valuta',feature:'Feature',current:'Attuale',average:'Media',percentile:'Percentile',no_bt:'Nessun dato di backtest ancora.',no_feat:'Nessuna feature di mercato.',no_conv:'Nessuna conversazione salvata.',start_chat:'Inizia a chattare per crearne una.',last_bar:'ultima barra',welcome:"Ciao! Chiedimi pattern, segnali e performance dell'EA. Usa <b>+</b> per una nuova conversazione e <b>☰</b> per la cronologia.",order_open:'Ordine aperto',order_close:'Ordine chiuso',notif_on:'Notifiche attive',notif_off:'Attiva notifiche',notif_on_msg:'Riceverai gli avvisi di apertura e chiusura ordini.',notif_off_msg:'Notifiche disattivate'},
- en:{market:'Market',history:'History',install:'⤓ Install',logout:'Log out',balance:'Balance',equity:'Equity',free_margin:'Free margin',margin_level:'Margin level',floating_pl:'Floating P/L',open_n:'Open',closed_n:'Closed',skip_n:'Skip',pnl_closed:'Closed PnL (points)',signals:'Signals',all:'All',assistant:'Assistant',chat_ph:'Ask about the EA…',send:'Send',hist_title:'History',new_chat:'New chat',close:'Close',dictation:'Voice dictation',storico_title:'Backtest history',market_title:'Market state',loading:'Loading…',trades:'Trades',winrate:'Win rate',pnl_pts:'PnL points',pnl_cur:'PnL currency',feature:'Feature',current:'Current',average:'Average',percentile:'Percentile',no_bt:'No backtest data yet.',no_feat:'No market features.',no_conv:'No saved conversations.',start_chat:'Start chatting to create one.',last_bar:'last bar',welcome:'Hi! Ask me about patterns, signals and EA performance. Use <b>+</b> for a new conversation and <b>☰</b> for history.',order_open:'Order opened',order_close:'Order closed',notif_on:'Notifications on',notif_off:'Enable notifications',notif_on_msg:"You'll get alerts on order open and close.",notif_off_msg:'Notifications disabled'},
- fr:{market:'Marché',history:'Historique',install:'⤓ Installer',logout:'Déconnexion',balance:'Balance',equity:'Equity',free_margin:'Marge libre',margin_level:'Niveau de marge',floating_pl:'P/L flottant',open_n:'Ouvertes',closed_n:'Fermées',skip_n:'Skip',pnl_closed:'PnL clôturé (points)',signals:'Signaux',all:'Tous',assistant:'Assistant',chat_ph:"Posez une question sur l'EA…",send:'Envoyer',hist_title:'Historique',new_chat:'Nouvelle conversation',close:'Fermer',dictation:'Dictée vocale',storico_title:'Historique backtest',market_title:'État du marché',loading:'Chargement…',trades:'Trades',winrate:'Taux de réussite',pnl_pts:'PnL points',pnl_cur:'PnL devise',feature:'Indicateur',current:'Actuel',average:'Moyenne',percentile:'Percentile',no_bt:'Aucune donnée de backtest.',no_feat:'Aucune feature de marché.',no_conv:'Aucune conversation enregistrée.',start_chat:'Commencez à discuter pour en créer une.',last_bar:'dernière barre',welcome:"Bonjour ! Posez-moi des questions sur les patterns, signaux et performances de l'EA. Utilisez <b>+</b> pour une nouvelle conversation et <b>☰</b> pour l'historique.",order_open:'Ordre ouvert',order_close:'Ordre fermé',notif_on:'Notifications activées',notif_off:'Activer les notifications',notif_on_msg:"Vous serez alerté à l'ouverture et la fermeture des ordres.",notif_off_msg:'Notifications désactivées'},
- es:{market:'Mercado',history:'Historial',install:'⤓ Instalar',logout:'Salir',balance:'Balance',equity:'Equity',free_margin:'Margen libre',margin_level:'Nivel de margen',floating_pl:'P/L flotante',open_n:'Abiertas',closed_n:'Cerradas',skip_n:'Skip',pnl_closed:'PnL cerrado (puntos)',signals:'Señales',all:'Todos',assistant:'Asistente',chat_ph:'Pregunta sobre el EA…',send:'Enviar',hist_title:'Historial',new_chat:'Nuevo chat',close:'Cerrar',dictation:'Dictado por voz',storico_title:'Historial de backtest',market_title:'Estado del mercado',loading:'Cargando…',trades:'Operaciones',winrate:'Tasa de acierto',pnl_pts:'PnL puntos',pnl_cur:'PnL divisa',feature:'Indicador',current:'Actual',average:'Media',percentile:'Percentil',no_bt:'Aún no hay datos de backtest.',no_feat:'Sin features de mercado.',no_conv:'Sin conversaciones guardadas.',start_chat:'Empieza a chatear para crear una.',last_bar:'última barra',welcome:'¡Hola! Pregúntame sobre patrones, señales y rendimiento del EA. Usa <b>+</b> para una nueva conversación y <b>☰</b> para el historial.',order_open:'Orden abierta',order_close:'Orden cerrada',notif_on:'Notificaciones activas',notif_off:'Activar notificaciones',notif_on_msg:'Recibirás avisos de apertura y cierre de órdenes.',notif_off_msg:'Notificaciones desactivadas'}
+ it:{nav_overview:'Panoramica',grp_account:'Il tuo conto',grp_activity:'Attività',grp_proof:'Track record',language:'Lingua',strategie:'Strategie',strat_sub:'Ogni EA con il suo backtest e cosa fa, in chiaro. Attiva ciò che vuoi.',ea_active:'Attivo',ea_unlock:'Sblocca',ea_soon:'In arrivo',ea_what:'Cosa fa',ea_risk:'Profilo di rischio',ea_back:'← Tutte le strategie',ea_owned_msg:'Attivo sul tuo conto',unlock_from:'Sbloccala da',per_month:'/mese',recommended:'Consigliato',best_value:'Miglior valore',waitlist:'Avvisami quando esce',cta_unlock:'Sblocca →',bt_download:'⤓ Scarica i risultati (CSV)',bt_download_all:'⤓ Scarica tutti i backtest (CSV)',bt_nodata:'Backtest non ancora disponibile nel database per questo strumento.',market:'Mercato',history:'Storico',install:'⤓ Installa',logout:'Esci',balance:'Balance',equity:'Equity',free_margin:'Margine libero',margin_level:'Livello margine',floating_pl:'P/L flottante',open_n:'Aperte',closed_n:'Chiuse',skip_n:'Skip',pnl_closed:'PnL chiuse (punti)',signals:'Segnali',all:'Tutti',assistant:'Assistente',chat_ph:"Chiedi qualcosa sull'EA…",send:'Invia',hist_title:'Cronologia',new_chat:'Nuova chat',close:'Chiudi',dictation:'Dettatura vocale',storico_title:'Storico backtest',market_title:'Stato mercato',loading:'Carico…',trades:'Trade',winrate:'Win rate',pnl_pts:'PnL punti',pnl_cur:'PnL valuta',feature:'Feature',current:'Attuale',average:'Media',percentile:'Percentile',no_bt:'Nessun dato di backtest ancora.',no_feat:'Nessuna feature di mercato.',no_conv:'Nessuna conversazione salvata.',start_chat:'Inizia a chattare per crearne una.',last_bar:'ultima barra',welcome:"Ciao! Chiedimi pattern, segnali e performance dell'EA. Usa <b>+</b> per una nuova conversazione e <b>☰</b> per la cronologia.",order_open:'Ordine aperto',order_close:'Ordine chiuso',notif_on:'Notifiche attive',notif_off:'Attiva notifiche',notif_on_msg:'Riceverai gli avvisi di apertura e chiusura ordini.',notif_off_msg:'Notifiche disattivate'},
+ en:{nav_overview:'Overview',grp_account:'Your account',grp_activity:'Activity',grp_proof:'Track record',language:'Language',strategie:'Strategies',strat_sub:'Every EA with its own backtest and exactly what it does. Activate what you want.',ea_active:'Active',ea_unlock:'Unlock',ea_soon:'Coming soon',ea_what:'What it does',ea_risk:'Risk profile',ea_back:'← All strategies',ea_owned_msg:'Active on your account',unlock_from:'Unlock from',per_month:'/mo',recommended:'Recommended',best_value:'Best value',waitlist:'Notify me at launch',cta_unlock:'Unlock →',bt_download:'⤓ Download results (CSV)',bt_download_all:'⤓ Download all backtests (CSV)',bt_nodata:'Backtest not yet available in the database for this instrument.',market:'Market',history:'History',install:'⤓ Install',logout:'Log out',balance:'Balance',equity:'Equity',free_margin:'Free margin',margin_level:'Margin level',floating_pl:'Floating P/L',open_n:'Open',closed_n:'Closed',skip_n:'Skip',pnl_closed:'Closed PnL (points)',signals:'Signals',all:'All',assistant:'Assistant',chat_ph:'Ask about the EA…',send:'Send',hist_title:'History',new_chat:'New chat',close:'Close',dictation:'Voice dictation',storico_title:'Backtest history',market_title:'Market state',loading:'Loading…',trades:'Trades',winrate:'Win rate',pnl_pts:'PnL points',pnl_cur:'PnL currency',feature:'Feature',current:'Current',average:'Average',percentile:'Percentile',no_bt:'No backtest data yet.',no_feat:'No market features.',no_conv:'No saved conversations.',start_chat:'Start chatting to create one.',last_bar:'last bar',welcome:'Hi! Ask me about patterns, signals and EA performance. Use <b>+</b> for a new conversation and <b>☰</b> for history.',order_open:'Order opened',order_close:'Order closed',notif_on:'Notifications on',notif_off:'Enable notifications',notif_on_msg:"You'll get alerts on order open and close.",notif_off_msg:'Notifications disabled'},
+ fr:{nav_overview:"Vue d'ensemble",grp_account:'Votre compte',grp_activity:'Activité',grp_proof:'Track record',language:'Langue',strategie:'Stratégies',strat_sub:'Chaque EA avec son backtest et ce qu’il fait, en clair. Activez ce que vous voulez.',ea_active:'Actif',ea_unlock:'Débloquer',ea_soon:'Bientôt',ea_what:'Ce qu’il fait',ea_risk:'Profil de risque',ea_back:'← Toutes les stratégies',ea_owned_msg:'Actif sur votre compte',unlock_from:'Débloquez dès',per_month:'/mois',recommended:'Recommandé',best_value:'Meilleure offre',waitlist:'Préviens-moi au lancement',cta_unlock:'Débloquer →',bt_download:'⤓ Télécharger les résultats (CSV)',bt_download_all:'⤓ Télécharger tous les backtests (CSV)',bt_nodata:'Backtest pas encore disponible dans la base de données pour cet instrument.',market:'Marché',history:'Historique',install:'⤓ Installer',logout:'Déconnexion',balance:'Balance',equity:'Equity',free_margin:'Marge libre',margin_level:'Niveau de marge',floating_pl:'P/L flottant',open_n:'Ouvertes',closed_n:'Fermées',skip_n:'Skip',pnl_closed:'PnL clôturé (points)',signals:'Signaux',all:'Tous',assistant:'Assistant',chat_ph:"Posez une question sur l'EA…",send:'Envoyer',hist_title:'Historique',new_chat:'Nouvelle conversation',close:'Fermer',dictation:'Dictée vocale',storico_title:'Historique backtest',market_title:'État du marché',loading:'Chargement…',trades:'Trades',winrate:'Taux de réussite',pnl_pts:'PnL points',pnl_cur:'PnL devise',feature:'Indicateur',current:'Actuel',average:'Moyenne',percentile:'Percentile',no_bt:'Aucune donnée de backtest.',no_feat:'Aucune feature de marché.',no_conv:'Aucune conversation enregistrée.',start_chat:'Commencez à discuter pour en créer une.',last_bar:'dernière barre',welcome:"Bonjour ! Posez-moi des questions sur les patterns, signaux et performances de l'EA. Utilisez <b>+</b> pour une nouvelle conversation et <b>☰</b> pour l'historique.",order_open:'Ordre ouvert',order_close:'Ordre fermé',notif_on:'Notifications activées',notif_off:'Activer les notifications',notif_on_msg:"Vous serez alerté à l'ouverture et la fermeture des ordres.",notif_off_msg:'Notifications désactivées'},
+ es:{nav_overview:'Resumen',grp_account:'Tu cuenta',grp_activity:'Actividad',grp_proof:'Track record',language:'Idioma',strategie:'Estrategias',strat_sub:'Cada EA con su backtest y qué hace, claro. Activa lo que quieras.',ea_active:'Activo',ea_unlock:'Desbloquear',ea_soon:'Próximamente',ea_what:'Qué hace',ea_risk:'Perfil de riesgo',ea_back:'← Todas las estrategias',ea_owned_msg:'Activo en tu cuenta',unlock_from:'Desbloquéala desde',per_month:'/mes',recommended:'Recomendado',best_value:'Mejor valor',waitlist:'Avísame al lanzamiento',cta_unlock:'Desbloquear →',bt_download:'⤓ Descargar resultados (CSV)',bt_download_all:'⤓ Descargar todos los backtests (CSV)',bt_nodata:'Backtest aún no disponible en la base de datos para este instrumento.',market:'Mercado',history:'Historial',install:'⤓ Instalar',logout:'Salir',balance:'Balance',equity:'Equity',free_margin:'Margen libre',margin_level:'Nivel de margen',floating_pl:'P/L flotante',open_n:'Abiertas',closed_n:'Cerradas',skip_n:'Skip',pnl_closed:'PnL cerrado (puntos)',signals:'Señales',all:'Todos',assistant:'Asistente',chat_ph:'Pregunta sobre el EA…',send:'Enviar',hist_title:'Historial',new_chat:'Nuevo chat',close:'Cerrar',dictation:'Dictado por voz',storico_title:'Historial de backtest',market_title:'Estado del mercado',loading:'Cargando…',trades:'Operaciones',winrate:'Tasa de acierto',pnl_pts:'PnL puntos',pnl_cur:'PnL divisa',feature:'Indicador',current:'Actual',average:'Media',percentile:'Percentil',no_bt:'Aún no hay datos de backtest.',no_feat:'Sin features de mercado.',no_conv:'Sin conversaciones guardadas.',start_chat:'Empieza a chatear para crear una.',last_bar:'última barra',welcome:'¡Hola! Pregúntame sobre patrones, señales y rendimiento del EA. Usa <b>+</b> para una nueva conversación y <b>☰</b> para el historial.',order_open:'Orden abierta',order_close:'Orden cerrada',notif_on:'Notificaciones activas',notif_off:'Activar notificaciones',notif_on_msg:'Recibirás avisos de apertura y cierre de órdenes.',notif_off_msg:'Notificaciones desactivadas'}
 };
 const MONTHS_I18N={
  it:['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
@@ -412,8 +585,9 @@ function setLang(l){
   if(currentConvId===null) chatMsg.innerHTML=welcomeHtml();
   updatePLCard&&updatePLCard();
   loadRecent&&loadRecent();  // ritraduce i segnali già mostrati
-  if(stDrawer&&stDrawer.classList.contains('open'))loadStorico();
-  if(mkDrawer&&mkDrawer.classList.contains('open'))loadMercato();
+  const pt=$('page-title'); if(pt&&typeof currentSection!=='undefined')pt.textContent=t(SEC_LABEL[currentSection]||'');
+  if(currentSection==='strategie')loadStrategie();
+  if(currentSection==='mercato')loadMercato();
   if($('history-view')&&!$('history-view').hidden)loadConversations();
 }
 
@@ -698,17 +872,12 @@ function addUserMsg(t){const d=document.createElement('div');d.className='msg us
 function addBotMsg(){const d=document.createElement('div');d.className='msg bot';chatMsg.appendChild(d);chatMsg.scrollTop=chatMsg.scrollHeight;return d;}
 
 /* ---------- Drawer chat + conversazioni ---------- */
-const drawer=$('drawer'), overlay=$('drawer-overlay'), fab=$('fab');
-const WELCOME='<div class="msg bot"><span class="who">PHAI Assistant</span>Ciao! Chiedimi pattern, segnali e performance dell\'EA. Usa <b>+</b> per una nuova conversazione e <b>☰</b> per la cronologia.</div>';
 let currentConvId=null;
-function openChat(){drawer.classList.add('open');overlay.classList.add('open');fab.classList.add('hidden');showChatView();setTimeout(()=>chatInput.focus(),220);}
-function closeChat(){drawer.classList.remove('open');overlay.classList.remove('open');fab.classList.remove('hidden');}
+function openChat(){showSection('assistant');}
 function showChatView(){$('history-view').hidden=true;$('chat-messages').hidden=false;$('chat-inputbar').style.display='';}
 function showHistoryView(){$('chat-messages').hidden=true;$('chat-inputbar').style.display='none';$('history-view').hidden=false;loadConversations();}
-fab.onclick=openChat; overlay.onclick=closeChat; $('close-btn').onclick=closeChat;
 $('hist-btn').onclick=()=>{$('history-view').hidden?showHistoryView():showChatView();};
 $('new-btn').onclick=()=>{currentConvId=null;chatMsg.innerHTML=welcomeHtml();showChatView();chatInput.focus();};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawer.classList.contains('open'))closeChat();});
 function fmtDateTime(iso){if(!iso)return'';const d=new Date(/[zZ+]/.test(iso)?iso:iso+'Z');return isNaN(d)?'':d.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
 async function ensureConversation(){
   if(currentConvId)return currentConvId;
@@ -742,21 +911,55 @@ async function deleteConversation(id){
   loadConversations();
 }
 
-/* ---------- Storico backtest (drawer) ---------- */
-const stDrawer=$('st-drawer'), stOverlay=$('st-overlay');
+/* ---------- Storico backtest (sezione) ---------- */
 const MONTHS=['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-function openStorico(){stDrawer.classList.add('open');stOverlay.classList.add('open');loadStorico();}
-function closeStorico(){stDrawer.classList.remove('open');stOverlay.classList.remove('open');}
-stOverlay.onclick=closeStorico; $('st-close').onclick=closeStorico;
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&stDrawer.classList.contains('open'))closeStorico();});
+function openStorico(){showSection('strategie');}
 function sgn(v){return (v>=0?'+':'')+v;}
 function btQuery(extra){return (activeSymbol?('symbol='+encodeURIComponent(activeSymbol)+(extra?'&':'')):'')+(extra||'');}
+/* ---------- I due motori PHAI (Base vs Reversione) — distinzione sempre visibile ---------- */
+const ENGINES=[
+  {key:'base',syms:['EURUSD','GBPUSD','USDCHF'],
+   name:{it:'Motore Base',en:'Base Engine',fr:'Moteur Base',es:'Motor Base'},
+   desc:{it:'linee-prezzo · trada la struttura del prezzo di un singolo strumento · win ~97%',
+         en:'price-lines · trades the price structure of a single instrument · ~97% win',
+         fr:"lignes-prix · trade la structure de prix d'un seul instrument · ~97% gagnants",
+         es:'líneas-precio · opera la estructura de precio de un instrumento · ~97% aciertos'}},
+  {key:'rev',syms:['EURGBP','EURCHF','GBPCHF','AUDNZD','AUDCAD','NZDCAD'],
+   name:{it:'Motore Reversione',en:'Reversion Engine',fr:'Moteur Réversion',es:'Motor Reversión'},
+   desc:{it:'valore relativo tra due valute correlate · mean-reversion sui cross · win ~65%',
+         en:'relative value between two correlated currencies · cross mean-reversion · ~65% win',
+         fr:'valeur relative entre deux devises corrélées · mean-reversion sur cross · ~65% gagnants',
+         es:'valor relativo entre dos divisas correlacionadas · reversión en cruces · ~65% aciertos'}},
+];
+const ENG_I18N={
+  h:{it:'I due motori PHAI',en:'The two PHAI engines',fr:'Les deux moteurs PHAI',es:'Los dos motores PHAI'},
+  soon:{it:'in arrivo',en:'coming soon',fr:'bientôt',es:'próximamente'},
+};
+function engTr(o){return o[lang]||o.it;}
+function engineOf(sym){return ENGINES.find(e=>e.syms.includes(sym))||ENGINES[0];}
+function engShort(e){return e.key==='base'?'Base':'Reversione';}
+function engineLegend(d,sym){
+  const avail=new Set((d&&d.symbols)||[]);
+  const act=sym?engineOf(sym).key:null;
+  const pills=ENGINES.map(e=>{
+    const has=e.syms.some(s=>avail.has(s));
+    const on=act===e.key;
+    const tag=has?'':`<span class="eng-soon">${engTr(ENG_I18N.soon)}</span>`;
+    return `<span class="eng-pill ${e.key}${on?' on':''}${has?'':' empty'}">${engTr(e.name)}${tag}</span>`;
+  }).join('');
+  const note=act
+    ? `<b>${engTr(engineOf(sym).name)}</b> — ${engTr(engineOf(sym).desc)}`
+    : ENGINES.map(e=>`<b>${engTr(e.name)}</b>: ${engTr(e.desc)}`).join('<br>');
+  return `<div class="eng-legend"><div class="eng-h">${engTr(ENG_I18N.h)}</div>`+
+    `<div class="eng-pills">${pills}</div><div class="eng-note">${note}</div></div>`;
+}
 async function loadStorico(){
   $('st-scope').textContent=activeSymbol?('· '+activeSymbol):'';
   const body=$('st-body'); body.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
   const r=await fetch('/api/backtest/overview'+(activeSymbol?('?symbol='+encodeURIComponent(activeSymbol)):'')); if(r.status===401){location.href='/';return;}
   const d=await r.json(); body.innerHTML='';
   if(!d.available){body.innerHTML='<div class="hist-empty">'+t('no_bt')+'<br>Tester MT5 → <b>import_backtests.py</b>.</div>';return;}
+  body.insertAdjacentHTML('beforeend', engineLegend(d, activeSymbol));   // distinzione motori sempre in cima
   const tt=d.totals, tot=document.createElement('div'); tot.className='st-tot';
   tot.innerHTML=`<div class="c"><div class="l">${t('trades')}</div><div class="v">${tt.trades}</div></div>`+
     `<div class="c"><div class="l">${t('winrate')}</div><div class="v">${tt.winrate}%</div></div>`+
@@ -777,7 +980,7 @@ async function loadStorico(){
 }
 function equityChart(d){
   const ys=[...(d.by_year||[])].sort((a,b)=>a.year-b.year);
-  if(ys.length<2) return '';
+  if(ys.length<1) return '';   // mostra la curva anche con un solo anno di dati
   const pts=[d.initial_capital].concat(ys.map(y=>y.end_capital));
   const W=320,H=90,P=6, n=pts.length;
   const min=Math.min(...pts), max=Math.max(...pts), rng=(max-min)||1;
@@ -802,10 +1005,17 @@ function yearRow(y){
     if(!activeSymbol && d.by_symbol && d.by_symbol.length>1){
       const lab=document.createElement('div'); lab.className='brk-lab'; lab.textContent='Per simbolo';
       sub.appendChild(lab);
-      d.by_symbol.forEach(s=>{
-        const r=document.createElement('div'); r.className='mn-row sym';
-        r.innerHTML=`<span class="nm">${s.symbol}</span><span class="mt">${s.trades} trade · win ${s.winrate}%</span><span class="pnl ${s.pnl_money>=0?'pos':'neg'}">${s.pnl_money>=0?'+':''}${fmtMoney(s.pnl_money)}€</span>`;
-        sub.appendChild(r);
+      ENGINES.forEach(e=>{                                  // raggruppa i simboli sotto il loro motore
+        const syms=d.by_symbol.filter(s=>engineOf(s.symbol).key===e.key);
+        if(!syms.length) return;
+        const eh=document.createElement('div'); eh.className='brk-eng';
+        eh.innerHTML=`<span class="eng-tag ${e.key}">${engShort(e)}</span> ${engTr(e.name)}`;
+        sub.appendChild(eh);
+        syms.forEach(s=>{
+          const r=document.createElement('div'); r.className='mn-row sym';
+          r.innerHTML=`<span class="nm">${s.symbol}</span><span class="mt">${s.trades} trade · win ${s.winrate}%</span><span class="pnl ${s.pnl_money>=0?'pos':'neg'}">${s.pnl_money>=0?'+':''}${fmtMoney(s.pnl_money)}€</span>`;
+          sub.appendChild(r);
+        });
       });
       const lab2=document.createElement('div'); lab2.className='brk-lab'; lab2.textContent='Per mese';
       sub.appendChild(lab2);
@@ -838,12 +1048,90 @@ function monthRow(year,m){
   return wrap;
 }
 
-/* ---------- Stato mercato (drawer) ---------- */
-const mkDrawer=$('mk-drawer'), mkOverlay=$('mk-overlay');
-function openMercato(){mkDrawer.classList.add('open');mkOverlay.classList.add('open');loadMercato();}
-function closeMercato(){mkDrawer.classList.remove('open');mkOverlay.classList.remove('open');}
-mkOverlay.onclick=closeMercato; $('mk-close').onclick=closeMercato;
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mkDrawer.classList.contains('open'))closeMercato();});
+/* ---------- Showroom Strategie (catalogo EA, acquisto per-EA) ---------- */
+let CATALOG=null; const _ovCache={};
+async function fetchOverview(sym){
+  if(sym in _ovCache) return _ovCache[sym];
+  try{ const d=await (await fetch('/api/backtest/overview?symbol='+encodeURIComponent(sym))).json(); _ovCache[sym]=d&&d.available?d:null; }
+  catch(_){ _ovCache[sym]=null; }
+  return _ovCache[sym];
+}
+function sparkline(d){
+  const ys=[...(d.by_year||[])].sort((a,b)=>a.year-b.year);
+  if(ys.length<1) return '';
+  const pts=[d.initial_capital].concat(ys.map(y=>y.end_capital));
+  const W=260,H=46,P=3,n=pts.length,min=Math.min(...pts),max=Math.max(...pts),rng=(max-min)||1;
+  const X=i=>P+i*(W-2*P)/(n-1),Y=v=>H-P-((v-min)/rng)*(H-2*P);
+  const line=pts.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const area=`M${X(0).toFixed(1)},${H-P} `+pts.map((v,i)=>`L${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')+` L${X(n-1).toFixed(1)},${H-P} Z`;
+  const col=pts[n-1]>=pts[0]?'#3ddc97':'#f1707b';
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="${col}22"/><path d="${line}" fill="none" stroke="${col}" stroke-width="2"/></svg>`;
+}
+async function loadStrategie(){
+  const list=$('strat-list'), det=$('ea-detail');
+  det.hidden=true; list.hidden=false;
+  list.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
+  try{ CATALOG=await (await fetch('/api/catalog?lang='+lang)).json(); }
+  catch(_){ list.innerHTML='<div class="hist-empty">—</div>'; return; }
+  let html=`<div class="strat-h">${t('strategie')}</div><div class="strat-sub">${t('strat_sub')}</div>`;
+  for(const ek of Object.keys(CATALOG.engines)){
+    const eng=CATALOG.engines[ek];
+    if(!CATALOG.eas.some(e=>e.engine===ek)) continue;
+    html+=`<div class="eng-block"><div class="eng-block-h" style="--ec:${eng.color}"><span class="dot"></span><span class="nm">${eng.name}</span><span class="tg">${eng.tagline}</span></div><div class="ea-grid" id="grid-${ek}"></div></div>`;
+  }
+  list.innerHTML=html;
+  for(const e of CATALOG.eas){
+    const grid=$('grid-'+e.engine); if(!grid) continue;
+    const card=document.createElement('div'); card.className='ea-card'; card.style.setProperty('--ec',e.engine_color);
+    const status=e.owned?`<span class="ea-status on">${t('ea_active')}</span>`:(e.live?`<span class="ea-status lock">🔒 ${t('ea_unlock')}</span>`:`<span class="ea-status soon">${t('ea_soon')}</span>`);
+    card.innerHTML=`<div class="ea-top"><span class="ea-nm">${e.name}</span>${status}</div><div class="ea-tg">${e.tagline}</div><div class="ea-spark" id="spark-${e.id}"></div><div class="ea-kpis" id="kpis-${e.id}"></div>`;
+    card.onclick=()=>openEA(e.id);
+    grid.appendChild(card);
+    if(e.live){ fetchOverview(e.symbol).then(d=>{ const sp=$('spark-'+e.id), kp=$('kpis-'+e.id);
+      if(!d){ if(sp)sp.innerHTML=`<div style="font-size:11px;color:var(--muted);padding:14px 2px">⚠️ ${t('bt_nodata')}</div>`; return; }
+      if(sp)sp.innerHTML=sparkline(d); if(kp){const tt=d.totals; kp.innerHTML=`<span class="k">${t('winrate')}<b>${tt.winrate}%</b></span><span class="k">Crescita/anno<b>${fmtPct(tt.cagr_pct)}</b></span>`;} }); }
+  }
+}
+async function openEA(id){
+  const e=((CATALOG&&CATALOG.eas)||[]).find(x=>x.id===id); if(!e)return;
+  const list=$('strat-list'), det=$('ea-detail');
+  list.hidden=true; det.hidden=false; det.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
+  const d=e.live?await fetchOverview(e.symbol):null;
+  let html=`<button class="ea-back" onclick="loadStrategie()">${t('ea_back')}</button>`;
+  html+=`<div class="ea-hero"><div class="hd"><span class="ea-eng-tag" style="background:${e.engine_color}">${e.engine_name}</span><span class="nm">${e.name}</span>${e.owned?`<span class="ea-status on">${t('ea_active')}</span>`:(e.live?'':`<span class="ea-status soon">${t('ea_soon')}</span>`)}</div>`;
+  html+=`<div class="tg">${e.tagline}</div>`;
+  if(d){
+    html+=equityChart(d);
+    const tt=d.totals;
+    html+=`<div class="ea-kpi-row">`+
+      `<div class="kp"><div class="kn ${tt.cagr_pct>=0?'pos':'neg'}">${fmtPct(tt.cagr_pct)}</div><div class="kl">Crescita/anno</div></div>`+
+      `<div class="kp"><div class="kn ${tt.growth_pct>=0?'pos':'neg'}">${fmtPct(tt.growth_pct)}</div><div class="kl">Crescita tot.</div></div>`+
+      `<div class="kp"><div class="kn">${tt.winrate}%</div><div class="kl">${t('winrate')}</div></div>`+
+      `<div class="kp"><div class="kn">${tt.trades}</div><div class="kl">${t('trades')}</div></div>`+
+      `</div>`;
+    html+=`<div style="margin-bottom:6px"><a class="rep-link" href="/api/backtest/export?symbol=${encodeURIComponent(e.symbol)}">${t('bt_download')}</a></div>`;
+  } else if(e.live){
+    html+=`<div class="ea-soon-box" style="border-style:solid">⚠️ ${t('bt_nodata')}</div>`;
+  }
+  html+=`<div class="ea-sec"><h4>${t('ea_what')}</h4><p>${e.mechanism}</p></div>`;
+  html+=`<div class="ea-sec"><h4>${t('ea_risk')}</h4><p>${e.risk}</p></div>`;
+  html+=`<div class="ea-cta">`;
+  if(e.owned){ html+=`<span class="owned">✓ ${t('ea_owned_msg')}</span>`; }
+  else if(!e.live){ html+=`<div class="ea-soon-box">🔜 ${t('ea_soon')}<br><button onclick="toast(t('waitlist'),'')">${t('waitlist')}</button></div>`; }
+  else {
+    html+=`<div style="font-size:12px;color:var(--muted);margin-bottom:10px">${t('unlock_from')}:</div><div class="offer">`;
+    (e.offer||[]).forEach(o=>{
+      const badge=o.recommended?`<span class="obadge">${t('recommended')}</span>`:(o.best_value?`<span class="obadge best">${t('best_value')}</span>`:'');
+      html+=`<div class="offer-card ${o.recommended?'rec':''}">${badge}<div class="ot">${o.title}</div><div class="op">${o.price}€<span>${t('per_month')}</span></div><button onclick="location.href='/checkout?sku='+encodeURIComponent('${o.sku}')">${t('cta_unlock')}</button></div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`</div></div>`;
+  det.innerHTML=html;
+}
+
+/* ---------- Stato mercato (sezione) ---------- */
+function openMercato(){showSection('mercato');}
 async function loadMercato(){
   $('mk-scope').textContent=activeSymbol?('· '+activeSymbol):'';
   const body=$('mk-body'); body.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
@@ -899,20 +1187,19 @@ window.ENT={};
 function showSignalsLocked(){
   signalList.innerHTML='<div class="sig-locked">🔒 I segnali in tempo reale sono inclusi dal piano <b>Starter</b>.<br>Abbonati per riceverli.</div>';
 }
-// Chi NON ha l'EA (free/starter) non ha un conto live: nascondi le card vuote del conto
-// e mostra invece il TRACK RECORD dei backtest (la prova) in cima.
-async function showTrackRecord(){
-  document.querySelectorAll('.cards.account,.cards.stats-row').forEach(e=>e.style.display='none');
-  let tr=document.getElementById('track-record');
-  if(!tr){ tr=document.createElement('div'); tr.id='track-record'; tr.className='hero';
-    const c=document.querySelector('.container'); if(c)c.parentNode.insertBefore(tr,c); }
+// Track record dei backtest (la prova): mostrato nella Panoramica per TUTTI gli utenti.
+async function renderTrackRecord(){
+  const tr=$('track-record'); if(!tr)return;
+  const title=tr.previousElementSibling;   // il titolo di gruppo "Track record"
   try{
     const d=await (await fetch('/api/backtest/overview')).json();
-    if(!d||!d.available){tr.style.display='none';return;}
+    if(!d||!d.available){tr.hidden=true; if(title)title.hidden=true; return;}
     const tt=d.totals;
+    tr.className='hero'; tr.style.margin='0'; tr.hidden=false; if(title)title.hidden=false;
     tr.innerHTML=
       `<div class="hero-title">📊 Track record verificato</div>`+
       `<div class="hero-sub">Backtest su ${(d.symbols||[]).length} simboli · capitale iniziale ${fmtMoney(d.initial_capital)}€</div>`+
+      engineLegend(d,'')+
       equityChart(d)+
       `<div class="hero-kpis">`+
         `<div class="kpi"><div class="kn ${tt.cagr_pct>=0?'pos':'neg'}">${fmtPct(tt.cagr_pct)}</div><div class="kl">Crescita/anno</div></div>`+
@@ -920,8 +1207,9 @@ async function showTrackRecord(){
         `<div class="kpi"><div class="kn ${tt.pnl_money>=0?'pos':'neg'}">${sgn(tt.pnl_money)}€</div><div class="kl">Profitto</div></div>`+
         `<div class="kpi"><div class="kn">${tt.winrate}%</div><div class="kl">Win rate</div></div>`+
       `</div>`+
-      `<button class="hero-cta" onclick="openStorico()">Vedi lo storico completo →</button>`;
-  }catch(_){tr.style.display='none';}
+      `<button class="hero-cta" onclick="showSection('strategie')">Esplora le strategie →</button>`+
+      `<div style="margin-top:10px;text-align:center"><a class="rep-link" href="/api/backtest/export">${t('bt_download_all')}</a></div>`;
+  }catch(_){tr.hidden=true; if(title)title.hidden=true;}
 }
 async function loadUser(){
   const r=await fetch('/api/me'); if(r.status===401){location.href='/';return;}
@@ -929,13 +1217,20 @@ async function loadUser(){
   window.ENT=d.entitlements||{};
   const b=$('plan-badge');
   if(b){ b.textContent=d.plan?d.plan.toUpperCase():'DEMO'; b.className='plan-badge '+(d.plan||'demo'); }
+  const av=$('avatar'); if(av)av.textContent=((d.email||'·').trim()[0]||'·').toUpperCase();
   if(window.ENT.signals===false) showSignalsLocked();
-  if(window.ENT.ea===false) showTrackRecord();
+  if(window.ENT.ea===false){   // senza EA non c'è conto live: nascondi conto+attività, resta la prova
+    document.querySelectorAll('#sec-overview .cards.account,#sec-overview .cards.stats-row').forEach(e=>e.style.display='none');
+    const gts=document.querySelectorAll('#sec-overview .group-title'); if(gts[0])gts[0].style.display='none'; if(gts[1])gts[1].style.display='none';
+  }
+  renderTrackRecord();
 }
 const _ls=$('lang-sel'); if(_ls)_ls.value=lang;
 applyI18n();
 $('sig-scope').textContent='· '+t('all');
 chatMsg.innerHTML=welcomeHtml();
+const _h0=(location.hash||'').slice(1);
+showSection(['overview','signals','strategie','mercato','assistant'].includes(_h0)?_h0:'overview');
 loadUser(); loadSymbols(); connectWS(); loadRecent(); refreshStats(); refreshAccount();
 setInterval(refreshStats,10000);
 setInterval(refreshAccount,10000);
@@ -950,7 +1245,7 @@ function toast(title,body,color){
   setTimeout(()=>t.remove(),6500);
 }
 function urlB64ToUint8(s){const pad='='.repeat((4-s.length%4)%4);const b=(s+pad).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(b);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
-function updateBell(on){const b=$('notif-btn'); if(!b)return; b.classList.toggle('on',on); b.title=on?t('notif_on'):t('notif_off');}
+function updateBell(on){const b=$('notif-btn'); if(!b)return; b.classList.toggle('on',on); b.title=on?t('notif_on'):t('notif_off'); const sp=b.querySelector('span'); if(sp)sp.textContent=on?t('notif_on'):t('notif_off');}
 async function initPush(){
   const b=$('notif-btn'); if(!b)return;
   if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){b.style.display='none';return;}

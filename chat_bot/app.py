@@ -36,6 +36,7 @@ import metrics
 import notifications
 import licensing
 import entitlements
+import catalog
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("papp")
@@ -587,6 +588,9 @@ async def ea_validate(request: Request):
     # Starter = solo segnali: licenza valida ma l'EA non opera.
     if not entitlements.can_ea(plan):
         return PlainTextResponse(_kv({"ok": 0, "plan": plan, "reason": "plan_no_ea"}))
+    # Gate per-EA: l'utente fa girare l'EA solo sui simboli che possiede (single/pack/portfolio).
+    if symbol and not entitlements.can_ea_symbol(plan, symbol):
+        return PlainTextResponse(_kv({"ok": 0, "plan": plan, "reason": "ea_not_owned"}))
     cfg = _load_ea_config()
     dft = cfg.get("default", {})
     sym_cfg = (cfg.get("symbols") or {}).get(symbol) or dft
@@ -649,6 +653,66 @@ async def ea_config(key: str = "", symbol: str = ""):
         for p in pats
     )
     return PlainTextResponse(_kv({"ok": 1, "enabled": enabled, "risk": risk, "npat": len(pats), "patterns": patline}))
+
+
+@app.get("/api/catalog")
+async def api_catalog(lang: str = "it", user: User = Depends(auth.current_user)):
+    """Catalogo per lo showroom 'Strategie': i due motori, i singoli EA (con stato
+    attivo/bloccato per QUESTO utente), i pacchetti e il portfolio con i prezzi.
+    Le statistiche e il grafico di ogni EA arrivano da /api/backtest/overview?symbol=."""
+    plan = await _user_plan(user)
+    owned = entitlements.owned_eas(plan)
+    L = lambda d: catalog.tr(d, lang)
+    eas = []
+    for e in catalog.EAS:
+        is_owned = e["id"] in owned
+        item = {
+            "id": e["id"], "engine": e["engine"], "symbol": e["symbol"], "live": e["live"],
+            "name": e["name"], "tagline": L(e["tagline"]), "mechanism": L(e["mechanism"]),
+            "risk": L(e["risk"]), "owned": is_owned,
+            "engine_name": L(catalog.ENGINES[e["engine"]]["name"]),
+            "engine_color": catalog.ENGINES[e["engine"]]["color"],
+        }
+        if not is_owned:
+            item["offer"] = catalog.offer_for_ea(e["id"])
+        eas.append(item)
+    engines = {k: {"key": k, "name": L(v["name"]), "tagline": L(v["tagline"]), "color": v["color"]}
+               for k, v in catalog.ENGINES.items()}
+    packs = [{"id": p["id"], "engine": p["engine"], "name": L(p["name"]), "tagline": L(p["tagline"]),
+              "eas": p["eas"], "price": p["price"], "owned": set(p["eas"]).issubset(owned)}
+             for p in catalog.PACKS]
+    portfolio = {"id": "portfolio", "name": L(catalog.PORTFOLIO["name"]), "tagline": L(catalog.PORTFOLIO["tagline"]),
+                 "eas": catalog.PORTFOLIO["eas"], "price": catalog.PORTFOLIO["price"],
+                 "owned": set(catalog.ALL_EA_IDS).issubset(owned)}
+    return {
+        "engines": engines, "eas": eas, "packs": packs, "portfolio": portfolio,
+        "single_price": catalog.SINGLE_PRICE, "signals_price": catalog.SIGNALS_PRICE,
+        "owned": sorted(owned), "plan": plan or "",
+    }
+
+
+@app.get("/api/backtest/export")
+async def backtest_export(symbol: str = "", user: User = Depends(auth.current_user)):
+    """Scarica i risultati del backtest come CSV (dal database, quindi sempre coerente
+    con ciò che è mostrato). symbol vuoto = tutti i simboli. 404 con avviso se non ci
+    sono dati per quel simbolo."""
+    import csv
+    import io
+    async with AsyncSession() as session:
+        q = _bt_scope(select(BacktestTrade), symbol).where(BacktestTrade.exit_time.isnot(None))
+        rows = (await session.execute(q.order_by(BacktestTrade.exit_time))).scalars().all()
+    if not rows:
+        return JSONResponse({"ok": False, "reason": "no_data", "symbol": (symbol or "tutti")}, status_code=404)
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["symbol", "pattern", "dir", "entry_time", "entry_price", "exit_time",
+                "exit_price", "lot", "pnl_pt", "pnl_money", "reason", "duration_d"])
+    for r in rows:
+        w.writerow([r.symbol, r.pattern, r.dir, r.entry_time, r.entry_price, r.exit_time,
+                    r.exit_price, r.lot, r.pnl_pt, r.pnl_money, r.reason, r.duration_d])
+    fname = f"phai_backtest_{(symbol or 'tutti').upper()}.csv"
+    return PlainTextResponse(buf.getvalue(), media_type="text/csv",
+                             headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
 
 # ---------------------------------------------------------------------------
@@ -765,6 +829,22 @@ async def pay_config():
     }
 
 
+@app.get("/api/pay/sku")
+async def pay_sku(sku: str = "pro", lang: str = "it"):
+    """Prezzo + etichetta di uno SKU (singolo EA / pacchetto / portfolio / signals)
+    per il checkout, con l'eventuale plan_id PayPal preso dall'ambiente
+    (env PAYPAL_PLAN_<SKU>, p.es. PAYPAL_PLAN_SINGLE_EURUSD / PAYPAL_PLAN_PACK_BASE)."""
+    label, price = catalog.sku_label_price(sku, lang)
+    env_key = "PAYPAL_PLAN_" + (sku or "").upper().replace(":", "_").replace("-", "_")
+    return {
+        "sku": sku, "label": label, "price": price, "kind": "subscription",
+        "plan_id": os.getenv(env_key, ""),
+        "client_id": os.getenv("PAYPAL_CLIENT_ID", ""),
+        "currency": os.getenv("PAYPAL_CURRENCY", "EUR"),
+        "configured": bool(os.getenv("PAYPAL_CLIENT_ID") and os.getenv("PAYPAL_SECRET")),
+    }
+
+
 def _plan_from_paypal(plan_id: str | None):
     if plan_id and plan_id == os.getenv("PAYPAL_PLAN_STARTER"):
         return "starter"
@@ -795,7 +875,7 @@ async def paypal_confirm(request: Request):
             data = r.json()
             if data.get("status") not in ("ACTIVE", "APPROVED"):
                 return {"ok": False, "reason": "subscription_not_active"}
-            plan = _plan_from_paypal(data.get("plan_id")) or (plan_req if plan_req in ("starter", "pro") else "pro")
+            plan = _plan_from_paypal(data.get("plan_id")) or (plan_req if catalog.is_valid_sku(plan_req) else "pro")
             email = email or (data.get("subscriber") or {}).get("email_address")
             res = await licensing.issue_license(email, plan=plan, source="paypal", external_id=sub_id)
             return {"ok": True, "key": res["key"]}
@@ -812,8 +892,9 @@ async def paypal_confirm(request: Request):
                     email = data["payer"]["email_address"]
                 except Exception:
                     email = None
-            # Lifetime = funzioni Pro senza scadenza
-            res = await licensing.issue_license(email, plan="pro", source="paypal", external_id=order_id)
+            # Ordine una-tantum: usa lo SKU richiesto se valido, altrimenti Pro.
+            plan = plan_req if catalog.is_valid_sku(plan_req) else "pro"
+            res = await licensing.issue_license(email, plan=plan, source="paypal", external_id=order_id)
             return {"ok": True, "key": res["key"]}
     return JSONResponse({"ok": False, "reason": "no_id"}, status_code=400)
 

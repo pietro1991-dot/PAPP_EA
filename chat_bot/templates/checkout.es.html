@@ -57,7 +57,8 @@ input:focus{border-color:var(--accent)}
 <a class="back" href="/#prezzi">← Volver a los planes</a>
 </div>
 <script>
-const PLAN = (new URLSearchParams(location.search).get('plan') || 'pro').toLowerCase();
+const _q = new URLSearchParams(location.search);
+const SKU = (_q.get('sku') || _q.get('plan') || 'pro');
 const $ = id => document.getElementById(id);
 const emailVal = () => ($('email').value || '').trim();
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
@@ -86,7 +87,7 @@ function showSuccess(key){
 
 async function confirmPayment(payload){
   $('msg').textContent = t('confirming'); $('msg').style.color = 'var(--muted)';
-  payload.plan = PLAN; payload.email = emailVal();
+  payload.plan = SKU; payload.email = emailVal();
   try{
     const r = await fetch('/api/pay/paypal/confirm', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
     const d = await r.json();
@@ -106,44 +107,41 @@ function loadSdk(clientId, currency, subscription){
 
 function requireEmail(){ const e=emailVal(); if(!validEmail(e)){ $('msg').style.color='var(--red)'; $('msg').textContent=t('needEmail'); return false;} return true; }
 
+function priceHtml(info){ return (info.price!=null&&info.price!==''?info.price+'€ ':'') + '<small>'+t('perMonth')+'</small>'; }
+
 (async function init(){
-  let cfg;
-  try{ cfg = await (await fetch('/api/pay/config')).json(); }catch(_){ return showFallback(); }
-  if(!cfg.configured || !cfg.client_id){ return showFallback(); }
+  let info;
+  try{ info = await (await fetch('/api/pay/sku?sku='+encodeURIComponent(SKU)+'&lang='+L)).json(); }
+  catch(_){ info = {label:SKU, price:'', plan_id:'', configured:false}; }
 
-  const plans = cfg.plans || {};
-  const p = plans[PLAN];
-  if(!p){ return showFallback(); }
-  const isSub = p.kind === 'subscription';
-  if(isSub && !p.plan_id){ return showFallback(); }   // plan id PayPal mancante
+  // intestazione prodotto: SEMPRE visibile (anche se PayPal non è ancora pronto)
+  $('plan-pill').textContent = info.label || SKU;
+  $('price').innerHTML = priceHtml(info);
+  $('plan-desc').textContent = t('subDesc');
 
-  // UI piano
-  $('plan-pill').textContent = (PLAN.charAt(0).toUpperCase()+PLAN.slice(1));
-  if(isSub){ $('price').innerHTML = (PLAN==='starter'?'9€':PLAN==='elite'?'197€':'97€') + ' <small>'+t('perMonth')+'</small>'; $('plan-desc').textContent=t('subDesc'); }
-  else{ $('price').innerHTML = (p.price||'97')+'€ <small>'+t('once')+'</small>'; $('plan-desc').textContent=t('orderDesc'); }
+  // PayPal non configurato o senza plan_id per questo SKU -> mostra prodotto + bonifico
+  if(!info.configured || !info.client_id || !info.plan_id){
+    $('loading').style.display='none';
+    $('fallback').style.display='block';
+    $('fallback').insertAdjacentHTML('afterbegin',
+      '<span class="plan-pill">'+(info.label||SKU)+'</span><div class="price">'+priceHtml(info)+'</div>');
+    return;
+  }
+
   $('loading').style.display='none'; $('content').style.display='block';
-
-  try{ await loadSdk(cfg.client_id, cfg.currency || 'EUR', isSub); }
+  try{ await loadSdk(info.client_id, info.currency || 'EUR', true); }
   catch(_){ return showFallback(); }
 
-  const buttons = isSub ? {
+  paypal.Buttons({
     style:{shape:'pill',color:'gold',layout:'vertical',label:'subscribe'},
     createSubscription:function(data, actions){
       if(!requireEmail()) return actions.reject();
-      return actions.subscription.create({ plan_id: p.plan_id, custom_id: emailVal() });
+      return actions.subscription.create({ plan_id: info.plan_id, custom_id: emailVal() });
     },
-    onApprove:function(data){ confirmPayment({subscription_id: data.subscriptionID}); }
-  } : {
-    style:{shape:'pill',color:'gold',layout:'vertical'},
-    createOrder:function(data, actions){
-      if(!requireEmail()) return actions.reject();
-      return actions.order.create({ purchase_units:[{ amount:{value:(p.price||'97'), currency_code: cfg.currency||'EUR'}, custom_id: emailVal(), description:'PHAI Trading' }] });
-    },
-    onApprove:function(data){ confirmPayment({order_id: data.orderID}); }
-  };
-  buttons.onError = function(){ $('msg').style.color='var(--red)'; $('msg').textContent=t('payError'); };
-  buttons.onCancel = function(){ $('msg').style.color='var(--muted)'; $('msg').textContent=t('cancelled'); };
-  paypal.Buttons(buttons).render('#paypal-container');
+    onApprove:function(data){ confirmPayment({subscription_id: data.subscriptionID}); },
+    onError:function(){ $('msg').style.color='var(--red)'; $('msg').textContent=t('payError'); },
+    onCancel:function(){ $('msg').style.color='var(--muted)'; $('msg').textContent=t('cancelled'); }
+  }).render('#paypal-container');
 })();
 </script>
 </body>
