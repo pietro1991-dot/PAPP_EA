@@ -1,61 +1,74 @@
 //+------------------------------------------------------------------+
-//|                                              EA_RelVal_EURGBP.mq5 |
+//|                                              EA_RelVal_GBPCHF.mq5 |
 //|                                                        PaPP v2     |
-//|  Relative-value mean-reversion su EURGBP, timeframe H6.           |
-//|  Edge validato 2026-06-28: il cross cancella la gamba USD -> resta |
-//|  il valore relativo, che mean-reverte. H6: ~35 trade/anno,        |
-//|  PF 1.19/1.40 train/test, R/DD test 3.1, 13/17 anni positivi.     |
+//|  Relative-value mean-reversion su GBPCHF, timeframe D1.           |
+//|  Edge validato 2026-06-30 sul prezzo GBPCHF REALE: la reversione  |
+//|  del valore relativo esiste a ORIZZONTE MENSILE (~28gg), non      |
+//|  settimanale come EURGBP. Lo esprimo NATIVAMENTE su D1.            |
+//|  Config: MA28 / WIN200 (~10 mesi). Validazione D1 su GBPCHF reale: |
+//|  PF 2.60/1.72 train/test, win ~70%, ~8 trade/anno.                |
 //|                                                                    |
-//|  Segnale (H6): osc = percentile (PctWindow) della distanza        |
+//|  NB: nel tester il D1 (se secondario) fornisce ~260 barre; per cio'|
+//|  WIN200 -> servono 230 barre, ci stanno. NON usare WIN lunghe      |
+//|  (es. 252/1008): superano le 260 e l'EA non trada MAI (BarsCalc    |
+//|  resta bloccato a 260). Verificato dai log del tester.            |
+//|                                                                    |
+//|  *** RISCHIO-CODA CHF ***: gamba CHF -> gap SNB (es. 15-01-2015)   |
+//|  non copribile (lo stop salta nel gap). Difesa = SIZE RIDOTTA.     |
+//|  Default PctCapitale 12 (vs 25 EURGBP). Se usi anche EURCHF,       |
+//|  tratta EURCHF+GBPCHF come UN solo secchio di size.               |
+//|                                                                    |
+//|  Segnale (D1): osc = percentile (PctWindow) della distanza        |
 //|  close-MA. osc<Lo -> BUY, osc>Hi -> SELL. Esci a osc=ExitLevel(50) |
 //|  o dopo MaxHold barre. Una posizione/volta. Lotto a RISCHIO %.     |
-//|  Mettere su grafico EURGBP (lavora internamente su H6).           |
+//|  Mettere su grafico GBPCHF (lavora internamente su D1).           |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
 #property version   "1.10"
-#property description "Relative-value mean-reversion EURGBP H6 - lotto a rischio %"
+#property description "Relative-value mean-reversion GBPCHF D1 (orizzonte mensile) - lotto a rischio %"
 
 #include <Trade/Trade.mqh>
 #include <papp_push.mqh>          // libreria condivisa (mettila in MQL5/Include)
 
 // --- Sizing: percentuale di capitale, scala col BALANCE attuale ---
-// PctCapitale = 100 -> 1 lotto ogni 10.000 di balance corrente. Cresce col conto:
-//   10k -> 1 lotto, 20k -> 2 lotti, 40k -> 4. 50 = meta' size, 200 = doppia.
-// NB: scalando col conto COMPONE -> amplifica il drawdown%. Default 25 = punto di
-//   equilibrio validato (con SAR=80: ~+215% in 16 anni, DD ~33%). 100 = leva piena
-//   (+1613% ma DD ~85%, non tradabile). Alza solo se accetti piu' drawdown.
-input double PctCapitale = 25.0;    // % di capitale. Allineato al backtest: Net +110%, DD 21%, PF 1.25.
-                                    // 25 = profilo sano. NON superare 25 (a 85 DD 61%, a 100 blow-up).
+// PctCapitale = 100 -> 1 lotto ogni 10.000 di balance corrente. Cresce col conto.
+// NB: scalando col conto COMPONE -> amplifica il drawdown%.
+// *** Default 12 (non 25 come EURGBP): GBPCHF ha rischio-coda CHF non copribile;
+//     la size piccola e' l'unica vera difesa contro un gap SNB. ***
+input double PctCapitale = 25.0;    // % di capitale. 25 = backtest validato: +258% in 16 anni, DD ~54%.
+                                    // 54% e' ALTO: per dormire meglio (e rischio-coda CHF) scendi a 12-15.
+                                    // NON superare 25: a 100% blow-up (DD 96%). Lo stop NON aiuta (peggiora il DD).
 input double MaxLot      = 0.0;     // tetto di sicurezza al lotto (0 = nessuno)
 
-// --- Vol-targeting: size piu' piccola quando la volatilita' e' alta (rimpicciolisce gli anni-disastro tipo 2016) ---
-input bool   VolTarget   = true;    // true = scala la size con la volatilita' (validato: R/DD 4.5->5.4, 2016 -458->-245)
-input int    VolFast     = 40;      // barre per la vol corrente
-input int    VolSlow     = 2000;    // barre per la vol di RIFERIMENTO (lungo: ~1.4 anni). 480 era troppo corto: si adattava al regime e non proteggeva il 2016. 2000 -> R/DD 4.5->5.5, 2016 -458->-273
+// --- Vol-targeting: size piu' piccola quando la volatilita' e' alta (barre D1) ---
+input bool   VolTarget   = true;    // true = scala la size con la volatilita'
+input int    VolFast     = 10;      // barre D1 per la vol corrente (~2 settimane)
+input int    VolSlow     = 200;     // barre D1 vol di RIFERIMENTO (~10 mesi). Tenuto entro ~260
+                                    // perche' nel tester il D1 secondario fornisce ~260 barre.
 input double VolFloor    = 0.30;    // fattore minimo (vol molto alta)
 input double VolCap      = 2.50;    // fattore massimo (vol molto bassa)
 
-// --- Segnale (H6) ---
-input int    MAPeriod    = 28;     // media della distanza
-input int    PctWindow   = 280;    // finestra del percentile
-input double LoThr       = 10.0;   // osc sotto = BUY (validato: 10/90 meglio di 15 e 20; oltre=5/95 troppo pochi trade)
+// --- Segnale (D1) - ORIZZONTE MENSILE (config validata su D1) ---
+input int    MAPeriod    = 28;     // media della distanza (28 giorni)
+input int    PctWindow   = 200;    // finestra del percentile (~10 mesi). 200 (non 252) perche'
+                                   // nel tester il D1 secondario da' ~260 barre: 200+28+2=230 ci sta.
+                                   // Edge verificato uguale: PF 2.60/1.72 train/test (vs 2.79/1.46 a 252).
+input double LoThr       = 10.0;   // osc sotto = BUY
 input double HiThr       = 90.0;   // osc sopra = SELL
 input double ExitLevel   = 50.0;   // esci al ritorno al centro
-input int    MaxHoldBars = 4800;   // uscita di sicurezza (barre H6). 4800 = di fatto nessun limite di
-                                   // tempo: tieni fino alla reversione (osc=50) o allo stop. Allineato al backtest.
-input double TPlongPip   = 25.0;   // TP fisso sulle BUY in pip. Allineato al backtest (con SL=200, hold fino a reversione).
-input double TPshortPip  = 25.0;   // TP fisso sulle SELL in pip. Allineato al backtest.
-input double SafetySLpip = 200.0;  // SL di protezione in pip. Allineato al backtest: con MaxHold=4800
-                                   // (nessun limite di tempo) lo stop a 200 pip e' l'unico taglio-perdite.
-input double SARpip      = 0.0;    // Stop-and-Reverse (0 = OFF). Test onesto su dati reali: PEGGIORA (whipsaw). Lasciare 0.
-input long   MagicNumber = 770077;
+input int    MaxHoldBars = 60;     // uscita di sicurezza (60 giorni)
+input double TPlongPip   = 0.0;    // TP fisso sulle BUY in pip (0 = esci a osc=50)
+input double TPshortPip  = 0.0;    // TP fisso sulle SELL in pip (0 = esci a osc=50)
+input double SafetySLpip = 0.0;    // SL di protezione in pip (0 = nessuno; testato: non aiuta)
+input double SARpip      = 0.0;    // Stop-and-Reverse (0 = OFF). Lasciare 0.
+input long   MagicNumber = 770078; // diverso da EURGBP (770077): possono coesistere
 
 // --- Telemetria PHAI (manda i segnali al chatbot) ---
 input bool   InpUseServer  = true;                   // invia i segnali al server PHAI (chatbot)
 input string InpServerUrl  = "https://app.phai.io";  // URL server (autorizzalo in Strumenti>Opzioni>EA>WebRequest)
 input string InpLicenseKey = "";                     // License key PHAI (dal tuo account)
 
-#define ANCHOR_TF PERIOD_H6
+#define ANCHOR_TF PERIOD_D1
 
 CTrade   trade;
 datetime g_lastBar = 0;
@@ -113,8 +126,8 @@ double CalcLot()
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   if(StringFind(_Symbol,"EURGBP")<0)
-      Print("ATTENZIONE: EA pensato per EURGBP, simbolo attuale = ",_Symbol);
+   if(StringFind(_Symbol,"GBPCHF")<0)
+      Print("ATTENZIONE: EA pensato per GBPCHF, simbolo attuale = ",_Symbol);
    g_hMA = iMA(_Symbol,ANCHOR_TF,MAPeriod,0,MODE_SMA,PRICE_CLOSE);
    if(g_hMA==INVALID_HANDLE){ Print("iMA fallito"); return INIT_FAILED; }
    trade.SetExpertMagicNumber(MagicNumber);
@@ -125,7 +138,7 @@ int OnInit()
 void OnDeinit(const int reason){ if(g_hMA!=INVALID_HANDLE) IndicatorRelease(g_hMA); }
 
 //+------------------------------------------------------------------+
-// osc (0..100) sull'ultima barra H6 CHIUSA. distanza[k]=(close-MA)/MA*100;
+// osc (0..100) sull'ultima barra D1 CHIUSA. distanza[k]=(close-MA)/MA*100;
 // osc = % di distanze<=corrente sulla finestra [1..PctWindow].
 bool ComputeOsc(double &osc)
   {
@@ -173,6 +186,9 @@ void OnTick()
 
    double osc;
    if(!ComputeOsc(osc)) return;
+   static bool firstReady=false;
+   if(!firstReady){ firstReady=true;
+      Print("RelVal pronto @",TimeToString(bt)," osc=",DoubleToString(osc,1)," BarsCalc=",BarsCalculated(g_hMA)); }
 
    double pip=Pip();
    double bid=SymbolInfoDouble(_Symbol,SYMBOL_BID), ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK);

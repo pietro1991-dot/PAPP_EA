@@ -12,6 +12,7 @@
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include <Trade\AccountInfo.mqh>
+#include <papp_push.mqh>          // libreria condivisa (mettila in MQL5/Include)
 
 input group "======  GENERALE / RISCHIO  ======"
 input string  InpIndicatorName = "PaPP_Median.ex5";
@@ -495,72 +496,18 @@ void LogAccountSnapshot()
 // === PHAI SERVER: licenza + telemetria via WebRequest ===
 // L'EA invia gli eventi (open/close/skip/account/market) e valida la licenza.
 // In ingresso parla JSON; le risposte sono key=value (facili da parsare).
-string PhaiEsc(string s){ StringReplace(s,"\\","\\\\"); StringReplace(s,"\"","\\\""); return s; }
-
-string PhaiHttpPost(string path, string body)
-{
-   if(!InpUseServer || MQLInfoInteger(MQL_TESTER)) return "";   // niente WebRequest nel tester
-   char post[]; StringToCharArray(body, post, 0, WHOLE_ARRAY, CP_UTF8);
-   int sz = ArraySize(post); if(sz > 0 && post[sz-1] == 0) ArrayResize(post, sz-1);  // togli il null finale
-   char result[]; string rh; ResetLastError();
-   int code = WebRequest("POST", InpServerUrl + path, "Content-Type: application/json\r\n",
-                         3000, post, result, rh);
-   if(code == -1)
-   {
-      Print("PHAI: WebRequest fallita (err ", GetLastError(), "). Autorizza ", InpServerUrl,
-            " in Strumenti > Opzioni > Expert Advisors > WebRequest.");
-      return "";
-   }
-   return CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
-}
-
-string PhaiKv(string resp, string key)
-{
-   string lines[]; int n = StringSplit(resp, '\n', lines);
-   for(int i = 0; i < n; i++)
-   {
-      string ln = lines[i]; StringReplace(ln, "\r", "");
-      int p = StringFind(ln, "=");
-      if(p > 0 && StringSubstr(ln, 0, p) == key) return StringSubstr(ln, p+1);
-   }
-   return "";
-}
-
-void PhaiSend(string jsonline)   // inietta la license key nell'evento e lo invia
-{
-   if(!InpUseServer || StringLen(InpLicenseKey) == 0 || StringLen(jsonline) < 2) return;
-   string body = "{\"key\":\"" + PhaiEsc(InpLicenseKey) + "\"," + StringSubstr(jsonline, 1);
-   PhaiHttpPost("/api/ea/ingest", body);
-}
-
-bool PhaiValidate()              // valida licenza+conto; aggiorna g_licensed (+ kill-switch server)
+// === PHAI: adapter sottili verso la libreria condivisa papp_push.mqh (logica single-source) ===
+// La logica vera (WebRequest, licenza+grazia+kill-switch, parsing) vive in papp_push.mqh.
+// Qui restano solo wrapper col nome storico, così i punti di chiamata non cambiano.
+string PhaiEsc(string s){ return PappEsc(s); }
+string PhaiHttpPost(string path, string body){ return PappPost(path, body); }
+string PhaiKv(string resp, string key){ return PappKv(resp, key); }
+void   PhaiSend(string jsonline){ PappSendLine(jsonline); }
+bool   PhaiValidate()
 {
    g_lastValidate = TimeCurrent();
-   if(!InpUseServer) { g_licensed = true; return true; }
-   string body = "{\"key\":\"" + PhaiEsc(InpLicenseKey) + "\",\"account\":\"" +
-      IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + "\",\"broker\":\"" +
-      PhaiEsc(AccountInfoString(ACCOUNT_COMPANY)) + "\",\"symbol\":\"" + _Symbol + "\"}";
-   string resp = PhaiHttpPost("/api/ea/validate", body);
-   if(resp == "")
-   {
-      // Server irraggiungibile: GRAZIA a tempo. Continua con l'ultimo stato valido;
-      // se non c'e' contatto da oltre LICENSE_GRACE_SEC, metti in pausa (anti-abuso).
-      if(g_lastOkValidate > 0 && TimeCurrent() - g_lastOkValidate > LICENSE_GRACE_SEC)
-      {
-         g_licensed = false;
-         Print("PHAI: server irraggiungibile da >", LICENSE_GRACE_SEC/86400, " giorni: licenza in pausa.");
-      }
-      else
-         Print("PHAI: server non raggiungibile, mantengo lo stato licenza (grazia).");
-      return g_licensed;
-   }
-   bool ok      = (PhaiKv(resp, "ok") == "1");
-   bool enabled = (PhaiKv(resp, "enabled") != "0");
-   g_licensed = ok && enabled;
-   if(g_licensed) g_lastOkValidate = TimeCurrent();   // contatto valido: resetta la grazia
-   if(!ok)           Print("PHAI: LICENZA NON VALIDA (", PhaiKv(resp,"reason"), "). Nessuna nuova operazione.");
-   else if(!enabled) Print("PHAI: strategia disattivata dal server per ", _Symbol, ". Nessuna nuova operazione.");
-   else              Print("PHAI: licenza OK (piano ", PhaiKv(resp,"plan"), ", rischio ", PhaiKv(resp,"risk"), "%).");
+   g_licensed = PappValidate(_Symbol, IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)),
+                             AccountInfoString(ACCOUNT_COMPANY));
    return g_licensed;
 }
 
@@ -880,6 +827,7 @@ int OnInit()
    if(InpUseServer)
    {
       if(StringLen(InpLicenseKey) == 0) Print("PHAI: InpUseServer attivo ma License key vuota.");
+      PappInit(InpUseServer, InpServerUrl, InpLicenseKey);   // configura la libreria condivisa
       PhaiValidate();   // lega la key al conto e verifica l'abbonamento all'avvio
    }
    return INIT_SUCCEEDED;

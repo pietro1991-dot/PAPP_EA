@@ -90,7 +90,7 @@ def _symbol_reports() -> dict:
             continue
         htmls = glob.glob(os.path.join(d, "*.html"))
         if htmls:
-            out.setdefault(m.group(1), f"/api/backtest/report/{m.group(1)}/{os.path.basename(htmls[0])}")
+            out.setdefault(m.group(1), f"/api/public/report/{m.group(1)}/{os.path.basename(htmls[0])}")
     return out
 
 
@@ -200,6 +200,53 @@ async def _summary_loop():
         await asyncio.sleep(SUMMARY_REFRESH_MIN * 60)
 
 
+_REPORT_HOURS = {"morning": 8, "evening": 20}   # ora locale del server (GMT+1)
+
+
+async def _generate_scheduled_report(kind: str):
+    """Resoconto mattina/sera ELABORATO DALL'LLM, salvato e inviato via push a tutti gli iscritti."""
+    digest = await metrics.build_digest()   # globale: stato di mercato live + segnali del giorno
+    if kind == "morning":
+        q = ("Sei l'assistente PHAI. Scrivi il RESOCONTO DEL MATTINO in italiano, massimo 4 frasi: "
+             "come si apre la giornata sui simboli seguiti. Usa lo stato di mercato (regime calmo o agitato, "
+             "posizione del prezzo rispetto alle medie) e di' come sono posizionati gli edge validati "
+             "(es. la reversione vive nel regime calmo; il Motore Base segue la struttura del prezzo). "
+             "NON predire la direzione e NON dire 'compra/vendi': descrivi il contesto e cosa osservano i sistemi.")
+        title = "☀️ PHAI · Resoconto del mattino"
+    else:
+        q = ("Sei l'assistente PHAI. Scrivi il RESOCONTO DELLA SERA in italiano, massimo 3 frasi: "
+             "com'è andata la giornata — numero di operazioni, PnL complessivo e il pattern più attivo. "
+             "Tono sintetico, concreto e onesto.")
+        title = "🌙 PHAI · Resoconto della sera"
+    answer = await llm_worker.submit(q, digest["text"], f"{kind}:{digest['sig']}")
+    if not answer or answer in (llm_worker.FALLBACK, llm_worker.BUSY, llm_worker.RATE):
+        return
+    async with AsyncSession() as session:
+        session.add(DailySummary(kind=kind, content=answer))
+        await session.commit()
+    try:
+        await notifications.dispatch(title, answer[:170], tag=f"report-{kind}", url="/")
+    except Exception:
+        log.exception("Push resoconto %s fallita", kind)
+    log.info("Resoconto %s generato e notificato", kind)
+
+
+async def _scheduled_reports_loop():
+    """Genera il resoconto del mattino (08:00) e della sera (20:00), ora locale del server."""
+    last_fired: dict[str, str] = {}
+    while True:
+        try:
+            now = datetime.now()
+            today = now.date().isoformat()
+            for kind, hour in _REPORT_HOURS.items():
+                if now.hour == hour and last_fired.get(kind) != today:
+                    last_fired[kind] = today
+                    await _generate_scheduled_report(kind)
+        except Exception:
+            log.exception("Errore loop resoconti")
+        await asyncio.sleep(300)   # ricontrolla ogni 5 minuti
+
+
 async def _latest_summary(kind: str = "perf_today"):
     async with AsyncSession() as session:
         row = (
@@ -299,6 +346,30 @@ async def process_event(data: dict, user_id: int | None = None):
                 spread_pts=data.get("spread_pts"),
             )
             session.add(snap)
+            await session.commit()
+        return
+
+    if data.get("action") == "features":
+        # Feature di mercato (Volatilità/Cluster/…) pushate dall'EA leggendo PaPP_Median.
+        # Globali per simbolo (non per-tenant). Idempotente per barra: piu' client non duplicano.
+        async with AsyncSession() as session:
+            sym = data.get("symbol") or "EURUSD"
+            tval = data.get("t")
+            if tval is not None:
+                dup = (await session.execute(
+                    select(MarketFeature.id).where(
+                        MarketFeature.symbol == sym, MarketFeature.t == tval
+                    ).limit(1)
+                )).first()
+                if dup:
+                    return
+            session.add(MarketFeature(
+                symbol=sym, t=tval, close=data.get("close"),
+                d_med=data.get("d_med"), d_ma30=data.get("d_ma30"), d_ma365=data.get("d_ma365"),
+                cluster=data.get("cluster"), velocity=data.get("velocity"),
+                accel=data.get("accel"), volatility=data.get("volatility"),
+                order_score=data.get("order_score"), spread=data.get("spread"),
+            ))
             await session.commit()
         return
 
@@ -409,10 +480,13 @@ async def lifespan(app: FastAPI):
     log.info("LogTailer avviato su: %s", tailer.path)
     summary_task = asyncio.create_task(_summary_loop())
     log.info("Loop riassunti avviato (ogni %d min)", SUMMARY_REFRESH_MIN)
+    reports_task = asyncio.create_task(_scheduled_reports_loop())
+    log.info("Loop resoconti mattina/sera avviato (08:00 / 20:00 ora server)")
     yield
     tailer.stop()
     task.cancel()
     summary_task.cancel()
+    reports_task.cancel()
     llm_worker.stop_worker()
 
 
@@ -799,6 +873,49 @@ async def ea_config(key: str = "", symbol: str = ""):
         for p in pats
     )
     return PlainTextResponse(_kv({"ok": 1, "enabled": enabled, "risk": risk, "npat": len(pats), "patterns": patline}))
+
+
+EA_FILES_DIR = os.path.join(os.path.dirname(__file__), "ea_files")
+
+
+@app.get("/api/ea/downloads")
+async def ea_downloads(user: User = Depends(auth.current_user)):
+    """Per la pagina download del cliente: la sua license key + gli EA che il piano sblocca."""
+    plan = await _user_plan(user)
+    owned = entitlements.owned_eas(plan)
+    async with AsyncSession() as session:
+        lk = (await session.execute(
+            select(LicenseKey).where(
+                LicenseKey.used_by_user_id == user.id,
+                LicenseKey.active.is_(True), LicenseKey.revoked.is_(False)
+            ).order_by(desc(LicenseKey.id)).limit(1)
+        )).scalar_one_or_none()
+    key = lk.key if lk else ""
+    eas = []
+    for e in catalog.EAS:
+        is_owned = e["id"] in owned
+        has_file = os.path.isfile(os.path.join(EA_FILES_DIR, f"{e['id']}.ex5"))
+        eas.append({
+            "id": e["id"], "symbol": e["symbol"], "name": e["name"], "engine": e["engine"],
+            "owned": is_owned, "url": (f"/api/ea/file/{e['id']}" if (is_owned and has_file) else None),
+        })
+    indic = "/api/ea/file/PaPP_Median" if os.path.isfile(os.path.join(EA_FILES_DIR, "PaPP_Median.ex5")) else None
+    return {"key": key, "eas": eas, "indicator_url": indic}
+
+
+@app.get("/api/ea/file/{ea_id}")
+async def ea_file(ea_id: str, user: User = Depends(auth.current_user)):
+    """Scarica il .ex5 di un EA, SOLO se il piano del cliente lo possiede. PaPP_Median e' libero
+    (serve agli EA Base). Path-safe."""
+    ea_id = os.path.basename(ea_id)
+    path = os.path.join(EA_FILES_DIR, f"{ea_id}.ex5")
+    if not os.path.isfile(path):
+        return JSONResponse({"error": "file non disponibile"}, status_code=404)
+    if ea_id != "PaPP_Median":
+        plan = await _user_plan(user)
+        if ea_id not in entitlements.owned_eas(plan):
+            return JSONResponse({"error": "non incluso nel tuo piano"}, status_code=403)
+    return FileResponse(path, filename=f"PHAI_{ea_id}.ex5", media_type="application/octet-stream")
 
 
 @app.get("/api/catalog")
@@ -1330,6 +1447,24 @@ def _row_stats(r):
 INITIAL_CAPITAL = 10000.0   # deposito iniziale dei backtest (EUR)
 
 
+async def _max_dd_pct(session, symbol, base=INITIAL_CAPITAL):
+    """Max drawdown % sulla curva di balance reale (base + cumsum dei pnl_money,
+    trade ordinati per uscita). Coincide col 'Balance Drawdown Maximal' del report MT5."""
+    rows = (await session.execute(
+        _bt_scope(select(BacktestTrade.pnl_money), symbol).order_by(BacktestTrade.exit_time)
+    )).scalars().all()
+    bal = peak = base
+    maxdd = 0.0
+    for p in rows:
+        bal += float(p or 0)
+        if bal > peak:
+            peak = bal
+        dd = (peak - bal) / peak if peak > 0 else 0.0
+        if dd > maxdd:
+            maxdd = dd
+    return round(maxdd * 100, 1)
+
+
 async def _overview_data(symbol: str = ""):
     """Costruisce i dati di backtest (totali + per-anno + capitale composto) per un
     simbolo (o tutti). Globale, non per-utente: è la prova pubblica del prodotto."""
@@ -1352,6 +1487,7 @@ async def _overview_data(symbol: str = ""):
                 ).group_by("y").order_by(desc("y"))
             )
         ).all()
+        dd_o = await _max_dd_pct(session, symbol, INITIAL_CAPITAL * (1 if symbol else max(1, len([s for s in symbols if s]))))
     by_year = [{"year": int(y[0]), **_row_stats(y[1:])} for y in years]
     # Capitale iniziale: 10k PER CONTO. Vista singolo simbolo = 10k; vista combinata
     # (tutti i simboli) = 10k x numero di simboli (conti separati), cosi' la % non e' gonfiata.
@@ -1379,6 +1515,9 @@ async def _overview_data(symbol: str = ""):
             **totals,
             "growth_pct": round(totals["pnl_money"] / base * 100, 2),
             "cagr_pct": round(cagr, 2),
+            "max_dd_pct": dd_o,
+            "avg_per_order": round(totals["pnl_money"] / totals["trades"], 2) if totals["trades"] else 0.0,
+            "orders_per_year": round(totals["trades"] / n_years, 1),
         },
         "by_year": by_year,
         "reports": _symbol_reports(),
@@ -1408,6 +1547,19 @@ async def backtest_report(symbol: str, fname: str, user: User = Depends(auth.cur
     return FileResponse(path)
 
 
+@app.get("/api/public/report/{symbol}/{fname}")
+async def public_report(symbol: str, fname: str):
+    """Report MT5 originale (HTML + grafici), PUBBLICO senza login: è materiale
+    di marketing che cliente o visitatore deve poter scaricare/vedere liberamente."""
+    d = _report_dir(symbol)
+    if not d:
+        return JSONResponse({"error": "report non disponibile"}, status_code=404)
+    path = os.path.join(d, os.path.basename(fname))   # basename: niente traversal
+    if not os.path.isfile(path):
+        return JSONResponse({"error": "file non trovato"}, status_code=404)
+    return FileResponse(path)
+
+
 @app.get("/api/public/track-record")
 async def public_track_record():
     """Sintesi backtest PUBBLICA (senza login) per la landing: KPI + curva equity +
@@ -1426,12 +1578,20 @@ async def public_track_record():
                 .group_by("y").order_by("y")
             )
         ).all()
+        n_years = max(1, len(years))
+        total_dd = await _max_dd_pct(session, "", INITIAL_CAPITAL * max(1, len(symbols)))
         per_sym = []
         for s in symbols:
             r = _row_stats((await session.execute(_bt_scope(select(*_bt_agg()), s))).first())
+            final_s = INITIAL_CAPITAL + r["pnl_money"]
+            cagr_s = ((final_s / INITIAL_CAPITAL) ** (1.0 / n_years) - 1) * 100 if final_s > 0 else 0.0
             per_sym.append({
-                "symbol": s, "pnl_money": r["pnl_money"], "winrate": r["winrate"],
-                "growth_pct": round(r["pnl_money"] / INITIAL_CAPITAL * 100, 2),
+                "symbol": s, "pnl_money": r["pnl_money"], "winrate": r["winrate"], "trades": r["trades"],
+                "growth_pct": round(r["pnl_money"] / INITIAL_CAPITAL * 100, 2),   # totale su 16 anni
+                "cagr_pct": round(cagr_s, 2),                                      # % media ANNUA composta
+                "max_dd_pct": await _max_dd_pct(session, s),                       # max drawdown reale
+                "avg_per_order": round(r["pnl_money"] / r["trades"], 2) if r["trades"] else 0.0,  # vincita media/ordine
+                "orders_per_year": round(r["trades"] / n_years, 1),               # ordini medi/anno
             })
     by_year = [{"year": int(y[0]), **_row_stats(y[1:])} for y in years]
     base = INITIAL_CAPITAL * max(1, len(symbols))
@@ -1445,8 +1605,11 @@ async def public_track_record():
     cagr = ((final / base) ** (1.0 / n_years) - 1) * 100 if base > 0 and final > 0 else 0.0
     return {
         "available": True, "initial_capital": base, "years": n_years, "symbols": symbols,
-        "totals": {**totals, "growth_pct": round(totals["pnl_money"] / base * 100, 2), "cagr_pct": round(cagr, 2)},
-        "curve": curve, "per_symbol": per_sym,
+        "totals": {**totals, "growth_pct": round(totals["pnl_money"] / base * 100, 2), "cagr_pct": round(cagr, 2),
+                   "max_dd_pct": total_dd,
+                   "avg_per_order": round(totals["pnl_money"] / totals["trades"], 2) if totals["trades"] else 0.0,
+                   "orders_per_year": round(totals["trades"] / n_years, 1)},
+        "curve": curve, "per_symbol": per_sym, "reports": _symbol_reports(),
     }
 
 
@@ -1502,10 +1665,9 @@ async def backtest_trades(
     ]
 
 
-@app.get("/api/market-state")
-async def market_state(symbol: str = "", user: User = Depends(auth.current_user)):
-    """Stato di mercato corrente di un simbolo: ultima barra, posizione vs MA, e
-    per ogni feature valore/media/percentile/livello. Per la tab Mercato."""
+async def _market_state_data(symbol: str = ""):
+    """Stato di mercato corrente: ultima barra, posizione vs MA, e per ogni feature
+    valore/media/percentile/livello. Riusato da route, chat, notifiche e resoconti."""
     async with AsyncSession() as session:
         syms = (
             await session.execute(
@@ -1553,6 +1715,13 @@ async def market_state(symbol: str = "", user: User = Depends(auth.current_user)
                 "level": "alto" if pct >= 70 else "basso" if pct <= 30 else "media",
             }
 
+        FEAT_DESC = {
+            "Volatilità": "Quanto si muove il prezzo. Alto = mercato agitato (movimenti ampi); basso = mercato calmo.",
+            "Cluster": "Quanto le medie sono compatte e concordi. Alto = struttura ordinata, in trend; basso = medie sparse, mercato incerto/laterale.",
+            "Velocità": "Quanto corre la struttura del prezzo (la sua pendenza). Alto = spinta forte; basso = quasi ferma.",
+            "Accelerazione": "Se la spinta sta aumentando o calando. Alto = sta accelerando; basso = sta frenando.",
+            "OrderScore": "Quanto la struttura è ordinata e direzionale. Alto = direzione pulita; basso = caos/laterale.",
+        }
         feats = []
         for name, col, val in [
             ("Volatilità", MarketFeature.volatility, last.volatility),
@@ -1563,7 +1732,7 @@ async def market_state(symbol: str = "", user: User = Depends(auth.current_user)
         ]:
             s = await stat(col, val)
             if s:
-                feats.append({"name": name, **s})
+                feats.append({"name": name, "desc": FEAT_DESC.get(name, ""), **s})
 
         price_vs = []
         for ma, d in [("MA30", last.d_ma30), ("MA365", last.d_ma365), ("Median", last.d_med)]:
@@ -1581,9 +1750,42 @@ async def market_state(symbol: str = "", user: User = Depends(auth.current_user)
     }
 
 
+@app.get("/api/market-state")
+async def market_state(symbol: str = "", user: User = Depends(auth.current_user)):
+    """Stato di mercato per la tab Mercato (richiede login)."""
+    return await _market_state_data(symbol)
+
+
+async def _market_state_text(symbol: str = "") -> str:
+    """Riassunto testuale dello stato di mercato live, per il contesto LLM (chat/resoconti)."""
+    try:
+        d = await _market_state_data(symbol)
+    except Exception:
+        return ""
+    if not d.get("available"):
+        return ""
+    pv = ", ".join(f"{p['pos']} {p['ma']} ({p['dist']:+}%)" for p in d.get("price_vs", []))
+    fs = "; ".join(f"{f['name']} {f['value']} (perc. {f['pct']}°, {f['level']})" for f in d.get("features", []))
+    return (f"Stato di mercato LIVE {d['symbol']} (ultima barra {d['t']}, close {d['close']}): "
+            f"prezzo {pv}. Feature [valore (percentile, livello)]: {fs}.")
+
+
 @app.get("/api/push/key")
 async def push_key(user: User = Depends(auth.current_user)):
     return {"key": os.getenv("VAPID_PUBLIC_KEY", "")}
+
+
+@app.post("/api/admin/report")
+async def admin_report(kind: str = "morning", user: User = Depends(auth.current_user)):
+    """Genera e invia SUBITO il resoconto (mattino/sera), solo per l'owner. Per test e invio manuale."""
+    oid = _owner_id()
+    if oid is None or user.id != oid:
+        return JSONResponse({"error": "non autorizzato"}, status_code=403)
+    if kind not in _REPORT_HOURS:
+        kind = "morning"
+    await _generate_scheduled_report(kind)
+    s = await _latest_summary(kind)
+    return {"ok": True, "kind": kind, "content": s.content if s else None}
 
 
 @app.post("/api/push/subscribe")

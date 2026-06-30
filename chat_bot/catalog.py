@@ -70,13 +70,25 @@ EAS = [
         "risk": {"it": "Sensibile: pensato per size contenute e diversificazione."},
     },
     {
-        "id": "EURGBP", "engine": "rev", "symbol": "EURGBP", "live": False,
+        "id": "EURGBP", "engine": "rev", "symbol": "EURGBP", "live": True,
         "name": "PHAI EUR/GBP",
         "tagline": {"it": "Valore relativo EUR/GBP: compra la paura, vende l'euforia."},
         "mechanism": {"it": "Non usa le linee. Misura quanto il cross EUR/GBP è 'tirato' (percentile "
-                            "della distanza dalla media a 6 ore) e fa fade verso la media. Vol-targeting "
-                            "che rimpicciolisce la size quando la volatilità sale, per tagliare gli anni-disastro."},
-        "risk": {"it": "Reversione pura: win ~64%, drawdown ~30%, completamente decorrelato dal Motore Base."},
+                            "della distanza dalla media a 6 ore) e fa fade verso la media, con take-profit "
+                            "a 25 pip e stop a 200. Vol-targeting che rimpicciolisce la size in alta volatilità."},
+        "risk": {"it": "Reversione pura: backtest +110% in 16 anni, win ~79%, drawdown ~21%, "
+                       "completamente decorrelato dal Motore Base."},
+    },
+    {
+        "id": "GBPCHF", "engine": "rev", "symbol": "GBPCHF", "live": True,
+        "name": "PHAI GBP/CHF",
+        "tagline": {"it": "Valore relativo GBP/CHF: la reversione a orizzonte mensile."},
+        "mechanism": {"it": "Come EUR/GBP ma sul cross GBP/CHF e a orizzonte mensile (giornaliero): "
+                            "misura quanto il cross è 'tirato' e fa fade verso la media. Edge raro "
+                            "(~8 trade l'anno) e decorrelato da EUR/GBP — i loro anni buoni e cattivi non coincidono."},
+        "risk": {"it": "Reversione su cross col franco: backtest +258% in 16 anni ad alto rischio "
+                       "(drawdown ~54% a piena size; usare size ridotta per il rischio-coda del franco). "
+                       "Decorrelato da EUR/GBP."},
     },
 ]
 

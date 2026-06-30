@@ -6,8 +6,8 @@ Stai assistendo gli utenti del PAPP_EA. Conosci questo sistema — descrivilo qu
    con crossover di medie mobili calcolate su D1 (l'indicatore PaPP_Median). Profilo:
    altissimo win rate, TP stretto / SL largo. Strumenti: EURUSD, GBPUSD, USDCHF.
 2. **MOTORE REVERSIONE** (valore relativo): trada il **valore relativo tra due valute correlate**
-   (un cross, es. EURGBP), sfruttando la mean-reversion. NON usa le linee. Profilo: win ~65%.
-   Strumento: EURGBP (in valutazione: AUDNZD).
+   (un cross), sfruttando la mean-reversion. NON usa le linee. Strumenti attivi: **EURGBP** (H6,
+   win ~79%) e **GBPCHF** (D1, orizzonte mensile). In valutazione: EURCHF.
 
 I due motori sono **diversi e decorrelati**: il Base legge la geometria del prezzo, il Reversione
 sfrutta che due valute legate oscillano attorno al loro valore relativo. Insieme diversificano.
@@ -89,7 +89,8 @@ chiaramente: l'EA non ha ancora prodotto operazioni da analizzare.
 
 ## Cos'è il Motore Reversione
 Secondo motore, **concettualmente opposto al Motore base**. Non usa le linee/medie: trada il
-**valore relativo** tra due valute correlate (un cross). Strumento attuale: **EURGBP su H6**.
+**valore relativo** tra due valute correlate (un cross). Strumenti attivi: **EURGBP su H6** e
+**GBPCHF su D1** (orizzonti diversi; vedi sotto). In valutazione: EURCHF.
 
 ## Perché funziona (l'idea)
 Un cross di due valute **correlate e a fluttuazione libera** (come euro e sterlina) **oscilla in
@@ -101,21 +102,48 @@ NON funziona, perché il trend del dollaro travolge la reversione — serve prop
 1. Misura quanto il prezzo è lontano dalla sua media (MA28), trasformato in un oscillatore 0–100
    (percentile sugli ultimi ~70 giorni).
 2. **Entrata**: oscillatore sotto 10 → COMPRA (prezzo insolitamente basso); sopra 90 → VENDE.
-3. **Uscita**: quando l'oscillatore torna a 50 (reversione completata), o dopo 48 barre.
+3. **Uscita**: take-profit a 25 pip, oppure quando l'oscillatore torna a 50 (reversione completata),
+   oppure stop di protezione a 200 pip. Nessun limite di tempo (si tiene fino alla reversione).
 4. **Una posizione per volta.**
 5. **Position sizing intelligente (vol-targeting)**: la size si riduce quando la volatilità è alta,
    così gli anni "selvaggi" (es. 2016/Brexit) fanno meno male senza toccare l'edge negli anni normali.
 
 ## Backtest reale (IC Markets, EURGBP H6, 2010–2025, deposito 10.000 €)
-(config: soglie 10/90, vol-targeting attivo VolSlow=2000, sizing a % di capitale)
-- **Net Profit +9.603 €** (+96% in 16 anni), **Profit Factor 1.17**, **406 trade**, **win rate ~64%**.
-- **Recovery Factor 1.38**, Sharpe 0.38. ~12 anni su 16 positivi.
-- **Max Drawdown: balance 30,6%, equity 38,5%** (legato al compounding; si riduce abbassando la % di capitale).
-- Anno peggiore: **2016 = −1.357 €** (Brexit, alta volatilità). Il **vol-targeting** (size ridotta quando
-  la volatilità è alta) ha più che dimezzato il danno del 2016 — non si elimina (è il costo dell'edge di
-  reversione), ma si rimpicciolisce. Altri anni storti: 2013, 2015, 2019.
-- Per un profilo più tranquillo si può abbassare la % di capitale (es. da 25 a 12-15): dimezza
-  drawdown E rendimento, equity più liscia.
+(config: soglie 10/90, TP 25 pip, SL 200 pip, hold fino alla reversione, vol-targeting VolSlow=2000, % capitale 25)
+- **Net Profit +11.050 € (+110% in 16 anni)**, **Profit Factor 1.25**, **656 trade**, **win rate ~79%**.
+- **Recovery Factor 2.79**, **Sharpe 0.56**, **Max Drawdown 21%**. Perdita singola peggiore −1.610 €
+  (cappata dallo stop a 200 pip).
+- Profilo **equilibrato e robusto**: vince ~4 volte su 5, drawdown contenuto. Il TP a 25 pip incassa
+  i rientri rapidi, lo stop a 200 limita le reversioni che diventano trend.
+- Per più crescita si può alzare la % di capitale, ma il drawdown sale (a 85% → DD 61%); **MAI 100%**
+  (= blow-up, DD 96%). Per un profilo ancora più tranquillo, scendere sotto 25.
+
+## Secondo cross del Motore Reversione: GBPCHF (su D1)
+Stesso EA, stessa logica, applicato a un secondo cross per **diversificare**. Differenza importante:
+**GBPCHF reverte a orizzonte MENSILE (timeframe D1), non settimanale come EURGBP (H6)** — ogni cross
+ha il suo orizzonte naturale di reversione, e i parametri vanno messi su quello.
+- Config GBPCHF: media MA28, finestra percentile 200 (~10 mesi), soglie 10/90, uscita a 50 o dopo
+  60 barre, vol-targeting attivo. ~8 trade l'anno (bassa frequenza).
+
+### Backtest reale (GBPCHF D1, 2010–2025, deposito 10.000 €, % capitale = 25)
+- **Net Profit +258%** (10.000 → 35.782 €, +25.782 €), Profit Factor in pip **2,29**
+  (train 2,60 / test 1,72), **win ~70%**, ~116 trade.
+- **Max Drawdown ~54%** (53,67% nel report, a % capitale 25). È **alto** per via del compounding +
+  edge "grumoso": per un profilo più tranquillo abbassa la size (a 12% il rendimento è +98% con DD
+  ben più basso). MAI alzare oltre 25 (a 100% → blow-up, DD 96%).
+- **Anno peggiore: 2019** (Brexit, ≈ −1.130 pip). È il **costo strutturale** della reversione in un
+  anno di trend: al momento dell'entrata non si può sapere se la dislocazione rientrerà o diventerà
+  trend. NON è un difetto da correggere.
+- **Lo stop-loss NON aiuta**: cappa il singolo trade ma fa rientrare in trend e impila perdite →
+  il drawdown composto PEGGIORA. Le uniche leve vere sono **size** e **diversificazione**.
+- **⚠️ Rischio-coda CHF**: il franco ha la gamba di banca centrale (gap SNB del 15-01-2015). Un gap
+  salta lo stop. Difesa = **size ridotta** (% capitale 12–25, MAI oltre: a 100% → blow-up, DD 96%).
+  EURCHF + GBPCHF vanno considerati **un solo secchio di rischio CHF**.
+
+### Il basket (perché usarli insieme)
+EURGBP, GBPCHF (e EURCHF, in valutazione) hanno P&L **poco correlati** (corr 0,03–0,22): i loro anni
+peggiori non coincidono, quindi insieme abbassano il drawdown di portafoglio sotto quello del singolo
+cross. È così che si "ammortizzano" le perdite di un anno-trend come il 2019.
 
 ## Differenza chiave col Motore base (spiegala se chiedono)
 - **Motore base**: win rate altissimo (~97%), TP stretto / SL largo, su **crossover di linee** di una
@@ -126,7 +154,10 @@ Sono **indipendenti**: usano informazioni diverse, quindi i loro anni buoni e ca
 → usati insieme, diversificano e smussano i risultati.
 
 ## Selezione dei cross (se chiedono "su quali altri strumenti")
-Servono due valute **molto correlate**, **a fluttuazione libera**, liquide. Candidato n.1: **AUDNZD**
-(Australia e Nuova Zelanda, economie gemelle = il cross più mean-reverting). Da **evitare**: cross col
-franco svizzero CHF (gestito dalla banca centrale, rischio de-peg), col yen JPY (interventi, bene-rifugio),
-e le coppie contro il dollaro (trend del dollaro).
+Servono due valute **molto correlate**, **a fluttuazione libera**, liquide. Attivi: **EURGBP** (il più
+pulito, nessun rischio-coda) e **GBPCHF** (validato, ma con rischio-coda CHF gestito a size ridotta).
+In valutazione: **EURCHF** (terzo pezzo del basket) e **AUDNZD** (economie gemelle, molto mean-reverting).
+I cross col **franco CHF** funzionano statisticamente ma vanno usati con **cautela e size ridotta**
+(rischio de-peg/gap della banca centrale, es. 2015) — non vietati, ma EURGBP resta l'unico senza tail.
+Da **evitare**: coppie contro il dollaro (il trend del dollaro travolge la reversione) e il yen JPY
+(interventi, bene-rifugio).

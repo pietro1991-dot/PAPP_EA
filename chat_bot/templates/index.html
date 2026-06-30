@@ -970,7 +970,10 @@ async function loadStorico(){
     `<div class="c"><div class="l">${t('pnl_pts')}</div><div class="v ${tt.pnl_pt>=0?'pos':'neg'}">${sgn(tt.pnl_pt)}</div></div>`+
     `<div class="c"><div class="l">${t('pnl_cur')}</div><div class="v ${tt.pnl_money>=0?'pos':'neg'}">${sgn(tt.pnl_money)}</div></div>`+
     `<div class="c"><div class="l">Crescita</div><div class="v ${tt.growth_pct>=0?'pos':'neg'}">${fmtPct(tt.growth_pct)}</div></div>`+
-    `<div class="c"><div class="l">Crescita/anno</div><div class="v ${tt.cagr_pct>=0?'pos':'neg'}">${fmtPct(tt.cagr_pct)}</div></div>`;
+    `<div class="c"><div class="l">Crescita/anno</div><div class="v ${tt.cagr_pct>=0?'pos':'neg'}">${fmtPct(tt.cagr_pct)}</div></div>`+
+    `<div class="c"><div class="l">Max drawdown</div><div class="v neg">${tt.max_dd_pct}%</div></div>`+
+    `<div class="c"><div class="l">Media/ordine</div><div class="v ${tt.avg_per_order>=0?'pos':'neg'}">${fmtMoney(tt.avg_per_order)}€</div></div>`+
+    `<div class="c"><div class="l">Ordini/anno</div><div class="v">${Math.round(tt.orders_per_year)}</div></div>`;
   body.appendChild(tot);
   body.insertAdjacentHTML('beforeend', equityChart(d));
   // Link al report MT5 originale (HTML + grafici), se disponibile
@@ -1093,7 +1096,7 @@ async function loadStrategie(){
     grid.appendChild(card);
     if(e.live){ fetchOverview(e.symbol).then(d=>{ const sp=$('spark-'+e.id), kp=$('kpis-'+e.id);
       if(!d){ if(sp)sp.innerHTML=`<div style="font-size:11px;color:var(--muted);padding:14px 2px">⚠️ ${t('bt_nodata')}</div>`; return; }
-      if(sp)sp.innerHTML=sparkline(d); if(kp){const tt=d.totals; kp.innerHTML=`<span class="k">${t('winrate')}<b>${tt.winrate}%</b></span><span class="k">Crescita/anno<b>${fmtPct(tt.cagr_pct)}</b></span>`;} }); }
+      if(sp)sp.innerHTML=sparkline(d); if(kp){const tt=d.totals; kp.innerHTML=`<span class="k">${t('winrate')}<b>${tt.winrate}%</b></span><span class="k">Crescita/anno<b>${fmtPct(tt.cagr_pct)}</b></span><span class="k">Max DD<b>${tt.max_dd_pct}%</b></span><span class="k">Media/ordine<b>${fmtMoney(tt.avg_per_order)}€</b></span><span class="k">Ordini/anno<b>${Math.round(tt.orders_per_year)}</b></span>`;} }); }
   }
 }
 async function openEA(id){
@@ -1112,6 +1115,9 @@ async function openEA(id){
       `<div class="kp"><div class="kn ${tt.growth_pct>=0?'pos':'neg'}">${fmtPct(tt.growth_pct)}</div><div class="kl">Crescita tot.</div></div>`+
       `<div class="kp"><div class="kn">${tt.winrate}%</div><div class="kl">${t('winrate')}</div></div>`+
       `<div class="kp"><div class="kn">${tt.trades}</div><div class="kl">${t('trades')}</div></div>`+
+      `<div class="kp"><div class="kn neg">${tt.max_dd_pct}%</div><div class="kl">Max drawdown</div></div>`+
+      `<div class="kp"><div class="kn">${fmtMoney(tt.avg_per_order)}€</div><div class="kl">Media/ordine</div></div>`+
+      `<div class="kp"><div class="kn">${Math.round(tt.orders_per_year)}</div><div class="kl">Ordini/anno</div></div>`+
       `</div>`;
     html+=`<div style="margin-bottom:6px"><a class="rep-link" href="/api/backtest/export?symbol=${encodeURIComponent(e.symbol)}">${t('bt_download')}</a></div>`;
   } else if(e.live){
@@ -1119,6 +1125,17 @@ async function openEA(id){
   }
   html+=`<div class="ea-sec"><h4>${t('ea_what')}</h4><p>${e.mechanism}</p></div>`;
   html+=`<div class="ea-sec"><h4>${t('ea_risk')}</h4><p>${e.risk}</p></div>`;
+  if(e.owned){
+    html+=`<div class="ea-sec"><h4>⤓ Scarica e installa</h4>`+
+      `<p><a class="rep-link" href="/api/ea/file/${e.symbol}">Scarica l'EA (.ex5)</a>`+
+      (e.engine==='base'?` · <a class="rep-link" href="/api/ea/file/PaPP_Median">Indicatore PaPP_Median</a>`:``)+`</p>`+
+      `<p style="font-size:12.5px;color:var(--muted);line-height:1.5">Copialo in <b>MQL5/Experts</b> di MT5, attaccalo al grafico <b>${e.symbol}</b>, e incolla la tua <b>license key</b> nell'input <b>InpLicenseKey</b>. Autorizza l'URL del server in Strumenti → Opzioni → Expert Advisors → WebRequest.</p>`+
+      `<div id="ea-key-${e.id}" style="font-size:12.5px;margin-top:6px;color:var(--muted)">…</div></div>`;
+    fetch('/api/ea/downloads').then(r=>r.json()).then(dd=>{const k=$('ea-key-'+e.id); if(!k)return;
+      if(dd.key) k.innerHTML=`La tua <b>license key</b>: <code style="background:var(--panel);border:1px solid var(--border);padding:2px 7px;border-radius:6px">${dd.key}</code> <button class="install-btn" onclick="navigator.clipboard.writeText('${dd.key}');toast('Key copiata','')">copia</button>`;
+      else k.textContent='Nessuna license key trovata sul tuo account.';
+    }).catch(()=>{});
+  }
   html+=`<div class="ea-cta">`;
   if(e.owned){ html+=`<span class="owned">✓ ${t('ea_owned_msg')}</span>`; }
   else if(!e.live){ html+=`<div class="ea-soon-box">🔜 ${t('ea_soon')}<br><button onclick="toast(t('waitlist'),'')">${t('waitlist')}</button></div>`; }
@@ -1155,13 +1172,14 @@ async function loadMercato(){
   d.features.forEach(f=>{
     const tr=document.createElement('tr');
     const td=(c,t)=>{const e=document.createElement('td');if(c)e.className=c;e.textContent=t;return e;};
-    tr.appendChild(td('',f.name));
+    const nm=document.createElement('td'); nm.innerHTML=`<div style="font-weight:600">${f.name}</div>`+(f.desc?`<div style="font-size:11px;color:var(--muted);margin-top:2px;max-width:260px;line-height:1.35">${f.desc}</div>`:''); tr.appendChild(nm);
     tr.appendChild(td('v',f.value));
     tr.appendChild(td('mu',f.avg));
     const last=document.createElement('td'); const lvl=document.createElement('span'); lvl.className='lvl '+f.level; lvl.textContent=`${f.pct}° · ${f.level}`; last.appendChild(lvl); tr.appendChild(last);
     tb.appendChild(tr);
   });
   tbl.appendChild(tb); body.appendChild(tbl);
+  body.insertAdjacentHTML('beforeend', `<div style="font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.55;border-top:1px solid var(--border);padding-top:10px"><b>Come leggere:</b> <b>Attuale</b> = valore in questo momento · <b>Media</b> = media storica · <b>Percentile</b> = dove si trova rispetto a tutta la storia (0–100): <b style="color:#7fb0ff">basso</b> ≤30, <b>media</b> 30–70, <b style="color:#f1a06a">alto</b> ≥70. I valori vicino allo 0 e al 100 sono gli estremi. Le etichette in alto (es. "sotto MA365 −1,75%") dicono quanto il prezzo dista dalle medie chiave.</div>`);
 }
 
 /* ---------- Markdown (sicuro) ---------- */
