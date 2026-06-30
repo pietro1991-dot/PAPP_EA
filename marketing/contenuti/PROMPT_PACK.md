@@ -107,8 +107,9 @@ Instagram carousel cover, dark navy background (#0a0e18) with gold accents (#cba
 bold white headline text "12 DOMANDE prima di comprare un robot di trading", small
 "PHAI TRADING" logotype top-left, premium fintech minimal style, 4:5
 ```
-> I testi esatti delle 12 slide e del carosello "EA da 30€ vs PHAI" sono in
-> [POST_SOCIAL.md](POST_SOCIAL.md): incolla una slide per immagine cambiando la headline.
+> I testi esatti dei caroselli — "12 domande", "EA da 30€ vs PHAI" e **"Le 5 strategie
+> PHAI" (i due motori)** — sono in [POST_SOCIAL.md](POST_SOCIAL.md): incolla una slide per
+> immagine cambiando la headline.
 
 **In alternativa (Canva, zero AI-render)**: crea un template 4:5 navy/oro e incolla i testi
 slide-per-slide da POST_SOCIAL.md. Più veloce e controllabile.
