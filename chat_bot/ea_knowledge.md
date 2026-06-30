@@ -107,12 +107,15 @@ NON funziona, perché il trend del dollaro travolge la reversione — serve prop
    così gli anni "selvaggi" (es. 2016/Brexit) fanno meno male senza toccare l'edge negli anni normali.
 
 ## Backtest reale (IC Markets, EURGBP H6, 2010–2025, deposito 10.000 €)
-(config: soglie 10/90, vol-targeting attivo, sizing a % di capitale)
-- **Net Profit +8.855 €** (+88,5% in 16 anni), **Profit Factor 1.20**, **399 trade**, **win rate ~65%**.
-- **~14 anni su 17 positivi.** Anno peggiore: 2016 (Brexit, alta volatilità) — gestito col vol-targeting.
-- Max Drawdown: balance ~38%, equity ~50% (legato al compounding; si riduce abbassando la % di capitale).
-- NOTA: ottimizzazione in corso (riferimento di volatilità più lungo) per ridurre ulteriormente il
-  drawdown e l'impatto del 2016 — i numeri finali verranno aggiornati col report definitivo.
+(config: soglie 10/90, vol-targeting attivo VolSlow=2000, sizing a % di capitale)
+- **Net Profit +9.603 €** (+96% in 16 anni), **Profit Factor 1.17**, **406 trade**, **win rate ~64%**.
+- **Recovery Factor 1.38**, Sharpe 0.38. ~12 anni su 16 positivi.
+- **Max Drawdown: balance 30,6%, equity 38,5%** (legato al compounding; si riduce abbassando la % di capitale).
+- Anno peggiore: **2016 = −1.357 €** (Brexit, alta volatilità). Il **vol-targeting** (size ridotta quando
+  la volatilità è alta) ha più che dimezzato il danno del 2016 — non si elimina (è il costo dell'edge di
+  reversione), ma si rimpicciolisce. Altri anni storti: 2013, 2015, 2019.
+- Per un profilo più tranquillo si può abbassare la % di capitale (es. da 25 a 12-15): dimezza
+  drawdown E rendimento, equity più liscia.
 
 ## Differenza chiave col Motore base (spiegala se chiedono)
 - **Motore base**: win rate altissimo (~97%), TP stretto / SL largo, su **crossover di linee** di una
