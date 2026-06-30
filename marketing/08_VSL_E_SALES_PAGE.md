@@ -31,7 +31,7 @@ Prova → Offerta → Bonus → Garanzia → Scarsità → CTA → P.S.**
 > a Marco che lo capisci meglio di chiunque.)*
 
 ### 4. La soluzione + meccanismo unico (3:30–6:00)
-> Presenta il **Price-Line Pattern Engine (PaPP)**: il D1 contro il rumore, le 8
+> Presenta i **due motori PHAI** (Base linee-prezzo + Reversione valore relativo): il D1 contro il rumore, le 8
 > linee, gli incroci, i 6 pattern. Il concetto chiave: **validazione fuori
 > campione** (allenare ≤2020, testare 2020→oggi). Spiega perché abbiamo **spento i
 > 4 pattern più redditizi** (rischio). Questo è il "perché siamo diversi".
@@ -44,8 +44,8 @@ Prova → Offerta → Bonus → Garanzia → Scarsità → CTA → P.S.**
 
 ### 6. L'offerta + stack + bonus (8:00–10:30)
 > Presenta tutto ciò che si riceve (stack del doc 03), assegna i valori, somma a
-> ~3.888 €, poi rivela l'ingresso a barriera bassa: **da 49 €/mese (Starter), 97 €/mese
-> (Pro), o 997 € una volta (Lifetime)**. Ricorda la **Demo gratuita** e i 4 bonus.
+> ~4.500 €, poi rivela l'ingresso a barriera bassa: **da 49 €/mese (un EA), 97 €/mese
+> (Pacchetto Base), o 197 €/mese (Portfolio completo)**. Ricorda la **Demo gratuita** e i 4 bonus.
 
 ### 7. Garanzia + scarsità (10:30–12:00)
 > Garanzia 30 giorni soddisfatto-o-rimborsato **sul software**. 50 licenze/mese per
@@ -101,12 +101,12 @@ Ordine dei blocchi (ogni blocco ha un solo compito):
 > sul servizio, non sui risultati di mercato.)*
 
 **CTA (bottone):**
-> 👉 **Sblocca PHAI Trading ora** — da **49 €/mese** (Starter) · **97 €/mese** (Pro) ·
-> **997 € una volta** (Lifetime). Disdici quando vuoi. Oppure: ▶ **prima apri la Demo**.
+> 👉 **Sblocca PHAI Trading ora** — da **49 €/mese** (un EA) · **97 €/mese** (Pacchetto Base) ·
+> **197 €/mese** (Portfolio). Disdici quando vuoi. Oppure: ▶ **prima apri la Demo**.
 
 ## PARTE C — Checkout (riduci l'attrito)
-- Piani chiari: **Pro 97€/mese in evidenza**, Starter 49€ come ingresso, Annuale (2 mesi
-  gratis) e Lifetime 997€ come **ancora**. Sempre visibile: ▶ **Apri la Demo** (rischio zero).
+- Piani chiari: **Pacchetto Base 97€/mese in evidenza**, EA singolo 49€ come ingresso,
+  Portfolio 197€ e Annuale (2 mesi gratis) come **ancora**. Sempre visibile: ▶ **Apri la Demo** (rischio zero).
 - **Order bump**: "Aggiungi la Guida Risk & Sizing a 27 € (anziché 197 €)".
 - **Upsell post-acquisto** (one-click): Setup DFY +297 €.
 - Pagamenti: carte + eventuale PayPal; **Paddle** per gestire IVA mondiale.

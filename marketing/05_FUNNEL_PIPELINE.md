@@ -27,7 +27,7 @@ La "Halo Strategy" di Sabri (4 fasi) resta la spina dorsale, ma nel SaaS (doc 16
                                          ▼
   FASE 4         ┌─────────────────────────────────────────────────┐
   Conversione    │  VSL + SALES PAGE → GODFATHER OFFER              │ → doc 03/08
-                 │  Demo→ "sblocca": Starter 49€ / Pro 97€ (gar.30g)│
+                 │  Demo→ "sblocca": singolo 49€/Pacchetto 97€/Portf.│
                  └───────────────────────┬─────────────────────────┘
                                          ▼
   FASE 5 ⭐      ┌─────────────────────────────────────────────────┐
@@ -37,7 +37,7 @@ La "Halo Strategy" di Sabri (4 fasi) resta la spina dorsale, ma nel SaaS (doc 16
                                          ▼
   FASE 6 ⭐      ┌─────────────────────────────────────────────────┐
   RETENTION &    │  lifecycle (valore anche a mercato fermo) +      │ → doc 07
-  ESPANSIONE     │  upsell (Pro/Elite/Annuale/Lifetime) + referral  │
+  ESPANSIONE     │  upsell (Pacchetto/Portfolio/Annuale) + referral │
                  └─────────────────────────────────────────────────┘
 
   In parallelo a OGNI fase: RETARGETING.
@@ -61,7 +61,7 @@ La "Halo Strategy" di Sabri (4 fasi) resta la spina dorsale, ma nel SaaS (doc 16
 
 ### Fase 4 — Conversione (barriera bassa + rischio zero)
 - **VSL + sales page** (doc 08) con la Godfather Offer (doc 03).
-- Ingresso facile: **Starter 49€** o **Pro 97€**, **garanzia 30 giorni** ("meglio che gratis").
+- Ingresso facile: **EA singolo 49€** o **Pacchetto Base 97€**, **garanzia 30 giorni** ("meglio che gratis").
 - **Order bump** (guida sizing 27€) + **upsell post-checkout** (DFY +297€).
 - *Niente trial a tempo* (i trade D1 sono rari → mostrerebbe il vuoto, doc 16).
 
@@ -77,7 +77,7 @@ Iscriversi è facile; il rischio è **pagare e non installare** → niente valor
 - **Valore anche a mercato fermo** (doc 16 §6): l'app/AI/notifiche danno motivi per
   tornare anche senza trade ("il sistema sta aspettando, è corretto").
 - **Lifecycle email**: educazione, dietro le quinte, "il tuo mese in PHAI".
-- **Upsell/ascensione**: Starter→Pro, Pro→Annuale/Lifetime, +Elite, +DFY (doc 03 §8).
+- **Upsell/ascensione**: singolo→Pacchetto, →Portfolio, →Annuale, +DFY (doc 03 §8).
 - **Referral**: "porta un amico, un mese gratis a entrambi" (loop virale, Sabri).
 
 ## 3. Pipeline operativa — cosa costruire, in ordine

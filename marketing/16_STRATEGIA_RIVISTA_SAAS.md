@@ -9,14 +9,14 @@
 
 ## 1. Perché rivedere: da "vendita una tantum" a "abbonamento"
 Quando l'obiettivo era vendere l'EA a 997 € una volta, il marketing puntava a
-**massimizzare le vendite secche**. Con l'abbonamento (Demo / Starter 49€ / Pro 97€ /
-Lifetime 997€) l'obiettivo è un altro:
+**massimizzare le vendite secche**. Con l'abbonamento per-EA (Demo / Signals 37€ / singolo 49€ /
+Pacchetti 67-97€ / Portfolio 197€) l'obiettivo è un altro:
 
 | Prima (one-time) | Ora (abbonamento-first) |
 |---|---|
 | Metrica chiave: numero di vendite | Metrica chiave: **MRR, churn, LTV:CAC, attivazione** |
 | Successo = incasso al checkout | Successo = cliente che **resta mesi** |
-| Barriera alta (997 € secchi) | Barriera **bassa** (Demo gratis, Starter 49€) |
+| Barriera alta (997 € secchi) | Barriera **bassa** (Demo gratis, EA singolo 49€) |
 | Marketing finisce alla vendita | Marketing continua: **onboarding + retention** |
 | Si vende "il prodotto" | Si vende **l'accesso continuativo a un servizio** |
 
@@ -67,8 +67,8 @@ LEAD: Demo gratuita (hero asset) + HVCO ──────► doc 04
 ATTIVAZIONE ⭐ NUOVO: registra → installa EA → primo dato
         │  lo SNODO CRITICO (l'install ha frizione → doc §5)
         ▼
-ABBONAMENTO: Starter 49€ / Pro 97€ (garanzia 30gg) ─► doc 03/08
-        │  ingresso facile; Lifetime/Annuale come ancora e anti-churn
+ABBONAMENTO: singolo 49€ / Pacchetto 97€ / Portfolio 197€ ─► doc 03/08
+        │  ingresso facile; Annuale come ancora e anti-churn
         ▼
 RETENTION + ESPANSIONE: lifecycle, upsell, referral ► doc §6
 ```
@@ -109,7 +109,7 @@ niente"**. Il marketing/lifecycle deve **comunicare valore anche a mercato fermo
 | **Demo → pagante** | Efficacia del prodotto-come-esca |
 | **Churn mensile** | Il buco da tappare (target < 8–10% iniziale) |
 | **LTV:CAC** (≥ 3:1) e **payback period** | Sostenibilità: con l'abbonamento puoi |
-| **% Annuale/Lifetime** | spendere di più per acquisire (vedi §8) e ridurre churn |
+| **% Annuale** | spendere di più per acquisire (vedi §8) e ridurre churn |
 
 ## 8. La logica di budget cambia (cohort & payback)
 Con la vendita una tantom, dovevi recuperare il CAC **subito**. Con l'abbonamento:
@@ -125,8 +125,8 @@ Con la vendita una tantom, dovevi recuperare il CAC **subito**. Con l'abbonament
 
 ## 9. Cosa aggiornare nei documenti esistenti
 Non riscriviamo tutto; ritocchiamo con questa lente:
-- **03 (Offerta)**: mettere in evidenza **Demo + Starter 49€** come ingresso; Lifetime
-  997€ come **ancora**, non come ask principale. Garanzia 30gg = "prova senza rischio".
+- **03 (Offerta)**: mettere in evidenza **Demo + EA singolo 49€** come ingresso; Portfolio
+  197€ / Annuale come **ancora**, non come ask principale. Garanzia 30gg = "prova senza rischio".
 - **04 (HVCO)**: promuovere la **Demo read-only** come lead magnet n.1 accanto al report.
 - **05 (Funnel)**: inserire la fase **Attivazione** e la **Retention** come fasi piene.
 - **06 (Annunci)**: CTA verso la **Demo** ("guardalo dal vivo"), tono "pazienza/serenità".
@@ -136,7 +136,7 @@ Non riscriviamo tutto; ritocchiamo con questa lente:
 
 ## 10. In sintesi (la strategia in una frase)
 > **Porta gente a vedere la Demo, fai entrare con barriera bassa e rischio zero
-> (Starter + garanzia), presidia l'attivazione (install) con onboarding e DFY, e
+> (EA singolo + garanzia), presidia l'attivazione (install) con onboarding e DFY, e
 > trattieni vendendo pazienza e trasparenza — comunicando valore anche quando il
 > sistema, giustamente, aspetta.** Le ads si pagano sul LTV, non sulla prima vendita.
 

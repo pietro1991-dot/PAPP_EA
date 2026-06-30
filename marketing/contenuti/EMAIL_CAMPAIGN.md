@@ -109,13 +109,13 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 
 > [Nome], ecco com'è una giornata con PHAI:
 > 
-> • L'EA monitora EURUSD, GBPUSD e USDCHF e apre/chiude secondo i pattern validati.
+> • Gli EA monitorano fino a 5 coppie su 2 motori (EUR/USD, GBP/USD, USD/CHF + i cross EUR/GBP e GBP/CHF) e aprono/chiudono secondo i pattern validati.
 > • Ogni mossa arriva sul tuo telefono con una notifica e una **spiegazione**.
 > • Apri l'app (in 4 lingue) e vedi conto, segnali, storico. Un dubbio? Lo chiedi all'assistente AI, che risponde subito.
 > 
 > Niente più scatole nere. Niente più 'ma perché ha fatto così?'.
 > 
-> Puoi iniziare in 3 modi: **Demo gratis** (la vedi dal vivo), **Starter a 49€/mese** o **Pro a 97€/mese**. Guardala prima tu 👉 {{demo}}
+> Puoi iniziare come vuoi: **Demo gratis**, **Signals a 37€/mese** (segnali a mano), una **singola strategia da 49€**, o il **Portfolio completo a 197€**. Guardala prima tu 👉 {{demo}}
 > 
 > Domani rispondo alle 6 domande che ricevo più spesso.
 > 
@@ -146,9 +146,9 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 
 > [Nome], ci siamo.
 > 
-> Oggi puoi sbloccare **PHAI** completo: l'EA su 3 coppie, l'app multilingua, il tuo **assistente AI 24/7**, l'indicatore, storico e backtest, le notifiche — più 4 bonus (oltre 900€ di valore).
+> Oggi puoi sbloccare **PHAI** completo: i 5 EA su 2 motori, l'app multilingua, il tuo **assistente AI 24/7**, l'indicatore, storico e backtest, le notifiche — più 4 bonus (oltre 900€ di valore).
 > 
-> Valore totale ~3.888€. Oggi: **97€/mese** (o **49€** per iniziare; **997€** una volta se preferisci il Lifetime). Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso totale. Il rischio me lo prendo io.
+> Valore totale ~4.500€. Oggi: **Portfolio a 197€/mese** (o **una singola strategia da 49€** per iniziare; **Annuale con 2 mesi gratis**). Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso totale. Il rischio me lo prendo io.
 > 
 > Apriamo **50 posti** questo mese: l'assistente AI gira su un server condiviso e oltre quel numero la qualità calerebbe. Quando finiscono, lista d'attesa — e al prossimo giro il prezzo sale.
 > 
@@ -285,7 +285,7 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 | 4 | ricorrente_mensile | +30g | Il tuo mese in PHAI |
 | 5 | starter_limite_coppie | +0g | Sblocca le altre 2 coppie (passa a Pro) |
 | 6 | pro_attivo_3mesi | +90g | Vuoi 2 mesi gratis? |
-| 7 | heavy_user_ai | +0g | Per chi usa molto l'assistente: PHAI Elite |
+| 7 | heavy_user_ai | +0g | Per chi usa molto l'assistente: il Portfolio |
 | 8 | pre_disdetta_o_carta_fallita | +0g | Prima che tu vada… |
 | 9 | cliente_soddisfatto | +0g | Porta un amico, un mese gratis a entrambi 🎁 |
 
@@ -348,7 +348,7 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 ### retention-upsell-pro — Sblocca le altre 2 coppie (passa a Pro)
 *Trigger: starter_limite_coppie · invio: +0 giorni · preview: Stai usando 1 coppia su 3.*
 
-> [Nome], col piano Starter PHAI opera su **1 coppia**. Ma il sistema è validato anche su **GBPUSD** e **USDCHF**.
+> [Nome], stai usando **1 strategia**. Ma PHAI ne ha **5 su 2 motori decorrelati**: quando un motore fatica, spesso l'altro lavora.
 > 
 > Con **Pro** sblocchi tutte e 3 le coppie + l'assistente AI completo + priorità. Più mercati sorvegliati, più opportunità colte — senza alzare un dito.
 > 
@@ -373,14 +373,14 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 > Il trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.
 > Non vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}
 
-### retention-elite — Per chi usa molto l'assistente: PHAI Elite
+### retention-elite — Per chi usa molto l'assistente: il Portfolio
 *Trigger: heavy_user_ai · invio: +0 giorni · preview: AI premium, priorità, pattern in anteprima.*
 
 > [Nome], usi spesso l'assistente AI — bene, è fatto per questo.
 > 
-> Se vuoi il massimo, **PHAI Elite** ti dà un'**AI più potente e prioritaria** (nessuna coda nei picchi) e i **nuovi pattern in anteprima**.
+> Se vuoi il massimo, il **PHAI Portfolio** ti dà un'**AI premium e prioritaria** (nessuna coda nei picchi), **tutti i 5 EA** e i **nuovi pattern in anteprima**.
 > 
-> Scopri Elite 👉 {{sblocca}}
+> Scopri il Portfolio 👉 {{sblocca}}
 > 
 > — Il team PHAI
 > ---

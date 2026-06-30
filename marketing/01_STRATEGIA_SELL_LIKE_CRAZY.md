@@ -33,7 +33,7 @@ e un **assistente AI multilingua** che è come avere un analista accanto 24/7.
 Sabri insiste: non vendere la categoria ("un altro EA"), vendi un **meccanismo
 unico** con un nome. Il nostro:
 
-> ### Il "Price-Line Pattern Engine" (PaPP)
+> ### I due motori PHAI (Base linee-prezzo + Reversione)
 > Mentre tutti guardano grafici a 5 minuti pieni di rumore, PHAI lavora sul
 > **grafico giornaliero (D1)** e individua gli incroci tra prezzo e 8 linee chiave
 > (la Median + 7 medie da 3 a 365 giorni). Solo i pattern che hanno **superato la
@@ -49,12 +49,12 @@ Sabri: prima dai, poi vendi, poi fai ascendere. La nostra scala:
 |---|---|---|---|
 | **0 — Esca (HVCO)** | "Report PHAI" + demo dashboard read-only + mini-corso email | **Gratis** | Catturare il lead, dare valore, costruire fiducia → doc 04 |
 | **1 — Tripwire** (opz.) | Indicatore `PaPP_Median` + guida "leggere il mercato sul D1" | **27–47 €** | Trasformare lead in cliente pagante (prima transazione) |
-| **2 — Core Offer** (Godfather) | **PHAI Trading**: EA + app multilingua a vita + assistente AI | **997 € una tantum** *oppure* **97 €/mese** | Il cuore del business → doc 03 |
-| **3 — Ascensione** | Setup "fatto-per-te" su VPS, pacchetto multi-coppia, community privata, "PHAI Pro" prioritario | **+297–997 €** | Massimizzare il valore per cliente (LTV) |
+| **2 — Core Offer** (Godfather) | **PHAI Trading**: 5 EA su 2 motori + app multilingua + assistente AI | **da 49 €/mese (singolo) a 197 €/mese (Portfolio)** | Il cuore del business → doc 03 |
+| **3 — Ascensione** | Setup "fatto-per-te" su VPS, Pacchetti-motore, Portfolio, community privata | **+67–197 €/mese** | Massimizzare il valore per cliente (LTV) |
 
 > Regola di Sabri sul prezzo: la maggior parte sotto-prezza. Il valore percepito
 > deve essere **10× il prezzo**. La nostra Godfather Offer (doc 03) impila bonus
-> finché 997 € sembrano un affare.
+> finché 197 €/mese sembrano un affare.
 
 ## 4. La "Halo Strategy" / il funnel a 4 fasi
 Tutto il marketing segue le 4 fasi di Sabri (dettaglio operativo nel doc 05):

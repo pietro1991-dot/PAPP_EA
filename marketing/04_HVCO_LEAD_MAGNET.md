@@ -88,7 +88,7 @@ sul **sotto-avatar** giusto (doc 02 §8):
 
 ## 7. Dopo l'opt-in / la Demo (slippery slide verso l'abbonamento)
 1. **Pagina di grazie** + consegna (report/profilo) + **invito a sbloccare PHAI**
-   (Demo → "collega il TUO conto" = Starter/Pro).
+   (Demo → "collega il TUO conto" = abbonamento attivo).
 2. Parte la **sequenza email** (doc 07): nurture → onboarding → retention.
 3. **Tag/segmento** per fonte (demo/report/quiz) e per sotto-avatar → email su misura.
 4. **Retargeting** di chi ha visto la Demo/landing ma non ha convertito.

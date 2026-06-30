@@ -92,7 +92,7 @@ perdi, vai nel panico e chiudi nel momento sbagliato. Il risultato? Hai perso so
 fiducia, e non sai più di chi fidarti. Lo capisco — ci sono passato anch'io."
 
 **[3:30–6:00 · SOLUZIONE + MECCANISMO UNICO]**
-"PHAI funziona con un meccanismo che abbiamo chiamato Price-Line Pattern Engine. Mentre
+"PHAI funziona con due motori indipendenti e decorrelati. Il primo legge le linee del prezzo, il secondo il valore relativo tra valute correlate. Mentre
 tutti fissano grafici a 5 minuti pieni di rumore, PHAI lavora sul grafico giornaliero e
 individua gli incroci tra il prezzo e 8 linee chiave. Ma la parte importante è questa:
 operano SOLO i pattern che hanno superato la validazione fuori campione — allenati fino al
@@ -106,12 +106,12 @@ drawdown massimo intorno al 20% e anni in perdita, come il 2017, il 2023 e il 20
 trasparenza è la prova. E tra poco potrai vedere tutto questo dal vivo, nella dashboard."
 
 **[8:00–10:30 · OFFERTA + BONUS]**
-"Con PHAI ottieni: l'Expert Advisor su EURUSD, GBPUSD e USDCHF; l'app multilingua con il
+"Con PHAI ottieni: gli Expert Advisor — 5 strategie su 2 motori (EUR/USD, GBP/USD, USD/CHF + i cross EUR/GBP e GBP/CHF); l'app multilingua con il
 tuo assistente AI 24 ore su 24; l'indicatore; storico e backtest consultabili; le
 notifiche su ogni mossa. In più, quattro bonus: la guida sulla gestione del rischio, il
 mini-corso sui pattern, la guida all'installazione e la community privata. Valore
-complessivo oltre 3.800 euro. Ma non paghi tutto questo: inizi da 49 euro al mese con
-Starter, o 97 al mese con Pro — e se preferisci, 997 una volta sola col Lifetime."
+complessivo oltre 4.500 euro. Ma non paghi tutto questo: inizi da 49 euro al mese per una
+singola strategia, 97 per un Pacchetto-motore, o 197 al mese per il Portfolio completo — con l'annuale che ti regala 2 mesi."
 
 **[10:30–12:00 · GARANZIA + SCARSITÀ + CTA + P.S.]**
 "E il rischio dell'acquisto me lo prendo io: garanzia 30 giorni soddisfatti o rimborsati

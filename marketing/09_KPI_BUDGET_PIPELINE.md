@@ -28,8 +28,8 @@ aggressivamente** di chi vende una tantum — un vantaggio competitivo reale.
 | **Efficienza** | **CAC** | < 250 € |
 | **Salute** | **LTV:CAC** | ≥ 3:1 |
 | **Cassa** | **Payback period** | < 3–4 mesi |
-| **Mix** | **% Annuale/Lifetime** | più alta = meno churn, più cassa |
-| **Espansione** | tasso di **upsell** (DFY/Pro/Elite) | leva del LTV |
+| **Mix** | **% Annuale** | più alta = meno churn, più cassa |
+| **Espansione** | tasso di **upsell** (DFY/Pacchetto/Portfolio) | leva del LTV |
 
 ## 2. Funnel Math — esempio abbonamento (1.000 € di ads)
 Scenario prudente per leggere il modello (NON una promessa):
@@ -43,7 +43,7 @@ MRR aggiunto (9 × ~80 € medi*): ~  720 €/mese ricorrenti
 LTV (9 × ~800 €):             ~ 7.200 € nel tempo
 CAC ≈ 1.000 / 9 ≈ 111 €  ·  Payback ≈ 1,4 mesi  ·  LTV:CAC ≈ 7:1
 ```
-*media tra Starter 49€ e Pro 97€, ipotesi. ⚠️ Scenario illustrativo: i tassi reali
+*media tra EA singolo 49€ e Pacchetto Base 97€, ipotesi. ⚠️ Scenario illustrativo: i tassi reali
 variano; conta IVA, fee pagamento, rimborsi, costo LLM (doc 15) nel margine vero.
 
 > Lettura chiave: anche se il **mese 1** quasi non copre il CAC, il cliente paga per
@@ -53,7 +53,7 @@ variano; conta IVA, fee pagamento, rimborsi, costo LLM (doc 15) nel margine vero
 ## 3. Pensiero per COORTI (non per singola vendita)
 - Raggruppa i clienti per **mese di acquisto** (coorte) e segui **MRR trattenuto** nel
   tempo: se la coorte di gennaio mantiene l'80% a marzo, sai quanto vale ogni nuovo cliente.
-- **Net Revenue Retention**: con l'upsell (Starter→Pro→Elite) una coorte può **crescere**
+- **Net Revenue Retention**: con l'upsell (singolo→Pacchetto→Portfolio) una coorte può **crescere**
   di valore anche perdendo qualche cliente. È il sacro graal del SaaS.
 
 ## 4. Budget per fasi di crescita
@@ -88,9 +88,9 @@ variano; conta IVA, fee pagamento, rimborsi, costo LLM (doc 15) nel margine vero
 - **CTR basso** → hook/creatività (doc 06).
 - **Demo→pagante basso** → offerta, garanzia, prova nella sales page (doc 03/08).
 - **Attivazione bassa** → onboarding, guida "5 min", DFY, email di recupero (doc 07/14).
-- **Churn alto** → lifecycle, valore a mercato fermo, upsell ad Annuale/Lifetime (doc 07/16).
+- **Churn alto** → lifecycle, valore a mercato fermo, upsell ad Annuale (doc 07/16).
 - **CAC alto** → migliora le conversioni a valle *prima* di toccare gli ads.
-- **LTV basso** → rafforza ascensione (DFY/Pro/Elite) e referral.
+- **LTV basso** → rafforza ascensione (DFY/Pacchetto/Portfolio) e referral.
 
 ## 8. Strumenti di misura
 GA4 + Meta Pixel + evento **attivazione** ("primo dato EA"); report nativi dell'email;

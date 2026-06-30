@@ -71,7 +71,7 @@ Subito dietro, il suo stesso cuore: B (abbonamento puro, 32).
 - Verdetto: il **cuore** del business.
 
 ### C — Ibrido (33) 🏆
-- = Abbonamento come default **+** opzione Lifetime una tantum **+** ascensione.
+- = Abbonamento **per-EA** come default **+** Annuale **+** ascensione (Pacchetti/Portfolio).
 - ✅ Prende il meglio di A e B: **ricorrente** dalla maggioranza + **iniezioni di
   cassa** da chi odia gli abbonamenti + ancora di prezzo che fa sembrare l'abbonamento
   un affare.
@@ -142,12 +142,13 @@ Subito dietro, il suo stesso cuore: B (abbonamento puro, 32).
 
 **Ascensione (LTV — doc 03 §7):**
 - **Setup "Fatto-Per-Te"** (broker+VPS+install): +297 € una tantum.
-- **PHAI Elite**: coppie extra + AI prioritaria + nuovi pattern in anteprima +
+- **PHAI Portfolio**: tutti gli EA + AI premium prioritaria + nuovi EA in anteprima +
   community: +30 €/mese sopra il Pro.
 - **Community/coaching** premium: +497 €/anno.
 
-> Ancoraggio (Sabri): mostra prima il **Lifetime 997 €** (valore stack ~3.888 €,
-> doc 03). A quel punto **97 €/mese** sembra un ingresso facile, e **49 €** un
+> Ancoraggio (Sabri): mostra prima il **value stack ~4.500 €** e l'**Annuale**
+> (doc 03). A quel punto **197 €/mese** (tutto) sembra ragionevole, **97 €** (un motore)
+> facile, e **49 €** (una strategia) un
 > no-brainer per provare.
 
 ---
@@ -162,7 +163,7 @@ Subito dietro, il suo stesso cuore: B (abbonamento puro, 32).
 
 ### Il numero che decide tutto: LTV vs CAC
 ```
-Pro 97 €/mese · permanenza media stimata 8 mesi  → LTV ≈ 776 € (solo sub)
+Pacchetto Base 97 €/mese · permanenza media stimata 8 mesi  → LTV ≈ 776 € (solo sub)
 + ascensione (30% prende Setup DFY 297 €)         → LTV ≈ 865 €+
 CAC obiettivo (doc 09): < 250 €
 Rapporto LTV:CAC ≈ 3,5 : 1   →  business sano e scalabile
@@ -182,7 +183,7 @@ Rapporto LTV:CAC ≈ 3,5 : 1   →  business sano e scalabile
 ### Mitigazione del churn (il rischio #1 del SaaS di trading)
 - Il valore NON è solo il P&L: è **lo strumento** (app, AI, trasparenza, educazione)
   → l'utente resta anche in mesi piatti perché il tool gli serve.
-- **Annuale scontato** e **Lifetime** spostano clienti fuori dal churn mensile.
+- **Annuale scontato** sposta i clienti fuori dal churn mensile.
 - Onboarding curato (doc 07) → time-to-value rapido → meno disdette precoci.
 - Comunicazione onesta sui drawdown → aspettative corrette → meno rimborsi/abbandoni.
 
@@ -203,25 +204,25 @@ Se vuoi un secondo motore di ricavo:
 ## 7. Roadmap del business (fasi)
 | Fase | Quando | Modello attivo | Obiettivo |
 |---|---|---|---|
-| **1 — Lancio** | Mesi 1–3 | Ibrido (Starter/Pro/Lifetime) + Demo gratis | Validare funnel, primi MRR |
-| **2 — Scala** | Mesi 4–9 | + Annuale, + ascensione (DFY/Elite), + IB opz. | Crescere MRR, alzare LTV |
+| **1 — Lancio** | Mesi 1–3 | Per-EA (Signals/singolo/Pacchetti/Portfolio) + Demo gratis | Validare funnel, primi MRR |
+| **2 — Scala** | Mesi 4–9 | + Annuale, + ascensione (DFY/Portfolio), + IB opz. | Crescere MRR, alzare LTV |
 | **3 — Espansione** | Mesi 10+ | + White-label/B2B, + nuove coppie/mercati, marketplace come vetrina | Grandi contratti, nuovi canali |
 
 ## 8. KPI specifici di questo modello (oltre al doc 09)
 - **MRR** (ricavo ricorrente mensile) e sua **crescita %**.
 - **Churn mensile** (target < 8–10% all'inizio, da abbassare).
 - **LTV:CAC** ≥ 3:1.
-- **% Annuale/Lifetime** sul totale (più alta = meno churn, più cassa).
-- **Tasso di ascensione** (quanti Pro comprano DFY/Elite).
+- **% Annuale** sul totale (più alta = meno churn, più cassa).
+- **Tasso di ascensione** (quanti clienti salgono a DFY/Portfolio).
 - **Conversione Demo→pagante**.
 
 ---
 
 ## 9. Decisione finale (riassunto)
-> **Modello scelto: SaaS Ibrido abbonamento-first.**
-> Abbonamento mensile (49 €/97 €) come cuore ricorrente, **+** opzione Lifetime
-> (997 €) e Annuale per cassa e anti-churn, **+** Demo gratuita come acquisizione,
-> **+** ascensione (DFY, Elite, community) per il LTV, **+** eventuale IB rebate
+> **Modello scelto: SaaS abbonamento-first, per-EA.**
+> Abbonamento mensile (da 49 € a 197 €) come cuore ricorrente, **+** Annuale
+> (2 mesi gratis) per cassa e anti-churn, **+** Demo gratuita come acquisizione,
+> **+** ascensione (DFY, Portfolio, community) per il LTV, **+** eventuale IB rebate
 > trasparente come secondo motore.
 >
 > **Perché:** massimo punteggio (33/35), massimo ricavo ricorrente e LTV,

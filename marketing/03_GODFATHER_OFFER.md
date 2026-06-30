@@ -41,7 +41,7 @@ relativo sui cross, doc 01) ci rende **non confrontabili sul prezzo**: non vendi
 vendi un sistema con un nome e 5 strategie decorrelate.
 
 ## 3. Lo stack di valore (componente 2: valore enorme)
-Cosa riceve un abbonato **Autopilot**, con valore assegnato a ciascun pezzo:
+Cosa riceve un abbonato **Portfolio**, con valore assegnato a ciascun pezzo:
 
 | Cosa riceve | Valore percepito |
 |---|---|
@@ -113,14 +113,14 @@ Sabri: spiega PERCHÉ, o sembra una fregatura.
 Dopo l'ingresso, la value ladder sale (doc 11 §3):
 - **Setup "Fatto-Per-Te"** (broker+VPS+install): **+297 €** — *e risolve la frizione
   d'installazione*, salvando l'attivazione (doc 16 §5).
-- **PHAI Elite** (197 €/mese): **AI premium** (nessuna coda, doc 15) + onboarding +
-  VPS inclusa + nuovi pattern in anteprima — **+100 €/mese** sopra l'Autopilot.
+- **PHAI Portfolio** (197 €/mese): **tutti i 5 EA** + **AI premium** (nessuna coda, doc 15) +
+  onboarding + VPS inclusa + nuovi EA in anteprima — il gradino sopra il Pacchetto Base.
 - **Community/coaching premium**: call mensili, analisi: **+497 €/anno**.
-- **Upgrade Signals→Autopilot→Annuale→Elite**: percorso naturale di crescita del cliente.
+- **Upgrade Signals → EA singolo → Pacchetto-motore → Portfolio → Annuale**: percorso naturale di crescita.
 
 ## 9. L'offerta completa in formato "pitch" (per VSL/sales page, doc 08)
-> **Ecco cosa sblocchi oggi con PHAI Autopilot:**
-> il sistema PHAI completo (EA su 3 coppie) + l'app multilingua + il tuo **assistente
+> **Ecco cosa sblocchi oggi con PHAI Portfolio:**
+> il sistema PHAI completo (5 EA su 2 motori) + l'app multilingua + il tuo **assistente
 > AI personale 24/7** + l'indicatore + storico/backtest consultabili + notifiche su
 > ogni mossa — **più 4 bonus** (Risk & Sizing, mini-corso pattern, guida setup,
 > community) per oltre 900 €.
@@ -131,15 +131,15 @@ Dopo l'ingresso, la value ladder sale (doc 11 §3):
 > *Puoi vederlo dal vivo adesso: apri la **Demo gratuita**.*
 
 ## 10. Checklist Godfather (criteri di Sabri — tutti spuntati?)
-- [x] **USP unica** con nome (Price-Line Pattern Engine)
-- [x] **Valore percepito ≥ 10×** il prezzo (3.888 € → 97 €/mese)
+- [x] **USP unica** con nome (i due motori PHAI: Base + Reversione)
+- [x] **Valore percepito ≥ 10×** il prezzo (~4.500 € → 197 €/mese; 49 € una singola strategia)
 - [x] **ROI dimostrato** con prova/trasparenza (backtest + Demo) e disclaimer
 - [x] **Motivo per agire ORA** reale (50 posti, server AI, prezzo di lancio, bonus)
 - [x] **Inversione del rischio** (garanzia 30gg "meglio che gratis")
-- [x] **Più veicoli di prezzo** (Demo/Signals/Autopilot/Elite/Annuale)
+- [x] **Più veicoli di prezzo** (Demo/Signals/EA singolo/Pacchetti/Portfolio/Annuale)
 - [x] **Reason why** credibile
 - [x] **Barriera d'ingresso bassa** (Demo gratis + Signals 37€)
-- [x] **Ascensione** definita (DFY/Elite/community/upgrade)
+- [x] **Ascensione** definita (DFY/Portfolio/community/upgrade)
 
 ---
 
