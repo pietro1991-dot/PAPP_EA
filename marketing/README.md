@@ -11,6 +11,14 @@ acquisizione prevedibile.
 > guadagno, disclaimer di rischio, dati di backtest etichettati come tali). Ogni
 > testo di marketing qui dentro va usato CON i disclaimer indicati.
 
+> 🧭 **Modello commerciale ATTUALE (fonte di verità: `chat_bot/catalog.py`).**
+> PHAI = **5 strategie su 2 motori decorrelati**: *Motore Base* (EUR/USD, GBP/USD,
+> USD/CHF) e *Motore Reversione* (EUR/GBP, GBP/CHF). Scala d'acquisto **per-EA**:
+> Demo (gratis) · **Signals 37€** · **EA singolo 49€** · **Pacchetto Reversione 67€**
+> · **Pacchetto Base 97€** · **Portfolio 197€** · Annuale (2 mesi gratis).
+> Le pagine live (`/`, `/risultati`, `/checkout`) e l'app riflettono questo modello;
+> alcuni doc qui sotto possono ancora citare prezzi/strutture precedenti negli esempi.
+
 ---
 
 ## Il prodotto in una riga

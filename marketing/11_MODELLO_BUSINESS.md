@@ -133,10 +133,12 @@ Subito dietro, il suo stesso cuore: B (abbonamento puro, 32).
 | Piano | Prezzo | Cosa include | A chi |
 |---|---|---|---|
 | **Demo** | Gratis | Dashboard read-only con dati reali, AI a domande limitate | Acquisizione/lead (doc 04) |
-| **Starter** | **49 €/mese** | EA su **1 coppia** (EURUSD), app, AI base, notifiche | Chi prova, budget piccolo |
-| **Pro** ⭐ | **97 €/mese** | EA su **3 coppie**, AI completa, priorità, storico/backtest, push | Il piano-cuore (la maggioranza) |
-| **Lifetime** | **997 € una tantum** | Tutto il Pro **a vita** (no canone) | Chi odia gli abbonamenti (cassa) |
-| **Annuale** | **970 €/anno** (2 mesi gratis) | Pro pagato annuale | Riduce churn, anticipa cassa |
+| **PHAI Signals** | **37 €/mese** | Tutti i segnali (esecuzione manuale), app, AI base, notifiche | Barriera bassissima |
+| **EA singolo** | **49 €/mese** | **1 EA automatico** a scelta + app + AI + storico/backtest | Tripwire |
+| **Pacchetto Reversione** | **67 €/mese** | I **2 EA del Motore Reversione** (EUR/GBP, GBP/CHF) | Bundle-motore |
+| **Pacchetto Base** ⭐ | **97 €/mese** | I **3 EA del Motore Base** (EUR/USD, GBP/USD, USD/CHF) | Il piano-cuore |
+| **PHAI Portfolio** | **197 €/mese** | **Tutti i 5 EA**, 2 motori, AI premium, VPS, nuovi EA inclusi | Eroe/decoy |
+| **Annuale Portfolio** | **1.970 €/anno** (2 mesi gratis) | Portfolio annuale | Riduce churn, anticipa cassa |
 
 **Ascensione (LTV — doc 03 §7):**
 - **Setup "Fatto-Per-Te"** (broker+VPS+install): +297 € una tantum.

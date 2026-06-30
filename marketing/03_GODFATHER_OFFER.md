@@ -21,28 +21,31 @@ Sabri: dai più "veicoli" d'acquisto e fai entrare con **micro-impegni**. La sca
 |---|---|---|---|
 | **Demo** | Dashboard read-only con dati reali + assistente AI a domande limitate | **Gratis** | *Value-in-advance*: vedi il prodotto prima di pagare → fiducia |
 | **PHAI Signals** | **Solo segnali** in tempo reale + app + AI base + notifiche (li esegui tu, niente PC acceso) | **37 €/mese** | *Micro-impegno*: "provo, disdico quando voglio" |
-| **PHAI Autopilot** ⭐ | **EA automatico** su 3 coppie + AI completa + storico/backtest + priorità | **97 €/mese** | Il piano-cuore (la maggioranza) |
-| **PHAI Elite** | Tutto l'Autopilot + AI premium + onboarding + VPS inclusa | **197 €/mese** | *Decoy*: fa scegliere l'Autopilot |
-| **Annuale Autopilot** | Autopilot pagato annuale (**2 mesi gratis**) | **970 €/anno** | **Ancora** + anti-churn + cassa anticipata |
+| **EA singolo** ⚡ | **1 EA automatico** a scelta (es. EUR/USD) + AI + storico/backtest | **49 €/mese** | *Tripwire*: "provo una strategia" |
+| **Pacchetto Reversione** | I **2 EA del Motore Reversione** (cross EUR/GBP, GBP/CHF) | **67 €/mese** | Bundle-motore scontato |
+| **Pacchetto Base** ⭐ | I **3 EA del Motore Base** (EUR/USD, GBP/USD, USD/CHF) | **97 €/mese** | Il piano-cuore (la maggioranza) |
+| **PHAI Portfolio** | **Tutti i 5 EA** (2 motori) + AI premium + onboarding + VPS + nuovi EA inclusi | **197 €/mese** | *Eroe/decoy* |
+| **Annuale Portfolio** | Portfolio pagato annuale (**2 mesi gratis**) | **1.970 €/anno** | **Ancora** + anti-churn + cassa anticipata |
 
-> **Trucco di ancoraggio (Sabri):** mostra **prima** il value stack (~3.888 €, §3) e
-> l'Annuale (970 €). Dopo quell'ancora, **97 €/mese** sembra niente e **37 €** (i soli
-> segnali) un no-brainer. L'ordine di presentazione *è* persuasione.
+> **Trucco di ancoraggio (Sabri):** mostra **prima** il value stack (~4.500 €, §3) e
+> l'Annuale (1.970 €). Dopo quell'ancora, **197 €/mese** (tutto) sembra niente, **97 €**
+> (un motore) ragionevole e **49 €** (una singola strategia) un no-brainer. L'ordine *è* persuasione.
 
 ## 2. La USP in una frase (componente 1)
 > **"Il primo sistema di trading automatico che ti SPIEGA ogni mossa — in tempo
 > reale, nella tua lingua, con un'AI che risponde a ogni domanda. Trasparenza totale
 > in un mercato pieno di scatole nere e truffe."**
 
-Il meccanismo unico (il *Price-Line Pattern Engine*, doc 01) ci rende **non
-confrontabili sul prezzo**: non vendi "un EA", vendi un metodo con un nome.
+Il meccanismo unico (i **due motori PHAI** — *Base* linee-prezzo + *Reversione* valore
+relativo sui cross, doc 01) ci rende **non confrontabili sul prezzo**: non vendi "un EA",
+vendi un sistema con un nome e 5 strategie decorrelate.
 
 ## 3. Lo stack di valore (componente 2: valore enorme)
 Cosa riceve un abbonato **Autopilot**, con valore assegnato a ciascun pezzo:
 
 | Cosa riceve | Valore percepito |
 |---|---|
-| **PHAI Trading EA** (EURUSD+GBPUSD+USDCHF), pattern validati out-of-sample | 1.200 € |
+| **5 PHAI Trading EA** su 2 motori (EUR/USD, GBP/USD, USD/CHF, EUR/GBP, GBP/CHF), validati out-of-sample | 2.000 € |
 | **App PHAI multilingua** (conto/segnali/performance live, anche su telefono) | 600 € |
 | **Assistente AI 24/7** (IT/EN/FR/ES) che spiega ogni operazione e il mercato | 480 € |
 | **Indicatore `PaPP_Median`** (le 8 linee sul D1) | 200 € |
@@ -52,11 +55,12 @@ Cosa riceve un abbonato **Autopilot**, con valore assegnato a ciascun pezzo:
 | **BONUS 2** — Mini-corso "Capire i pattern PHAI sul D1" (video) | 297 € |
 | **BONUS 3** — Setup rapido: broker + VPS + installazione passo-passo | 197 € |
 | **BONUS 4** — Community privata PHAI (aggiornamenti, nuovi pattern) | 247 € |
-| **VALORE TOTALE** | **~3.888 €** |
+| **VALORE TOTALE** | **~4.500 €** |
 
-> **Pitch:** "Tutto questo — valore oltre 3.800 € — non a 3.888 €.
-> Lo sblocchi con **PHAI Autopilot a 97 €/mese** (o **970 €/anno**, 2 mesi gratis).
-> E se per ora vuoi solo i segnali da eseguire a mano: **PHAI Signals a 37 €/mese.**"
+> **Pitch:** "Tutto questo — valore oltre 4.500 € — lo sblocchi con il **PHAI Portfolio
+> a 197 €/mese** (o **1.970 €/anno**, 2 mesi gratis). Vuoi solo un motore? **Pacchetto Base
+> 97 € / Reversione 67 €.** Una singola strategia? **49 €/mese.** Solo i segnali a mano?
+> **PHAI Signals 37 €/mese.**"
 
 ## 4. ROI dimostrato (componente 3) — con prova e disclaimer
 Sabri: dimostra il ritorno, non affermarlo. La nostra prova è la **trasparenza**:
