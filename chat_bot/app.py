@@ -904,6 +904,137 @@ async def checkout_page(request: Request):
     return _serve_page("checkout", request)
 
 
+@app.get("/sitemap", response_class=HTMLResponse)
+async def sitemap_page(request: Request):
+    """Mappa del sito OWNER-ONLY: hub con tutte le pagine (marketing in 4 lingue,
+    checkout per ogni SKU, app, dati/download) + elenco tecnico di tutte le rotte."""
+    try:
+        user = await auth.current_user(request)
+    except Exception:
+        return RedirectResponse("/login", status_code=302)
+    oid = _owner_id()
+    if oid is not None and user.id != oid:
+        return RedirectResponse("/", status_code=302)
+
+    LANGS = ["it", "en", "fr", "es"]
+    FLAG = {"it": "🇮🇹", "en": "🇬🇧", "fr": "🇫🇷", "es": "🇪🇸"}
+
+    def card(href, title, desc, *, ext=False, langs=False):
+        tgt = ' target="_blank" rel="noopener"' if ext else ""
+        if langs:
+            chips = " ".join(
+                f'<a class="lang" href="{href}?lang={l}" target="_blank" rel="noopener">{FLAG[l]} {l.upper()}</a>'
+                for l in LANGS
+            )
+            return (f'<div class="sm-card"><div class="sm-t">{title}</div>'
+                    f'<div class="sm-d">{desc}</div><div class="sm-langs">{chips}</div></div>')
+        return (f'<a class="sm-card link" href="{href}"{tgt}><div class="sm-t">{title} ↗</div>'
+                f'<div class="sm-d">{desc}</div></a>')
+
+    # --- Sezioni ---
+    marketing = [
+        card("/", "Landing / Sales", "Porta d'ingresso completa (hero → prova → prezzi → FAQ).", langs=True),
+        card("/report", "Squeeze report", "Pagina a obiettivo unico: email in cambio del report.", langs=True),
+        card("/demo", "Demo dal vivo", "Dashboard read-only con dati reali (auto-login demo).", ext=True),
+        card("/login", "Login", "Accesso clienti.", ext=True),
+        card("/login?mode=register", "Registrazione", "Creazione account con license key.", ext=True),
+        card("/unsub?e=esempio@mail.com", "Disiscrizione email", "Pagina /unsub per togliersi dalle email.", ext=True),
+    ]
+
+    app_pages = [
+        card("/#overview", "App · Panoramica", "Conto, attività e track record.", ext=True),
+        card("/#strategie", "App · Strategie (marketplace)", "Gli EA per motore: grafico, spiegazione, sblocco.", ext=True),
+        card("/#signals", "App · Segnali", "Feed segnali in tempo reale.", ext=True),
+        card("/#mercato", "App · Mercato", "Stato del mercato (feature).", ext=True),
+        card("/#assistant", "App · Assistente", "Chatbot AI.", ext=True),
+    ]
+
+    # Checkout per ogni SKU (dal catalogo)
+    sku_list = [("signals", "PHAI Signals", catalog.SIGNALS_PRICE)]
+    for e in catalog.EAS:
+        sku_list.append((f"single:{e['id']}", f"Solo {e['name']}", catalog.SINGLE_PRICE))
+    for p in catalog.PACKS:
+        sku_list.append((p["id"], catalog.tr(p["name"]), p["price"]))
+    sku_list.append(("portfolio", catalog.tr(catalog.PORTFOLIO["name"]), catalog.PORTFOLIO["price"]))
+    checkout_cards = [
+        card(f"/checkout?sku={sku}", f"{label} — {int(price)}€/mese", f"Checkout SKU <code>{sku}</code>.", ext=True)
+        for sku, label, price in sku_list
+    ]
+
+    # Dati & download
+    data_cards = [card("/api/backtest/export", "⤓ Tutti i backtest (CSV)", "Esporta tutti i trade dal database.", ext=True)]
+    for e in catalog.EAS:
+        if e["live"]:
+            data_cards.append(card(f"/api/backtest/export?symbol={e['symbol']}",
+                                   f"⤓ Backtest {e['name']} (CSV)", f"Trade di {e['symbol']} dal DB.", ext=True))
+    data_cards.append(card("/api/public/track-record", "Track record pubblico (JSON)", "KPI sintetici per la landing.", ext=True))
+    data_cards.append(card("/api/catalog", "Catalogo (JSON)", "Motori, EA, pacchetti, prezzi e cosa possiedi.", ext=True))
+
+    # Tutte le rotte tecniche (auto)
+    seen, rows = set(), []
+    for r in app.routes:
+        path = getattr(r, "path", "")
+        methods = getattr(r, "methods", None)
+        if not path or path.startswith("/static") or path in seen:
+            continue
+        seen.add(path)
+        ms = ",".join(sorted(m for m in (methods or []) if m not in ("HEAD", "OPTIONS"))) or "WS"
+        rows.append(f'<tr><td class="m">{ms}</td><td>{path}</td></tr>')
+    tech_rows = "".join(sorted(rows))
+
+    def section(title, sub, cards):
+        return (f'<section><h2>{title}</h2><p class="sub">{sub}</p>'
+                f'<div class="grid">{"".join(cards)}</div></section>')
+
+    html = f"""<!DOCTYPE html><html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHAI · Mappa del sito</title>
+<style>
+:root{{--bg:#0a0e18;--panel:#121829;--panel2:#1a2236;--border:#283149;--text:#e9ebf2;--muted:#8b94ab;--accent:#cba65c;--green:#3ddc97}}
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);padding:24px 18px 60px}}
+.wrap{{max-width:1080px;margin:0 auto}}
+.top{{display:flex;align-items:center;gap:12px;margin-bottom:6px}}
+.top img{{width:34px;height:34px}}
+.top b{{font-size:20px;font-weight:800;letter-spacing:1px}}
+.top i{{font-style:normal;color:var(--accent);font-size:11px;letter-spacing:2px}}
+.lead{{color:var(--muted);font-size:14px;margin:4px 0 26px}}
+.actions{{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}}
+.actions a{{font-size:13px;font-weight:700;padding:9px 14px;border-radius:9px;background:var(--panel2);border:1px solid var(--border);color:var(--text);text-decoration:none}}
+.actions a:hover{{border-color:var(--accent);color:var(--accent)}}
+section{{margin-bottom:30px}}
+h2{{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin-bottom:2px}}
+.sub{{color:var(--muted);font-size:12.5px;margin-bottom:12px}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}}
+.sm-card{{background:linear-gradient(180deg,#161e30,#121829);border:1px solid var(--border);border-radius:12px;padding:13px 15px;text-decoration:none;color:var(--text);display:block;transition:.15s}}
+a.sm-card:hover{{border-color:var(--accent);transform:translateY(-2px)}}
+.sm-t{{font-size:14px;font-weight:700}}
+.sm-d{{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}}
+.sm-d code{{background:#0e1422;padding:1px 5px;border-radius:4px;color:#cfd6e6}}
+.sm-langs{{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}}
+.sm-langs .lang{{font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px;background:#0e1422;border:1px solid var(--border);color:var(--accent);text-decoration:none}}
+.sm-langs .lang:hover{{border-color:var(--accent)}}
+details{{margin-top:6px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:6px 14px}}
+summary{{cursor:pointer;font-weight:700;font-size:13px;padding:8px 0;color:var(--text)}}
+table{{width:100%;border-collapse:collapse;font-size:12.5px;margin:6px 0 10px}}
+td{{padding:5px 8px;border-bottom:1px solid var(--border);color:#cfd4de}}
+td.m{{color:var(--green);font-weight:700;white-space:nowrap;width:120px}}
+.footer{{color:var(--muted);font-size:12px;margin-top:24px}}
+</style></head><body><div class="wrap">
+<div class="top"><img src="/static/logo-mark.png" alt="PHAI"><b>PHAI <i>TRADING</i></b></div>
+<div class="lead">Mappa del sito — tutte le pagine e i dati del prodotto, in un colpo d'occhio. Visibile solo a te (owner).</div>
+<div class="actions"><a href="/">← Torna all'app</a><a href="/demo" target="_blank">Apri la Demo</a><a href="/" target="_blank">Apri la Landing</a></div>
+{section("Pagine pubbliche / Marketing", "Cosa vede un visitatore. Le pagine marketing sono in 4 lingue.", marketing)}
+{section("Checkout (un link per prodotto)", "Ogni SKU della scala di valore: singolo EA, pacchetti, portfolio, signals.", checkout_cards)}
+{section("App cliente (dashboard)", "Le sezioni dell'app dopo il login.", app_pages)}
+{section("Dati e download", "Scarica i risultati dei backtest e gli endpoint dati.", data_cards)}
+<section><h2>Tutte le rotte tecniche</h2><p class="sub">Ogni endpoint del sistema (pagine + API + websocket).</p>
+<details><summary>Mostra tutte le rotte ({len(rows)})</summary><table><tbody>{tech_rows}</tbody></table></details></section>
+<div class="footer">Generata dal vivo dalle rotte dell'app · PHAI Trading</div>
+</div></body></html>"""
+    return HTMLResponse(html)
+
+
 @app.post("/api/register")
 async def api_register(request: Request):
     body = await request.json()
@@ -955,7 +1086,8 @@ async def api_logout():
 @app.get("/api/me")
 async def api_me(user: User = Depends(auth.current_user)):
     plan = await _user_plan(user)
-    return {"email": user.email, "plan": plan or None, "entitlements": entitlements.features(plan)}
+    return {"email": user.email, "plan": plan or None, "entitlements": entitlements.features(plan),
+            "is_owner": _owner_id() is not None and user.id == _owner_id()}
 
 
 @app.get("/api/signals")
