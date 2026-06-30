@@ -484,6 +484,145 @@ async def landing_preview(request: Request):
     return _serve_page("landing", request)
 
 
+def _public_nav(active=""):
+    """Header di navigazione del SITO pubblico (condiviso da landing e /risultati)."""
+    items = [("/", "Home", "home"), ("/landing#come-funziona", "Come funziona", "come"),
+             ("/risultati", "Risultati", "risultati"), ("/landing#prezzi", "Prezzi", "prezzi"),
+             ("/landing#faq", "FAQ", "faq"), ("/demo", "Demo", "demo")]
+    links = "".join(
+        f'<a class="pn-link{" on" if k == active else ""}" href="{href}">{label}</a>'
+        for href, label, k in items
+    )
+    return (
+        '<header class="pubnav"><div class="pn-wrap">'
+        '<a class="pn-brand" href="/"><img src="/static/logo-mark.png" alt="PHAI"><b>PHAI <i>TRADING</i></b></a>'
+        f'<nav class="pn-links">{links}</nav>'
+        '<a class="pn-cta" href="/login">Accedi</a>'
+        '</div></header>'
+    )
+
+
+def _equity_svg(d, w=560, h=150):
+    ys = sorted(d.get("by_year", []), key=lambda y: y["year"])
+    if not ys:
+        return ""
+    pts = [d["initial_capital"]] + [y["end_capital"] for y in ys]
+    n = len(pts); mn = min(pts); mx = max(pts); rng = (mx - mn) or 1; P = 6
+    fx = lambda i: P + i * (w - 2 * P) / (n - 1)
+    fy = lambda v: h - P - ((v - mn) / rng) * (h - 2 * P)
+    line = " ".join(("M" if i == 0 else "L") + f"{fx(i):.1f},{fy(v):.1f}" for i, v in enumerate(pts))
+    area = (f"M{fx(0):.1f},{h - P} " + " ".join(f"L{fx(i):.1f},{fy(v):.1f}" for i, v in enumerate(pts))
+            + f" L{fx(n - 1):.1f},{h - P} Z")
+    col = "#3ddc97" if pts[-1] >= pts[0] else "#f1707b"
+    return (f'<svg viewBox="0 0 {w} {h}" preserveAspectRatio="none" class="eqsvg">'
+            f'<path d="{area}" fill="{col}22"/><path d="{line}" fill="none" stroke="{col}" stroke-width="2.5"/></svg>')
+
+
+@app.get("/risultati", response_class=HTMLResponse)
+async def risultati_page():
+    """Pagina PUBBLICA dei risultati: lo showroom degli EA (grafico + cosa fa + CTA),
+    visibile senza login. È la prova-in-anticipo: vedi tutto prima di registrarti."""
+    def money(v):
+        return f"{v:,.0f}".replace(",", ".")
+    blocks = []
+    for ek, eng in catalog.ENGINES.items():
+        eas = [e for e in catalog.EAS if e["engine"] == ek]
+        if not eas:
+            continue
+        cards = []
+        for e in eas:
+            d = await _overview_data(e["symbol"]) if e["live"] else None
+            has = bool(d and d.get("available"))
+            if has:
+                tt = d["totals"]
+                chart = _equity_svg(d)
+                kpis = (
+                    f'<div class="rk"><b class="{"pos" if tt["cagr_pct"]>=0 else "neg"}">{tt["cagr_pct"]:+.1f}%</b><span>Crescita/anno</span></div>'
+                    f'<div class="rk"><b>{tt["winrate"]}%</b><span>Win rate</span></div>'
+                    f'<div class="rk"><b>{tt["trades"]}</b><span>Trade</span></div>'
+                )
+                cap = (f'<div class="rcap">Capitale {money(d["initial_capital"])}€ → '
+                       f'<b>{money(d["initial_capital"]+tt["pnl_money"])}€</b> '
+                       f'<span class="rspan">({d["years"]} anni di backtest)</span></div>')
+            else:
+                chart = ('<div class="rsoon">⚠️ Backtest non ancora disponibile nel database.</div>'
+                         if e["live"] else '<div class="rsoon">🔜 In arrivo</div>')
+                kpis = ""; cap = ""
+            badge = (f'<span class="rstat soon">In arrivo</span>' if not e["live"]
+                     else '<span class="rstat live">Validato</span>')
+            if e["live"]:
+                cta = (f'<a class="rbtn gold" href="/checkout?sku=single:{e["id"]}">Attiva da {int(catalog.SINGLE_PRICE)}€/mese</a>'
+                       f'<a class="rbtn ghost" href="/demo">Vedi nella Demo</a>')
+            else:
+                cta = '<a class="rbtn ghost" href="/report">Avvisami quando esce</a>'
+            cards.append(
+                f'<div class="rcard"><div class="rtop"><div><div class="rname">{e["name"]}</div>'
+                f'<div class="rtag">{catalog.tr(e["tagline"])}</div></div>{badge}</div>'
+                f'{cap}<div class="rchart">{chart}</div><div class="rkpis">{kpis}</div>'
+                f'<div class="rsec"><h4>Cosa fa</h4><p>{catalog.tr(e["mechanism"])}</p></div>'
+                f'<div class="rsec"><h4>Rischio</h4><p>{catalog.tr(e["risk"])}</p></div>'
+                f'<div class="rcta">{cta}</div></div>'
+            )
+        blocks.append(
+            f'<section class="rengine"><div class="reng-h"><span class="dot" style="background:{eng["color"]}"></span>'
+            f'<span class="reng-nm">{catalog.tr(eng["name"])}</span><span class="reng-tg">{catalog.tr(eng["tagline"])}</span></div>'
+            f'<div class="rgrid">{"".join(cards)}</div></section>'
+        )
+    html = f"""<!DOCTYPE html><html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHAI · Risultati e backtest in chiaro</title>
+<meta name="description" content="I risultati reali di ogni strategia PHAI: grafico, win rate, drawdown — in chiaro, prima di registrarti.">
+<style>
+:root{{--bg:#0a0e18;--panel:#121829;--panel2:#1a2236;--border:#283149;--text:#e9ebf2;--muted:#8b94ab;--accent:#cba65c;--green:#3ddc97;--red:#f1707b}}
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}}
+a{{color:inherit}}
+.pubnav{{position:sticky;top:0;z-index:50;background:rgba(10,14,24,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}}
+.pn-wrap{{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:11px 18px}}
+.pn-brand{{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--text)}}
+.pn-brand img{{width:30px;height:30px}}.pn-brand b{{font-size:16px;font-weight:800;letter-spacing:1px}}.pn-brand i{{font-style:normal;color:var(--accent);font-size:9px;letter-spacing:2px}}
+.pn-links{{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}}
+.pn-link{{font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;padding:7px 11px;border-radius:8px}}
+.pn-link:hover{{color:var(--text);background:#161e30}}.pn-link.on{{color:var(--accent)}}
+.pn-cta{{font-size:13.5px;font-weight:700;color:#0a0e18;background:var(--accent);text-decoration:none;padding:8px 16px;border-radius:9px}}
+.hero{{max-width:1100px;margin:0 auto;padding:40px 18px 10px;text-align:center}}
+.hero h1{{font-size:34px;font-weight:800;line-height:1.15}}
+.hero p{{color:var(--muted);font-size:15px;margin-top:12px;max-width:640px;margin-left:auto;margin-right:auto}}
+.wrap{{max-width:1100px;margin:0 auto;padding:18px 18px 70px}}
+.rengine{{margin-top:30px}}
+.reng-h{{display:flex;align-items:center;gap:10px;margin:0 2px 14px;flex-wrap:wrap}}
+.reng-h .dot{{width:12px;height:12px;border-radius:50%}}
+.reng-nm{{font-size:18px;font-weight:800}}.reng-tg{{font-size:12px;color:var(--muted)}}
+.rgrid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}}
+.rcard{{background:linear-gradient(180deg,#161e30,#121829);border:1px solid var(--border);border-radius:16px;padding:18px}}
+.rtop{{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}}
+.rname{{font-size:18px;font-weight:800}}.rtag{{font-size:12.5px;color:#aeb4c0;margin-top:3px;line-height:1.45}}
+.rstat{{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:3px 8px;border-radius:7px;white-space:nowrap}}
+.rstat.live{{background:rgba(61,220,151,.16);color:var(--green)}}.rstat.soon{{background:#2a3146;color:#aeb7cc}}
+.rcap{{font-size:12px;color:var(--muted);margin:12px 0 4px}}.rcap b{{color:var(--text)}}.rspan{{opacity:.8}}
+.rchart{{margin:4px 0 10px}}.eqsvg{{width:100%;height:150px;display:block}}
+.rsoon{{padding:34px 10px;text-align:center;color:var(--muted);font-size:13px;background:#0f1420;border:1px dashed var(--border);border-radius:10px}}
+.rkpis{{display:flex;gap:16px;margin-bottom:8px}}
+.rk b{{display:block;font-size:18px;font-weight:800}}.rk b.pos{{color:var(--green)}}.rk b.neg{{color:var(--red)}}
+.rk span{{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}}
+.rsec{{margin-top:12px}}.rsec h4{{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin-bottom:4px}}
+.rsec p{{font-size:13px;line-height:1.55;color:#cfd4de}}
+.rcta{{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}}
+.rbtn{{flex:1;text-align:center;text-decoration:none;font-weight:700;font-size:13.5px;padding:11px 12px;border-radius:10px;white-space:nowrap}}
+.rbtn.gold{{background:var(--accent);color:#0a0e18}}.rbtn.ghost{{background:transparent;border:1px solid var(--border);color:var(--text)}}
+.rbtn.ghost:hover{{border-color:var(--accent);color:var(--accent)}}
+.disc{{max-width:1100px;margin:10px auto 0;padding:0 18px;color:var(--muted);font-size:11.5px;text-align:center}}
+@media(max-width:560px){{.hero h1{{font-size:26px}}.rgrid{{grid-template-columns:1fr}}.pn-links{{display:none}}}}
+</style></head><body>
+{_public_nav("risultati")}
+<div class="hero"><h1>I risultati, in chiaro.</h1>
+<p>Ogni strategia PHAI con il suo backtest reale: grafico del capitale, win rate e numero di operazioni. Niente screenshot finti — vedi tutto <b>prima</b> di registrarti.</p></div>
+<div class="wrap">{"".join(blocks)}
+<div class="disc">Backtest = simulazione storica su dati reali, non promessa di rendimenti futuri. Il trading comporta rischi: puoi perdere il capitale. La garanzia è sul software, mai sui profitti.</div>
+</div></body></html>"""
+    return HTMLResponse(html)
+
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
     return HTMLResponse(open("templates/login.html").read())
@@ -1191,8 +1330,9 @@ def _row_stats(r):
 INITIAL_CAPITAL = 10000.0   # deposito iniziale dei backtest (EUR)
 
 
-@app.get("/api/backtest/overview")
-async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_user)):
+async def _overview_data(symbol: str = ""):
+    """Costruisce i dati di backtest (totali + per-anno + capitale composto) per un
+    simbolo (o tutti). Globale, non per-utente: è la prova pubblica del prodotto."""
     async with AsyncSession() as session:
         symbols = (
             await session.execute(
@@ -1243,6 +1383,17 @@ async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_
         "by_year": by_year,
         "reports": _symbol_reports(),
     }
+
+
+@app.get("/api/backtest/overview")
+async def backtest_overview(symbol: str = "", user: User = Depends(auth.current_user)):
+    return await _overview_data(symbol)
+
+
+@app.get("/api/public/backtest")
+async def public_backtest(symbol: str = ""):
+    """Overview backtest PUBBLICA (senza login) per la pagina Risultati."""
+    return await _overview_data(symbol)
 
 
 @app.get("/api/backtest/report/{symbol}/{fname}")
