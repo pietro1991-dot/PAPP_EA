@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import select, func, desc, case, extract, or_
 
-from db import AsyncSession, Signal, AccountSnapshot, BacktestTrade, MarketFeature
+from db import AsyncSession, Signal, AccountSnapshot, BacktestTrade, MarketFeature, EaState, MarketSnapshot
 
 
 def _scope_user(q, col, user_id, owner_id):
@@ -301,6 +301,61 @@ async def build_digest(symbol: str = "", user_id: int | None = None, owner_id: i
             targets = [sym] if sym and sym in feat_syms else feat_syms
             for s in targets:
                 parts += await _market_block(session, s)
+
+        # Stato strategie Reversione (oscillatore: "dove siamo" tra un trade e l'altro)
+        st_syms = sorted(set(
+            (await session.execute(
+                select(EaState.symbol).where(EaState.symbol.isnot(None)).distinct()
+            )).scalars().all()
+        ))
+        st_targets = [sym] if (sym and sym in st_syms) else st_syms
+        st_lines = []
+        for s in st_targets:
+            row = (await session.execute(
+                _scope_user(select(EaState).where(EaState.symbol == s), EaState.user_id, user_id, owner_id)
+                .order_by(desc(EaState.id)).limit(1)
+            )).scalar_one_or_none()
+            if row is not None:
+                oscs = f"{row.osc:.0f}/100" if row.osc is not None else "?"
+                extra = []
+                if row.dist is not None:
+                    extra.append(f"distanza dalla media {row.dist:+.2f}%")
+                if row.vol is not None:
+                    extra.append(f"volatilità cross {row.vol:.2f}%")
+                if row.to_buy is not None and row.to_sell is not None:
+                    if row.to_buy <= row.to_sell:
+                        extra.append(f"manca {row.to_buy:.0f} (osc) al BUY")
+                    else:
+                        extra.append(f"manca {row.to_sell:.0f} (osc) al SELL")
+                if row.bars_out:
+                    extra.append(f"{row.bars_out} barre in banda estrema")
+                line = f"  {s}: oscillatore {oscs}" + (f" — {row.info}" if row.info else "")
+                if extra:
+                    line += " · " + ", ".join(extra)
+                st_lines.append(line)
+        if st_lines:
+            parts.append("\n=== STATO STRATEGIE REVERSIONE (dove siamo ora) ===")
+            parts += st_lines
+
+        # Prezzi LIVE: ultimo MarketSnapshot (bid/ask) per simbolo - piu' fresco delle feature
+        px = (await session.execute(
+            _scope_user(select(MarketSnapshot), MarketSnapshot.user_id, user_id, owner_id)
+            .order_by(desc(MarketSnapshot.id)).limit(60)
+        )).scalars().all()
+        seen_px = {}
+        for r in px:
+            if r.symbol not in seen_px:
+                seen_px[r.symbol] = r
+        px_targets = [sym] if (sym and sym in seen_px) else sorted(seen_px)
+        px_lines = []
+        for s in px_targets:
+            r = seen_px.get(s)
+            if r is not None and r.bid:
+                sp = f" (spread {r.spread_pts:.0f} pt)" if r.spread_pts is not None else ""
+                px_lines.append(f"  {s}: bid {r.bid:.5f} / ask {r.ask:.5f}{sp}")
+        if px_lines:
+            parts.append("\n=== PREZZI LIVE (ultimo tick ricevuto) ===")
+            parts += px_lines
 
     return {
         "text": "\n".join(parts),

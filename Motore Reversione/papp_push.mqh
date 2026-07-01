@@ -77,6 +77,30 @@ string PappKv(string resp, string key)
    return "";
 }
 
+// === LOG LOCALE (ponte) === scrive gli eventi anche in un file nella cartella Common,
+// che il chatbot sulla STESSA macchina legge direttamente (senza key, senza server).
+// Per i clienti remoti questa via non arriva: la' conta il push HTTP (con la key).
+int _pp_log = -1;
+
+void PappLogOpen(string fname)
+{
+   if(StringLen(fname) == 0 || MQLInfoInteger(MQL_TESTER)) return;
+   _pp_log = FileOpen(fname, FILE_WRITE|FILE_READ|FILE_TXT|FILE_ANSI|FILE_COMMON|
+                              FILE_SHARE_READ|FILE_SHARE_WRITE);
+   if(_pp_log >= 0){ FileSeek(_pp_log, 0, SEEK_END);
+      Print("PHAI: log locale aperto in Common\\Files\\", fname); }
+   else Print("PHAI: log locale non aperto: ", fname);
+}
+void PappLogClose(){ if(_pp_log >= 0){ FileClose(_pp_log); _pp_log = -1; } }
+
+void PappLogLine(string jsonline)   // scrive una linea {..} nel log locale (se aperto)
+{
+   if(_pp_log < 0) return;
+   FileSeek(_pp_log, 0, SEEK_END);
+   FileWriteString(_pp_log, jsonline + "\n");
+   FileFlush(_pp_log);
+}
+
 // SEGNALE di trade (apertura/chiusura). dir: 1=BUY, 2=SELL.
 void PappSignal(string action, string symbol, int dir, double entry, double sl, double tp,
                 double lot, double exitPrice, double pnl, string reason)
@@ -89,7 +113,8 @@ void PappSignal(string action, string symbol, int dir, double entry, double sl, 
    if(lot > 0)       j += StringFormat(",\"lot\":%.2f", lot);
    if(exitPrice > 0) j += StringFormat(",\"exitPrice\":%.5f", exitPrice);
    j += StringFormat(",\"pnl\":%.1f", pnl);
-   PappEvent(j);
+   PappLogLine("{" + j + "}");   // ponte locale (owner, senza key)
+   PappEvent(j);                 // push HTTP (clienti remoti, con key)
 }
 
 // VALIDAZIONE LICENZA (kill-switch server + grazia). Ritorna true se l'EA puo' aprire
@@ -144,6 +169,44 @@ void PappFeatures(string symbol, double close, double d_med, double d_ma30, doub
       (int)TimeCurrent(), symbol, close, d_med, d_ma30, d_ma365, cluster, velocity,
       accel, volatility, order_score, spread);
    PappEvent(j);
+}
+
+// SNAPSHOT CONTO (balance/equity/margine + P&L delle posizioni del simbolo). Locale + HTTP.
+void PappAccount(string symbol)
+{
+   double bal=AccountInfoDouble(ACCOUNT_BALANCE), eq=AccountInfoDouble(ACCOUNT_EQUITY);
+   double mrg=AccountInfoDouble(ACCOUNT_MARGIN), fm=AccountInfoDouble(ACCOUNT_MARGIN_FREE);
+   double ml=AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), prof=AccountInfoDouble(ACCOUNT_PROFIT);
+   double symProf=0; int symOpen=0;
+   for(int i=PositionsTotal()-1;i>=0;i--){ ulong tk=PositionGetTicket(i); if(tk==0) continue;
+      if(PositionGetString(POSITION_SYMBOL)!=symbol) continue;
+      symProf+=PositionGetDouble(POSITION_PROFIT)+PositionGetDouble(POSITION_SWAP); symOpen++; }
+   double symPct=(bal>0)? symProf/bal*100.0 : 0.0;
+   string j=StringFormat("\"t\":%d,\"symbol\":\"%s\",\"action\":\"account\",\"balance\":%.2f,\"equity\":%.2f,"
+      "\"margin\":%.2f,\"free_margin\":%.2f,\"margin_level\":%.2f,\"profit\":%.2f,"
+      "\"sym_profit\":%.2f,\"sym_pct\":%.2f,\"sym_open\":%d",
+      (int)TimeCurrent(),symbol,bal,eq,mrg,fm,ml,prof,symProf,symPct,symOpen);
+   PappLogLine("{"+j+"}"); PappEvent(j);
+}
+
+// STATO strategia: oscillatore (0-100) + nota "dove siamo". Locale + HTTP.
+void PappState(string symbol, double osc, string info)
+{
+   string j=StringFormat("\"t\":%d,\"symbol\":\"%s\",\"action\":\"state\",\"osc\":%.1f,\"info\":\"%s\"",
+      (int)TimeCurrent(),symbol,osc,PappEsc(info));
+   PappLogLine("{"+j+"}"); PappEvent(j);
+}
+
+// STATO strategia REVERSIONE con metriche dedicate: distanza dalla media (%),
+// volatilita' del cross (%), quanti punti oscillatore mancano al BUY/SELL, barre
+// consecutive in banda estrema. Locale + HTTP.
+void PappRelval(string symbol, double osc, double dist, double vol,
+                double toBuy, double toSell, int barsOut, string info)
+{
+   string j=StringFormat("\"t\":%d,\"symbol\":\"%s\",\"action\":\"state\",\"osc\":%.1f,"
+      "\"dist\":%.4f,\"vol\":%.4f,\"to_buy\":%.1f,\"to_sell\":%.1f,\"bars_out\":%d,\"info\":\"%s\"",
+      (int)TimeCurrent(),symbol,osc,dist,vol,toBuy,toSell,barsOut,PappEsc(info));
+   PappLogLine("{"+j+"}"); PappEvent(j);
 }
 
 #endif

@@ -122,6 +122,26 @@ class MarketSnapshot(Base):
     )
 
 
+class EaState(Base):
+    """Stato periodico di una strategia (oscillatore + nota 'dove siamo'), inviato ad
+    ogni barra dagli EA Reversione. Serve a far sapere a cliente e modello dove siamo
+    tra un trade e l'altro. Taggato col tenant (owner se ponte locale)."""
+    __tablename__ = "ea_state"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
+    symbol: Mapped[str] = mapped_column(String(20), index=True)
+    t: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    osc: Mapped[float | None] = mapped_column(Float, nullable=True)      # oscillatore 0-100
+    info: Mapped[str | None] = mapped_column(String(200), nullable=True) # "verso BUY (<10)", "LONG aperta", ecc.
+    # metriche reversione-specifiche
+    dist: Mapped[float | None] = mapped_column(Float, nullable=True)     # distanza grezza dalla media (%)
+    vol: Mapped[float | None] = mapped_column(Float, nullable=True)      # volatilita' del cross (dev.std distanze, %)
+    to_buy: Mapped[float | None] = mapped_column(Float, nullable=True)   # punti oscillatore per arrivare al BUY
+    to_sell: Mapped[float | None] = mapped_column(Float, nullable=True)  # punti oscillatore per arrivare al SELL
+    bars_out: Mapped[int | None] = mapped_column(Integer, nullable=True) # barre consecutive in banda estrema
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class PushSubscription(Base):
     __tablename__ = "push_subscriptions"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -232,6 +252,11 @@ _MIGRATIONS = [
     "CREATE INDEX IF NOT EXISTS ix_signals_user_id ON signals (user_id)",
     "CREATE INDEX IF NOT EXISTS ix_license_external_id ON license_keys (external_id)",
     "ALTER TABLE leads ADD COLUMN IF NOT EXISTS unsubscribed BOOLEAN DEFAULT FALSE",
+    "ALTER TABLE ea_state ADD COLUMN IF NOT EXISTS dist DOUBLE PRECISION",
+    "ALTER TABLE ea_state ADD COLUMN IF NOT EXISTS vol DOUBLE PRECISION",
+    "ALTER TABLE ea_state ADD COLUMN IF NOT EXISTS to_buy DOUBLE PRECISION",
+    "ALTER TABLE ea_state ADD COLUMN IF NOT EXISTS to_sell DOUBLE PRECISION",
+    "ALTER TABLE ea_state ADD COLUMN IF NOT EXISTS bars_out INTEGER",
 ]
 
 

@@ -161,3 +161,41 @@ I cross col **franco CHF** funzionano statisticamente ma vanno usati con **caute
 (rischio de-peg/gap della banca centrale, es. 2015) — non vietati, ma EURGBP resta l'unico senza tail.
 Da **evitare**: coppie contro il dollaro (il trend del dollaro travolge la reversione) e il yen JPY
 (interventi, bene-rifugio).
+
+═══════════════════════════════════════════════════════════════
+# COME INSTALLARE E AVVIARE L'EA (guida operativa)
+═══════════════════════════════════════════════════════════════
+Se un cliente chiede "come installo / monto / avvio l'EA", guidalo passo-passo con questa procedura, adattando simbolo e timeframe al suo EA. È il momento più importante: sii chiaro e paziente.
+
+Premessa semplice: l'EA gira sul SUO computer dentro MetaTrader 5 (MT5). Lo stesso file va a tutti i clienti; è la sua **license key** (negli input) a sbloccare cosa può girare. L'EA **genera** i segnali in locale (non li riceve) e li **manda** al nostro server.
+
+## Cosa scaricare (app → Strategie → apri l'EA che possiedi → "Scarica e installa")
+- il file **EA (.ex5)**
+- il **preset (.set)** con la sua key già dentro (consigliato: così non digita la key)
+- SOLO per i **Motore Base** (EUR/USD, GBP/USD, USD/CHF): anche l'**indicatore PaPP_Median (.ex5)**. I cross del **Motore Reversione** (EUR/GBP, GBP/CHF) NON usano l'indicatore (sono autonomi).
+
+## Passo-passo
+1. Apri MT5. Menu **File → "Apri cartella dati"** (è la cartella DATI, non quella di installazione). Entra nella cartella **MQL5**.
+2. Copia i file: l'**EA .ex5 in `MQL5\Experts`**; (solo Base) **PaPP_Median.ex5 in `MQL5\Indicators`**.
+3. In MT5, pannello **Navigatore** → tasto destro su **"Expert Advisors" → "Aggiorna"**. L'EA deve comparire.
+4. **Autorizza il server** (una volta sola): **Strumenti → Opzioni → scheda "Expert Advisors"** → spunta **"Consenti WebRequest per gli URL elencati"** e aggiungi: **https://app.phai.io**
+5. Apri il **grafico giusto**: il **simbolo** dell'EA (es. EUR/USD per l'EA EURUSD) e il **timeframe**: Base = **D1**; EUR/GBP = **H6**; GBP/CHF = **D1**.
+6. **Trascina l'EA** dal Navigatore sul grafico: si apre la finestra impostazioni.
+7. Scheda **"Parametri/Input"**, in basso clicca **"Carica"** e scegli il **.set**: tutti gli input — **key compresa** — si riempiono da soli.
+   - In alternativa (senza .set): incolla la key in **InpLicenseKey** E metti **InpUseServer = true**. ⚠️ Sui Base `InpUseServer` è **false di default**: senza metterlo `true` la licenza NON si attiva e i segnali NON arrivano. Il **.set lo mette già a true**.
+8. Spunta **"Consenti trading algoritmico"** nella finestra → **OK**.
+9. In alto, controlla che il pulsante **"Trading algoritmico" (Algo Trading)** sia **ATTIVO** (verde).
+10. **Verifica**: in basso, scheda **"Esperti"** → deve apparire **"INIT OK"** e **"PHAI: licenza OK (piano …, rischio …%)"**. Sul grafico, in alto a destra, **faccina sorridente** = EA attivo (triste = trading non attivo).
+
+## Errori frequenti (e soluzione)
+- **"PHAI: WebRequest fallita … Autorizza …"** → non hai aggiunto l'URL al passo 4. Aggiungi `https://app.phai.io`, poi rimuovi e riattacca l'EA.
+- **"PHAI: LICENZA NON VALIDA"** → key sbagliata/scaduta, oppure quel **simbolo non è nel tuo piano**.
+- **L'EA non compare** nel Navigatore → "Aggiorna"; se è un .mq5 ricompila (F7 in MetaEditor).
+- **(Base) errore indicatore / nessun segnale** → PaPP_Median non è in `MQL5\Indicators` o non è compilato.
+- **Faccina triste / non opera** → attiva "Trading algoritmico" (passi 8 e 9).
+- **Niente dati sul chatbot** → `InpUseServer` deve essere **true** (usa il .set) e l'URL autorizzato.
+
+## Note
+- Una posizione per volta per ogni EA; più EA possono girare insieme (magic number diversi).
+- La licenza si **rivalida periodicamente**; se il server è irraggiungibile c'è una **grazia di alcuni giorni**, poi l'EA si mette in pausa (anti-abuso).
+- Il PC (o un VPS) deve restare **acceso** con MT5 aperto perché l'EA operi: l'EA è automatico ma vive dentro MT5.

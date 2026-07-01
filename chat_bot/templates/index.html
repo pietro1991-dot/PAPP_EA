@@ -230,6 +230,21 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .lvl.alto{color:var(--accent);background:rgba(203,166,92,.14)}
 .lvl.basso{color:#5ab0ff;background:rgba(90,176,255,.12)}
 .lvl.media{color:var(--muted);background:#1a2236}
+.osc-head{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.osc-head .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite}
+.osc-wrap{display:flex;flex-direction:column;gap:10px}
+.osc-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+.osc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px}
+.osc-sym{font-weight:700;font-size:14px;letter-spacing:.5px}
+.osc-val{font-weight:700;font-size:14px}
+.osc-bar{position:relative;height:9px;border-radius:6px;background:linear-gradient(90deg,rgba(95,208,127,.30),rgba(127,176,255,.10) 25%,rgba(127,176,255,.10) 75%,rgba(241,160,106,.30))}
+.osc-fill{position:absolute;top:50%;width:13px;height:13px;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 3px var(--bg)}
+.osc-info{font-size:12px;color:var(--muted);margin-top:9px}
+.osc-metrics{margin-top:11px;border-top:1px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:7px}
+.osc-m{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
+.osc-m span{color:var(--muted)}
+.osc-m b{font-weight:700;margin-left:12px}
+.osc-legend{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
 .drawer-head{display:flex;align-items:center;gap:10px;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top));border-bottom:1px solid var(--border)}
 .drawer-title{flex:1;font-weight:700;font-size:15px}
 .drawer-title .scope{color:var(--accent);font-weight:600}
@@ -1127,9 +1142,13 @@ async function openEA(id){
   html+=`<div class="ea-sec"><h4>${t('ea_risk')}</h4><p>${e.risk}</p></div>`;
   if(e.owned){
     html+=`<div class="ea-sec"><h4>⤓ Scarica e installa</h4>`+
-      `<p><a class="rep-link" href="/api/ea/file/${e.symbol}">Scarica l'EA (.ex5)</a>`+
-      (e.engine==='base'?` · <a class="rep-link" href="/api/ea/file/PaPP_Median">Indicatore PaPP_Median</a>`:``)+`</p>`+
-      `<p style="font-size:12.5px;color:var(--muted);line-height:1.5">Copialo in <b>MQL5/Experts</b> di MT5, attaccalo al grafico <b>${e.symbol}</b>, e incolla la tua <b>license key</b> nell'input <b>InpLicenseKey</b>. Autorizza l'URL del server in Strumenti → Opzioni → Expert Advisors → WebRequest.</p>`+
+      `<p><a class="rep-link" href="/api/ea/file/${e.symbol}">⤓ EA (.ex5)</a>`+
+      ` · <a class="rep-link" href="/api/ea/set/${e.symbol}">⤓ Preset .set (key già dentro)</a>`+
+      (e.engine==='base'?` · <a class="rep-link" href="/api/ea/file/PaPP_Median">⤓ Indicatore PaPP_Median</a>`:``)+
+      ` · <a class="rep-link" href="/api/ea/guide/${e.symbol}" target="_blank" rel="noopener">📖 Guida installazione</a>`+`</p>`+
+      `<p style="font-size:12.5px;color:var(--muted);line-height:1.5">Metti l'<b>.ex5</b> in <b>MQL5/Experts</b>`+
+      (e.engine==='base'?` e <b>PaPP_Median</b> in <b>MQL5/Indicators</b>`:``)+
+      `. Attacca l'EA al grafico <b>${e.symbol}</b>, poi nella scheda Input fai <b>Carica</b> e scegli il <b>.set</b> (la key si compila da sola) — oppure incolla la key a mano in <b>InpLicenseKey</b>. Autorizza l'URL in Strumenti → Opzioni → Expert Advisors → WebRequest.</p>`+
       `<div id="ea-key-${e.id}" style="font-size:12.5px;margin-top:6px;color:var(--muted)">…</div></div>`;
     fetch('/api/ea/downloads').then(r=>r.json()).then(dd=>{const k=$('ea-key-'+e.id); if(!k)return;
       if(dd.key) k.innerHTML=`La tua <b>license key</b>: <code style="background:var(--panel);border:1px solid var(--border);padding:2px 7px;border-radius:6px">${dd.key}</code> <button class="install-btn" onclick="navigator.clipboard.writeText('${dd.key}');toast('Key copiata','')">copia</button>`;
@@ -1153,12 +1172,46 @@ async function openEA(id){
 
 /* ---------- Stato mercato (sezione) ---------- */
 function openMercato(){showSection('mercato');}
+function renderOscPanel(sts){
+  let h='<div class="osc-head"><span class="pulse"></span>Stato strategia · oscillatore live</div><div class="osc-wrap">';
+  sts.forEach(s=>{
+    const has=(s.osc!==null&&s.osc!==undefined);
+    const v=has?Math.max(0,Math.min(100,s.osc)):0;
+    const col=v<=10?'#5fd07f':(v>=90?'#f1a06a':'#7fb0ff');
+    const num=x=>(x!==null&&x!==undefined);
+    let rows='';
+    const add=(lab,val)=>{rows+=`<div class="osc-m"><span>${lab}</span><b>${val}</b></div>`;};
+    if(num(s.dist)) add('Distanza dalla media',(s.dist>=0?'+':'')+s.dist.toFixed(2)+'%');
+    if(num(s.vol)) add('Volatilità del cross',s.vol.toFixed(2)+'%');
+    if(num(s.to_buy)&&num(s.to_sell)){
+      if(s.to_buy<=s.to_sell) add('Manca all’ingresso',s.to_buy.toFixed(0)+' al BUY');
+      else add('Manca all’ingresso',s.to_sell.toFixed(0)+' al SELL');
+    }
+    if(num(s.bars_out)) add('Barre in banda estrema',s.bars_out);
+    h+=`<div class="osc-card"><div class="osc-top"><span class="osc-sym">${s.symbol}</span>`
+      +`<span class="osc-val" style="color:${col}">${has?v.toFixed(0)+'/100':'—'}</span></div>`
+      +`<div class="osc-bar"><div class="osc-fill" style="left:${v}%;background:${col}"></div></div>`
+      +`<div class="osc-info">${s.info?escapeHtml(s.info):''}</div>`
+      +(rows?`<div class="osc-metrics">${rows}</div>`:'')+`</div>`;
+  });
+  h+='</div><div class="osc-legend">≤10 = vicino al <b style="color:#5fd07f">BUY</b> · ≥90 = vicino al <b style="color:#f1a06a">SELL</b> · in mezzo = in attesa. Aggiornato ~ogni 15s.</div>';
+  return h;
+}
 async function loadMercato(){
   $('mk-scope').textContent=activeSymbol?('· '+activeSymbol):'';
   const body=$('mk-body'); body.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
+  // Stato strategie Reversione (oscillatore live) - mostrato in cima
+  let oscHtml='';
+  try{
+    const sr=await fetch('/api/strategy-state');
+    if(sr.ok){ const sd=await sr.json(); let sts=(sd.symbols||[]);
+      if(activeSymbol) sts=sts.filter(x=>x.symbol===activeSymbol);
+      if(sts.length) oscHtml=renderOscPanel(sts)+'<div style="height:14px"></div>';
+    }
+  }catch(e){}
   const r=await fetch('/api/market-state'+(activeSymbol?('?symbol='+encodeURIComponent(activeSymbol)):'')); if(r.status===401){location.href='/';return;}
-  const d=await r.json(); body.innerHTML='';
-  if(!d.available){body.innerHTML='<div class="hist-empty">'+t('no_feat')+'<br><b>import_features.py</b></div>';return;}
+  const d=await r.json(); body.innerHTML=oscHtml;
+  if(!d.available){ if(!oscHtml) body.innerHTML='<div class="hist-empty">'+t('no_feat')+'<br><b>import_features.py</b></div>'; return;}
   const hd=document.createElement('div'); hd.className='mk-head';
   const sym=document.createElement('div'); sym.className='mk-sym'; sym.textContent=d.symbol;
   const sub=document.createElement('div'); sub.className='mk-sub'; sub.textContent=`${t('last_bar')} ${d.t} · close ${d.close}`;

@@ -14,6 +14,7 @@ from datetime import datetime
 from sqlalchemy import select, desc, delete, extract, case, or_, func as sa_func
 
 from db import (
+    EaState,
     init_db,
     AsyncSession,
     Signal,
@@ -355,20 +356,38 @@ async def process_event(data: dict, user_id: int | None = None):
         async with AsyncSession() as session:
             sym = data.get("symbol") or "EURUSD"
             tval = data.get("t")
+            existing = None
             if tval is not None:
-                dup = (await session.execute(
-                    select(MarketFeature.id).where(
+                existing = (await session.execute(
+                    select(MarketFeature).where(
                         MarketFeature.symbol == sym, MarketFeature.t == tval
                     ).limit(1)
-                )).first()
-                if dup:
-                    return
-            session.add(MarketFeature(
-                symbol=sym, t=tval, close=data.get("close"),
+                )).scalar_one_or_none()
+            vals = dict(
+                close=data.get("close"),
                 d_med=data.get("d_med"), d_ma30=data.get("d_ma30"), d_ma365=data.get("d_ma365"),
                 cluster=data.get("cluster"), velocity=data.get("velocity"),
                 accel=data.get("accel"), volatility=data.get("volatility"),
                 order_score=data.get("order_score"), spread=data.get("spread"),
+            )
+            if existing is not None:
+                # stessa barra D1 -> aggiorna ai valori freschi (la barra in formazione cambia)
+                for k, v in vals.items():
+                    setattr(existing, k, v)
+            else:
+                session.add(MarketFeature(symbol=sym, t=tval, **vals))
+            await session.commit()
+        return
+
+    if data.get("action") == "state":
+        # stato periodico di una strategia (oscillatore + nota): "dove siamo" tra i trade.
+        async with AsyncSession() as session:
+            session.add(EaState(
+                user_id=user_id, symbol=(data.get("symbol") or "?"),
+                t=data.get("t"), osc=data.get("osc"), info=(data.get("info") or "")[:200],
+                dist=data.get("dist"), vol=data.get("vol"),
+                to_buy=data.get("to_buy"), to_sell=data.get("to_sell"),
+                bars_out=data.get("bars_out"),
             ))
             await session.commit()
         return
@@ -477,7 +496,7 @@ async def lifespan(app: FastAPI):
     llm_worker.start_worker()
     tailer = LogTailer(on_signal)
     task = asyncio.create_task(tailer.start())
-    log.info("LogTailer avviato su: %s", tailer.path)
+    log.info("LogTailer avviato su: %s/%s", tailer.dir, tailer.PATTERN)
     summary_task = asyncio.create_task(_summary_loop())
     log.info("Loop riassunti avviato (ogni %d min)", SUMMARY_REFRESH_MIN)
     reports_task = asyncio.create_task(_scheduled_reports_loop())
@@ -916,6 +935,116 @@ async def ea_file(ea_id: str, user: User = Depends(auth.current_user)):
         if ea_id not in entitlements.owned_eas(plan):
             return JSONResponse({"error": "non incluso nel tuo piano"}, status_code=403)
     return FileResponse(path, filename=f"PHAI_{ea_id}.ex5", media_type="application/octet-stream")
+
+
+@app.get("/api/ea/set/{ea_id}")
+async def ea_set(ea_id: str, user: User = Depends(auth.current_user)):
+    """Genera un preset MT5 (.set) con la license key del cliente GIA' compilata, così
+    caricandolo gli input (key compresa) si riempiono da soli. Solo per EA posseduti."""
+    ea_id = os.path.basename(ea_id)
+    if ea_id not in entitlements.owned_eas(await _user_plan(user)):
+        return JSONResponse({"error": "non incluso nel tuo piano"}, status_code=403)
+    async with AsyncSession() as session:
+        lk = (await session.execute(
+            select(LicenseKey).where(
+                LicenseKey.used_by_user_id == user.id,
+                LicenseKey.active.is_(True), LicenseKey.revoked.is_(False)
+            ).order_by(desc(LicenseKey.id)).limit(1)
+        )).scalar_one_or_none()
+    key = lk.key if lk else ""
+    # .set MT5: una riga input=valore. Solo i 3 input PHAI; il resto resta ai default validati.
+    content = ("InpUseServer=true\r\n"
+               "InpServerUrl=https://app.phai.io\r\n"
+               f"InpLicenseKey={key}\r\n")
+    return PlainTextResponse(content, headers={
+        "Content-Disposition": f'attachment; filename="PHAI_{ea_id}.set"'})
+
+
+_EA_TF = {"EURUSD": "D1 (giornaliero)", "GBPUSD": "D1 (giornaliero)", "USDCHF": "D1 (giornaliero)",
+          "EURGBP": "H6 (6 ore)", "GBPCHF": "D1 (giornaliero)"}
+
+
+@app.get("/api/ea/guide/{ea_id}", response_class=HTMLResponse)
+async def ea_guide(ea_id: str, user: User = Depends(auth.current_user)):
+    """Guida di installazione PERSONALIZZATA per un EA (simbolo, timeframe, indicatore se Base,
+    license key gia' dentro). Pagina HTML stampabile/salvabile. Solo per EA posseduti."""
+    ea_id = os.path.basename(ea_id)
+    e = catalog.EA_BY_ID.get(ea_id)
+    if not e or ea_id not in entitlements.owned_eas(await _user_plan(user)):
+        return HTMLResponse("<h3 style='font-family:sans-serif'>Guida non disponibile per questo EA o piano.</h3>", status_code=403)
+    async with AsyncSession() as session:
+        lk = (await session.execute(
+            select(LicenseKey).where(
+                LicenseKey.used_by_user_id == user.id,
+                LicenseKey.active.is_(True), LicenseKey.revoked.is_(False)
+            ).order_by(desc(LicenseKey.id)).limit(1)
+        )).scalar_one_or_none()
+    key = lk.key if lk else "(la trovi nel tuo account PHAI)"
+    sym = e["symbol"]; tf = _EA_TF.get(ea_id, "D1"); is_base = (e["engine"] == "base")
+    name = e["name"] if isinstance(e["name"], str) else e["name"].get("it", ea_id)
+    dl_ind = "<li>l'<b>indicatore PaPP_Median.ex5</b></li>" if is_base else ""
+    step_ind = "<li>Copia <b>PaPP_Median.ex5</b> in <code>MQL5\\Indicators</code></li>" if is_base else ""
+    note_ind = (" e l'<b>indicatore</b> in <code>Indicators</code>") if is_base else ""
+    err_ind = ("<li><b>(Base) Nessun segnale / errore indicatore</b> → PaPP_Median non è in "
+               "<code>MQL5\\Indicators</code> o non è compilato.</li>") if is_base else ""
+    html = f"""<!doctype html><html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHAI · Guida installazione {name}</title>
+<style>
+body{{font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:780px;margin:0 auto;padding:28px 20px;color:#1a2030;line-height:1.6}}
+h1{{font-size:22px;margin:0 0 4px}} h2{{font-size:16px;margin:26px 0 8px;color:#0a5}}
+.sub{{color:#667;margin-bottom:18px}}
+.box{{background:#f4f6fb;border:1px solid #dde3ef;border-radius:10px;padding:14px 16px;margin:14px 0}}
+.key{{font-family:ui-monospace,monospace;background:#0a0e18;color:#cba65c;padding:8px 12px;border-radius:7px;display:inline-block;word-break:break-all}}
+ol{{padding-left:22px}} li{{margin:7px 0}} code{{background:#eceff6;padding:1px 6px;border-radius:5px;font-size:13px}}
+.warn{{background:#fff5f5;border-color:#f3c0c0}} .ok{{background:#f0fbf4;border-color:#bfe6cf}}
+@media print{{.noprint{{display:none}}}}
+button{{padding:9px 16px;border:0;border-radius:8px;background:#cba65c;color:#0a0e18;font-weight:700;cursor:pointer}}
+</style></head><body>
+<h1>Guida installazione — {name}</h1>
+<div class="sub">Simbolo <b>{sym}</b> · Timeframe <b>{tf}</b> · MetaTrader 5</div>
+<div class="box"><b>La tua license key</b><br><span class="key">{key}</span><br>
+<small>È già inclusa nel file <b>.set</b> che scarichi: caricandolo non devi digitarla.</small></div>
+
+<h2>1) Scarica dall'app</h2>
+<ul><li>il file <b>EA (.ex5)</b></li><li>il <b>preset (.set)</b> (con la tua key dentro)</li>{dl_ind}</ul>
+
+<h2>2) Copia i file in MetaTrader 5</h2>
+<ol>
+<li>In MT5: <b>File → Apri cartella dati</b> (la cartella DATI), poi entra in <code>MQL5</code>.</li>
+<li>Copia l'<b>EA .ex5</b> in <code>MQL5\\Experts</code>{note_ind}.</li>
+{step_ind}
+<li>In MT5, <b>Navigatore → tasto destro su "Expert Advisors" → Aggiorna</b>.</li>
+</ol>
+
+<h2>3) Autorizza il server (una volta sola)</h2>
+<ol><li><b>Strumenti → Opzioni → scheda "Expert Advisors"</b>.</li>
+<li>Spunta <b>"Consenti WebRequest per gli URL elencati"</b> e aggiungi: <code>https://app.phai.io</code></li></ol>
+
+<h2>4) Avvia l'EA</h2>
+<ol>
+<li>Apri il grafico <b>{sym}</b>, timeframe <b>{tf}</b>.</li>
+<li>Trascina l'EA dal Navigatore sul grafico.</li>
+<li>Scheda <b>Input</b> → in basso <b>"Carica"</b> → scegli il <b>.set</b> (key compilata da sola).</li>
+<li>Spunta <b>"Consenti trading algoritmico"</b> → <b>OK</b>.</li>
+<li>In alto, attiva il pulsante <b>"Trading algoritmico"</b> (verde).</li>
+</ol>
+
+<div class="box ok"><b>5) Verifica che funzioni</b><br>
+In basso, scheda <b>"Esperti"</b>: devi vedere <b>"INIT OK"</b> e <b>"PHAI: licenza OK"</b>.
+Sul grafico in alto a destra una <b>faccina sorridente</b> = EA attivo.</div>
+
+<h2>Problemi frequenti</h2>
+<ul>
+<li><b>"WebRequest fallita / Autorizza…"</b> → manca l'URL al punto 3. Aggiungi <code>https://app.phai.io</code> e riattacca l'EA.</li>
+<li><b>"LICENZA NON VALIDA"</b> → key sbagliata/scaduta, o {sym} non è nel tuo piano.</li>
+<li><b>Faccina triste / non opera</b> → attiva "Trading algoritmico" (punto 4).</li>
+{err_ind}
+</ul>
+<div class="box noprint" style="text-align:center"><button onclick="window.print()">🖨️ Stampa / salva in PDF</button></div>
+<div class="sub" style="margin-top:20px">Il PC (o un VPS) deve restare acceso con MT5 aperto perché l'EA operi. Dubbi? Chiedi all'assistente PHAI in chat.</div>
+</body></html>"""
+    return HTMLResponse(html)
 
 
 @app.get("/api/catalog")
@@ -1411,11 +1540,21 @@ async def get_market(user: User = Depends(auth.current_user)):
 
 @app.get("/api/symbols")
 async def get_symbols(user: User = Depends(auth.current_user)):
-    """Elenco dei simboli presenti nei segnali (per le tab di navigazione)."""
+    """Elenco dei simboli navigabili. Non solo dai segnali (trade): include anche i
+    simboli con stato strategia live (EaState), snapshot conto e backtest — cosi' i
+    Reversione (EURGBP/GBPCHF) compaiono anche prima del primo trade."""
+    syms: set[str] = set()
     async with AsyncSession() as session:
-        q = _scope(select(Signal.symbol).where(Signal.symbol.isnot(None)), Signal.user_id, user)
-        rows = (await session.execute(q.distinct())).scalars().all()
-    return sorted(s for s in rows if s)
+        scoped = [
+            _scope(select(Signal.symbol).where(Signal.symbol.isnot(None)), Signal.user_id, user),
+            _scope(select(EaState.symbol).where(EaState.symbol.isnot(None)), EaState.user_id, user),
+            _scope(select(AccountSnapshot.symbol).where(AccountSnapshot.symbol.isnot(None)), AccountSnapshot.user_id, user),
+        ]
+        glob = [select(BacktestTrade.symbol).where(BacktestTrade.symbol.isnot(None))]
+        for q in scoped + glob:
+            rows = (await session.execute(q.distinct())).scalars().all()
+            syms.update(s for s in rows if s)
+    return sorted(syms)
 
 
 def _bt_scope(q, symbol):
@@ -1863,6 +2002,37 @@ async def get_account(user: User = Depends(auth.current_user)):
         "free_margin": latest.free_margin,
         "margin_level": latest.margin_level,
         "profit": latest.profit,
+        "symbols": sorted(per.values(), key=lambda x: x["symbol"]),
+    }
+
+
+@app.get("/api/strategy-state")
+async def get_strategy_state(user: User = Depends(auth.current_user)):
+    """Stato LIVE delle strategie Reversione: oscillatore (0-100) + nota 'dove siamo',
+    dall'ultimo invio di ogni EA (aggiornato ~ogni 15s)."""
+    async with AsyncSession() as session:
+        rows = (
+            await session.execute(
+                _scope(select(EaState), EaState.user_id, user)
+                .order_by(desc(EaState.id)).limit(200)
+            )
+        ).scalars().all()
+    per = {}
+    for r in rows:
+        if r.symbol and r.symbol not in per:
+            per[r.symbol] = {
+                "symbol": r.symbol,
+                "osc": r.osc,
+                "info": r.info,
+                "dist": r.dist,
+                "vol": r.vol,
+                "to_buy": r.to_buy,
+                "to_sell": r.to_sell,
+                "bars_out": r.bars_out,
+                "t": r.t.isoformat() if r.t else None,
+            }
+    return {
+        "available": bool(per),
         "symbols": sorted(per.values(), key=lambda x: x["symbol"]),
     }
 

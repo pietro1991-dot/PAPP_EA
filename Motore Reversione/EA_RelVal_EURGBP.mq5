@@ -51,9 +51,10 @@ input double SARpip      = 0.0;    // Stop-and-Reverse (0 = OFF). Test onesto su
 input long   MagicNumber = 770077;
 
 // --- Telemetria PHAI (manda i segnali al chatbot) ---
-input bool   InpUseServer  = true;                   // invia i segnali al server PHAI (chatbot)
+input bool   InpUseServer  = false;                  // OWNER: false = nessuna licenza, dati via ponte locale. Cliente: il .set lo mette true
 input string InpServerUrl  = "https://app.phai.io";  // URL server (autorizzalo in Strumenti>Opzioni>EA>WebRequest)
 input string InpLicenseKey = "";                     // License key PHAI (dal tuo account)
+input string InpLogFile    = "papp_ea_log.jsonl";    // log locale (ponte chatbot sulla stessa macchina; vuoto=off)
 
 #define ANCHOR_TF PERIOD_H6
 
@@ -120,9 +121,65 @@ int OnInit()
    trade.SetExpertMagicNumber(MagicNumber);
    trade.SetDeviationInPoints(20);
    PappInit(InpUseServer, InpServerUrl, InpLicenseKey);
+   string _lf = (StringLen(InpLogFile)>0 && InpLogFile!="papp_ea_log.jsonl") ? InpLogFile : ("papp_ea_"+_Symbol+".jsonl");
+   PappLogOpen(_lf);          // ponte locale: un file PER EA (niente collisioni di scrittura tra EA)
+   EventSetTimer(15);         // export quasi-live (conto + oscillatore) ogni 15s
+   PrintFormat("PAPP %s avviato | TF=%s | server=%s | key=%s | logfile=%s",
+               _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
+               (InpUseServer?"on":"off"), (StringLen(InpLicenseKey)>0?"si":"no"), _lf);
    return INIT_SUCCEEDED;
   }
-void OnDeinit(const int reason){ if(g_hMA!=INVALID_HANDLE) IndicatorRelease(g_hMA); }
+void OnDeinit(const int reason){ if(g_hMA!=INVALID_HANDLE) IndicatorRelease(g_hMA); EventKillTimer(); PappLogClose(); }
+
+//+------------------------------------------------------------------+
+// Stato LIVE reversione: usa la barra 0 (in formazione, prezzo corrente). Ritorna
+// osc (percentile), dist (distanza corrente dalla media %) e vol (dev.std delle
+// distanze sulla finestra = volatilita' del cross). Solo informativo (il trading
+// resta su barre chiuse, in ComputeOsc).
+bool ComputeRelval(double &osc, double &dist, double &vol)
+  {
+   if(BarsCalculated(g_hMA) < PctWindow+MAPeriod+2) return false;
+   double ma[]; double cl[];
+   ArraySetAsSeries(ma,true); ArraySetAsSeries(cl,true);
+   if(CopyBuffer(g_hMA,0,0,PctWindow+2,ma) < PctWindow+1) return false;
+   if(CopyClose(_Symbol,ANCHOR_TF,0,PctWindow+2,cl) < PctWindow+1) return false;
+   dist = (ma[0]>0)? (cl[0]-ma[0])/ma[0]*100.0 : 0.0;
+   int below=0, tot=0; double sum=0, sum2=0;
+   for(int k=1;k<=PctWindow;k++){ if(ma[k]<=0.0) continue;
+      double d=(cl[k]-ma[k])/ma[k]*100.0;
+      if(d<=dist) below++; tot++; sum+=d; sum2+=d*d; }
+   if(tot<=0) return false;
+   osc = 100.0*(double)below/(double)tot;
+   double mean=sum/tot, var=(sum2/tot)-mean*mean; if(var<0) var=0;
+   vol = MathSqrt(var);
+   return true;
+  }
+
+//+------------------------------------------------------------------+
+// Timer (~15s): export quasi-live di conto + stato (oscillatore col prezzo corrente).
+int g_timerN  = 0;   // contatore per loggare ogni tanto (non ad ogni tick)
+int g_barsOut = 0;   // barre consecutive in banda estrema (aggiornato in OnTick)
+void OnTimer()
+  {
+   g_timerN++;
+   bool beat = (g_timerN <= 3 || g_timerN % 20 == 0);   // log: primi 3 + poi ogni ~5 min
+   PappAccount(_Symbol);                 // conto: SEMPRE (non dipende dalle barre)
+   double osc, dist, vol; int bars = BarsCalculated(g_hMA);
+   if(!ComputeRelval(osc, dist, vol))    // stato + metriche: solo se ci sono abbastanza barre
+     {
+      if(beat) PrintFormat("PAPP %s: oscillatore non pronto (barre=%d, servono %d). Inviato solo conto (equity=%.2f).",
+                           _Symbol, bars, PctWindow+MAPeriod+2, AccountInfoDouble(ACCOUNT_EQUITY));
+      return;
+     }
+   long pdir=0; bool hasPos=HasPosition(pdir);
+   double toBuy  = (osc>LoThr)? osc-LoThr : 0.0;   // punti osc per SCENDERE al BUY
+   double toSell = (osc<HiThr)? HiThr-osc : 0.0;   // punti osc per SALIRE al SELL
+   string info = hasPos ? (pdir>0?"posizione LONG aperta":"posizione SHORT aperta")
+               : (osc<=LoThr?"in zona BUY":(osc>=HiThr?"in zona SELL":"in attesa"));
+   PappRelval(_Symbol, osc, dist, vol, toBuy, toSell, g_barsOut, info);
+   if(beat) PrintFormat("PAPP %s: inviato conto+stato | osc=%.1f dist=%.3f%% vol=%.3f toBUY=%.0f toSELL=%.0f fuori=%d | %s",
+                        _Symbol, osc, dist, vol, toBuy, toSell, g_barsOut, info);
+  }
 
 //+------------------------------------------------------------------+
 // osc (0..100) sull'ultima barra H6 CHIUSA. distanza[k]=(close-MA)/MA*100;
@@ -173,6 +230,7 @@ void OnTick()
 
    double osc;
    if(!ComputeOsc(osc)) return;
+   g_barsOut = (osc<=LoThr || osc>=HiThr) ? g_barsOut+1 : 0;   // barre consecutive in banda estrema
 
    double pip=Pip();
    double bid=SymbolInfoDouble(_Symbol,SYMBOL_BID), ask=SymbolInfoDouble(_Symbol,SYMBOL_ASK);

@@ -135,6 +135,10 @@ input int     InpP10_Dir       = 2;
 #define BUF_MA14    5
 #define BUF_MA7     6
 #define BUF_MA3     7
+#define BUF_CLUSTER 8
+#define BUF_VEL     9
+#define BUF_ACC     10
+#define BUF_VOL     11
 
 #define MAX_PATTERNS 20
 
@@ -350,6 +354,46 @@ bool ReadBufD1(int buf, int d1Shift, double &val)
    if(CopyBuffer(g_ind, buf, chartShift, 1, tmp) != 1) return false;
    val = tmp[0];
    return IsPriceOk(val);
+}
+
+//+------------------------------------------------------------------+
+// Lettura RAW di un buffer di calcolo D1 (cluster/vel/acc/vol): niente IsPriceOk
+// perche' questi valori possono essere ~0 o negativi. Solo barra corrente (shift 0).
+bool ReadCalcD1(int buf, double &val)
+{
+   double tmp[1];
+   if(g_indD1 != INVALID_HANDLE && CopyBuffer(g_indD1, buf, 0, 1, tmp) == 1){ val = tmp[0]; return true; }
+   if(CopyBuffer(g_ind, buf, 0, 1, tmp) == 1){ val = tmp[0]; return true; }
+   return false;
+}
+
+//+------------------------------------------------------------------+
+// Push FEATURE di mercato (Volatilità/Cluster/… + distanze dalle medie) lette da
+// PaPP_Median. Scrive nel log locale (ponte) e via HTTP. t = barra D1 corrente ->
+// il backend fa upsert (aggiorna ai valori freschi della giornata).
+void LogFeatures()
+{
+   if(g_logHandle < 0) return;
+   double close = iClose(_Symbol, PERIOD_D1, 0);
+   if(close <= 0) return;
+   double median=0, ma30=0, ma365=0, clu=0, vel=0, acc=0, vol=0;
+   ReadBufD1(BUF_MEDIAN, 0, median);
+   ReadBufD1(BUF_MA30,   0, ma30);
+   ReadBufD1(BUF_MA365,  0, ma365);
+   ReadCalcD1(BUF_CLUSTER, clu); ReadCalcD1(BUF_VEL, vel);
+   ReadCalcD1(BUF_ACC,     acc); ReadCalcD1(BUF_VOL, vol);
+   double d_med  = (median > 0) ? (close-median)/median*100.0 : 0.0;
+   double d_ma30 = (ma30   > 0) ? (close-ma30)/ma30*100.0     : 0.0;
+   double d_ma365= (ma365  > 0) ? (close-ma365)/ma365*100.0   : 0.0;
+   double spreadPt = (double)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+   string json = StringFormat(
+      "{\"t\":%d,\"symbol\":\"%s\",\"action\":\"features\",\"close\":%.5f,"
+      "\"d_med\":%.3f,\"d_ma30\":%.3f,\"d_ma365\":%.3f,\"cluster\":%.3f,\"velocity\":%.3f,"
+      "\"accel\":%.3f,\"volatility\":%.3f,\"order_score\":%.3f,\"spread\":%.3f}\n",
+      (int)iTime(_Symbol, PERIOD_D1, 0), _Symbol, close, d_med, d_ma30, d_ma365,
+      clu, vel, acc, vol, 0.0, spreadPt);
+   FileSeek(g_logHandle, 0, SEEK_END); FileWriteString(g_logHandle, json); FileFlush(g_logHandle);
+   PhaiSend(json);
 }
 
 //+------------------------------------------------------------------+
@@ -790,13 +834,15 @@ int OnInit()
    g_logHandle = -1;
    if(StringLen(InpLogFile) > 0 && !MQLInfoInteger(MQL_TESTER))
    {
-      g_logHandle = FileOpen(InpLogFile,
+      // un file PER EA (papp_ea_<SIMBOLO>.jsonl): evita collisioni di scrittura tra EA
+      string lf = (InpLogFile!="papp_ea_log.jsonl") ? InpLogFile : ("papp_ea_"+_Symbol+".jsonl");
+      g_logHandle = FileOpen(lf,
          FILE_WRITE|FILE_READ|FILE_TXT|FILE_ANSI|FILE_COMMON|
          FILE_SHARE_READ|FILE_SHARE_WRITE);
       if(g_logHandle == INVALID_HANDLE)
-         Print("WARNING: log file non aperto: ", InpLogFile);
+         Print("WARNING: log file non aperto: ", lf);
       else
-         Print("Log decisioni: ", TerminalInfoString(TERMINAL_COMMONDATA_PATH), "\\Files\\", InpLogFile);
+         Print("PAPP ", _Symbol, " log: ", TerminalInfoString(TERMINAL_COMMONDATA_PATH), "\\Files\\", lf);
    }
 
    // Timer market snapshot
@@ -923,12 +969,15 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTimer()
 {
-   if(g_logHandle < 0) return;
+   if(g_logHandle < 0){ Print("PAPP ", _Symbol, ": timer attivo ma log file chiuso (snapshot non inviati)."); return; }
    datetime now = TimeCurrent();
    if(now - g_lastMarketLog < 60) return;  // non piu' spesso di 60s
    g_lastMarketLog = now;
    LogMarketSnapshot();
    LogAccountSnapshot();
+   LogFeatures();
+   PrintFormat("PAPP %s: snapshot mercato+conto+feature inviato | equity=%.2f | bal=%.2f",
+               _Symbol, AccountInfoDouble(ACCOUNT_EQUITY), AccountInfoDouble(ACCOUNT_BALANCE));
 }
 
 //+------------------------------------------------------------------+
