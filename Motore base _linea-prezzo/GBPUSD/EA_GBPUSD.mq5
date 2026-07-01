@@ -333,6 +333,17 @@ void LogFeatures()
    ReadBufD1(BUF_MA365,  0, ma365);
    ReadCalcD1(BUF_CLUSTER, clu); ReadCalcD1(BUF_VEL, vel);
    ReadCalcD1(BUF_ACC,     acc); ReadCalcD1(BUF_VOL, vol);
+   // OrderScore: ordine dello stack di MA (somma dei confronti a coppie, -6..+6), come Export_PAPP
+   double v3=0,v7=0,v14=0,v121=0,v182=0;
+   ReadBufD1(BUF_MA3,0,v3);    ReadBufD1(BUF_MA7,0,v7);    ReadBufD1(BUF_MA14,0,v14);
+   ReadBufD1(BUF_MA121,0,v121);ReadBufD1(BUF_MA182,0,v182);
+   double os=0;
+   if(v3>0&&v7>0)      os+=(v3>v7)?1:-1;
+   if(v7>0&&v14>0)     os+=(v7>v14)?1:-1;
+   if(v14>0&&ma30>0)   os+=(v14>ma30)?1:-1;
+   if(ma30>0&&v121>0)  os+=(ma30>v121)?1:-1;
+   if(v121>0&&v182>0)  os+=(v121>v182)?1:-1;
+   if(v182>0&&ma365>0) os+=(v182>ma365)?1:-1;
    double d_med  = (median > 0) ? (close-median)/median*100.0 : 0.0;
    double d_ma30 = (ma30   > 0) ? (close-ma30)/ma30*100.0     : 0.0;
    double d_ma365= (ma365  > 0) ? (close-ma365)/ma365*100.0   : 0.0;
@@ -342,7 +353,7 @@ void LogFeatures()
       "\"d_med\":%.3f,\"d_ma30\":%.3f,\"d_ma365\":%.3f,\"cluster\":%.3f,\"velocity\":%.3f,"
       "\"accel\":%.3f,\"volatility\":%.3f,\"order_score\":%.3f,\"spread\":%.3f}\n",
       (int)iTime(_Symbol, PERIOD_D1, 0), _Symbol, close, d_med, d_ma30, d_ma365,
-      clu, vel, acc, vol, 0.0, spreadPt);
+      clu, vel, acc, vol, os, spreadPt);
    FileSeek(g_logHandle, 0, SEEK_END); FileWriteString(g_logHandle, json); FileFlush(g_logHandle);
    PhaiSend(json);
 }

@@ -17,6 +17,79 @@ from sqlalchemy import select, func, desc, case, extract, or_
 from db import AsyncSession, Signal, AccountSnapshot, BacktestTrade, MarketFeature, EaState, MarketSnapshot
 
 
+def relval_bias(to_buy, to_sell):
+    """Orientamento della strategia REVERSIONE dall'oscillatore. to_buy/to_sell =
+    punti osc che mancano alla banda BUY/SELL (<=0 = gia' dentro = pattern attivo)."""
+    if to_buy is None or to_sell is None:
+        return None
+    if to_buy <= 0:
+        return {"dir": "BUY", "stato": "attivo"}
+    if to_sell <= 0:
+        return {"dir": "SELL", "stato": "attivo"}
+    if to_buy <= 15:
+        return {"dir": "BUY", "stato": "in arrivo", "manca": round(to_buy)}
+    if to_sell <= 15:
+        return {"dir": "SELL", "stato": "in arrivo", "manca": round(to_sell)}
+    return {"dir": "attesa", "stato": "lontano"}
+
+
+def base_regime(d_ma365, velocity):
+    """Orientamento di REGIME per i Base: trend (prezzo vs MA lunga) + momentum
+    (velocity). NON un segnale operativo, ma il contesto di mercato corrente."""
+    if d_ma365 is None or velocity is None:
+        return None
+    trend = 1 if d_ma365 > 0 else -1
+    mom = 1 if velocity > 0 else (-1 if velocity < 0 else 0)
+    if trend > 0 and mom >= 0:
+        return {"dir": "BUY", "regime": "rialzista"}
+    if trend < 0 and mom <= 0:
+        return {"dir": "SELL", "regime": "ribassista"}
+    return {"dir": "neutro", "regime": "laterale/misto"}
+
+
+def market_verdict_relval(bias):
+    """Verdetto operativo REVERSIONE (è il segnale vero della strategia)."""
+    if not bias:
+        return None
+    d, st = bias.get("dir"), bias.get("stato")
+    if d == "attesa":
+        return {"action": "ASPETTA", "tone": "wait",
+                "reason": "oscillatore neutro: nessun segnale vicino"}
+    buy = (d == "BUY")
+    if st == "attivo":
+        return {"action": ("COMPRA ORA" if buy else "VENDI ORA"),
+                "tone": ("buy" if buy else "sell"),
+                "reason": ("oscillatore in zona ipervenduto: la strategia compra"
+                           if buy else "oscillatore in zona ipercomprato: la strategia vende")}
+    return {"action": ("PRONTI A COMPRARE" if buy else "PRONTI A VENDERE"),
+            "tone": ("buy" if buy else "sell"),
+            "reason": f"manca poco ({bias.get('manca')} punti) alla zona di "
+                      + ("acquisto" if buy else "vendita")}
+
+
+def market_verdict_base(order_score, velocity):
+    """Verdetto di ORIENTAMENTO Base (contesto di mercato, non un segnale garantito):
+    stack di medie (order_score -6..+6) + momentum (velocity)."""
+    if order_score is None:
+        return None
+    os_, mom = order_score, (velocity or 0)
+    strong = abs(os_) >= 3
+    if strong and os_ > 0 and mom >= 0:
+        return {"action": "ORIENTAMENTO: COMPRA", "tone": "buy",
+                "reason": f"medie in ordine rialzista (order {os_:+.0f}) e struttura in salita"}
+    if strong and os_ < 0 and mom <= 0:
+        return {"action": "ORIENTAMENTO: VENDI", "tone": "sell",
+                "reason": f"medie in ordine ribassista (order {os_:+.0f}) e struttura in discesa"}
+    if strong and os_ > 0:
+        return {"action": "CAUTELA (rialzo che frena)", "tone": "wait",
+                "reason": f"medie rialziste (order {os_:+.0f}) ma momentum in calo"}
+    if strong and os_ < 0:
+        return {"action": "CAUTELA (ribasso che frena)", "tone": "wait",
+                "reason": f"medie ribassiste (order {os_:+.0f}) ma momentum in ripresa"}
+    return {"action": "ASPETTA", "tone": "wait",
+            "reason": f"medie intrecciate (order {os_:+.0f}): mercato laterale/incerto"}
+
+
 def _scope_user(q, col, user_id, owner_id):
     """Filtra per tenant i dati di conto/segnali. user_id None = vista globale
     (riassunto condiviso). Owner e modalità demo vedono anche i dati condivisi."""
@@ -100,6 +173,9 @@ async def _market_block(session, symbol: str) -> list[str]:
         extra.append(f"OrderScore {last.order_score:.1f}")
     if extra:
         lines.append("  " + " · ".join(extra))
+    v = market_verdict_base(last.order_score, last.velocity)
+    if v:
+        lines.append(f"  COSA FARE (orientamento di mercato): {v['action']} — {v['reason']}")
     return lines
 
 
@@ -332,6 +408,9 @@ async def build_digest(symbol: str = "", user_id: int | None = None, owner_id: i
                 line = f"  {s}: oscillatore {oscs}" + (f" — {row.info}" if row.info else "")
                 if extra:
                     line += " · " + ", ".join(extra)
+                v = market_verdict_relval(relval_bias(row.to_buy, row.to_sell))
+                if v:
+                    line += f" → COSA FARE: {v['action']} — {v['reason']}"
                 st_lines.append(line)
         if st_lines:
             parts.append("\n=== STATO STRATEGIE REVERSIONE (dove siamo ora) ===")

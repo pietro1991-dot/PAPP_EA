@@ -215,6 +215,26 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .pos{color:var(--green)} .neg{color:var(--red)}
 /* Stato mercato */
 .mk-head{margin-bottom:10px}
+.mk-block{margin-bottom:22px}
+.mk-block:last-child{margin-bottom:0}
+.mk-filter{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.mk-fbtn{font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+.mk-fbtn.on{background:var(--accent);border-color:var(--accent);color:#0e1420}
+.bias{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px}
+.bias.buy{color:#5fd07f;background:rgba(95,208,127,.14)}
+.bias.sell{color:#f1a06a;background:rgba(241,160,106,.14)}
+.bias.wait{color:var(--muted);background:#1a2236}
+.bias.soft{opacity:.9}
+.verdict{margin-top:13px;padding:12px 14px;border-radius:11px;display:flex;align-items:center;gap:11px;border:1px solid}
+.verdict .vi{font-size:22px;line-height:1}
+.verdict .vt{font-size:15px;font-weight:800;letter-spacing:.3px}
+.verdict .vr{font-size:12px;color:var(--muted);margin-top:2px}
+.verdict.buy{background:rgba(95,208,127,.10);border-color:rgba(95,208,127,.38)}
+.verdict.buy .vt{color:#5fd07f}
+.verdict.sell{background:rgba(241,160,106,.10);border-color:rgba(241,160,106,.38)}
+.verdict.sell .vt{color:#f1a06a}
+.verdict.wait{background:#141b2b;border-color:var(--border)}
+.verdict.wait .vt{color:#b9c2d6}
 .mk-sym{font-size:20px;font-weight:800;letter-spacing:1px}
 .mk-sub{font-size:11px;color:var(--muted);margin-top:2px}
 .mk-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
@@ -520,6 +540,7 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
     <section class="section" id="sec-mercato" hidden>
       <div class="panel">
         <div class="panel-head"><span data-i18n="market_title">Stato mercato</span> <span class="scope" id="mk-scope"></span></div>
+        <div class="mk-filter" id="mk-filter"></div>
         <div class="st-body" id="mk-body"></div>
       </div>
     </section>
@@ -1172,6 +1193,35 @@ async function openEA(id){
 
 /* ---------- Stato mercato (sezione) ---------- */
 function openMercato(){showSection('mercato');}
+let mkFilter='';   // filtro locale della sezione mercato ('' = tutti)
+async function loadMkFilter(){
+  const box=$('mk-filter'); if(!box) return;
+  let syms=[];
+  try{ const r=await fetch('/api/symbols'); if(r.ok) syms=await r.json(); }catch(e){}
+  let h=`<button class="mk-fbtn${mkFilter===''?' on':''}" onclick="setMkFilter('')">${t('all')}</button>`;
+  syms.forEach(s=>{ h+=`<button class="mk-fbtn${mkFilter===s?' on':''}" onclick="setMkFilter('${s}')">${s}</button>`; });
+  box.innerHTML=h;
+}
+function setMkFilter(s){ mkFilter=s; loadMkFilter(); loadMercato(); }
+function biasBadgeRelval(b){
+  if(!b) return '';
+  if(b.dir==='attesa') return '<span class="bias wait">in attesa</span>';
+  const cls=(b.dir==='BUY')?'buy':'sell';
+  if(b.stato==='attivo') return `<span class="bias ${cls}">${b.dir==='BUY'?'▲':'▼'} ${b.dir} ORA</span>`;
+  return `<span class="bias ${cls} soft">${b.dir} in arrivo · manca ${b.manca}</span>`;
+}
+function biasBadgeBase(b){
+  if(!b) return '';
+  if(b.dir==='neutro') return `<span class="bias wait">regime ${b.regime}</span>`;
+  const cls=(b.dir==='BUY')?'buy':'sell';
+  return `<span class="bias ${cls}">regime ${b.regime} · bias ${b.dir}</span>`;
+}
+function verdictBox(v){
+  if(!v) return '';
+  const icon=v.tone==='buy'?'🟢':(v.tone==='sell'?'🔴':'⏳');
+  return `<div class="verdict ${v.tone}"><span class="vi">${icon}</span><div>`
+    +`<div class="vt">${escapeHtml(v.action)}</div><div class="vr">${escapeHtml(v.reason)}</div></div></div>`;
+}
 function renderOscPanel(sts){
   let h='<div class="osc-head"><span class="pulse"></span>Stato strategia · oscillatore live</div><div class="osc-wrap">';
   sts.forEach(s=>{
@@ -1192,47 +1242,58 @@ function renderOscPanel(sts){
       +`<span class="osc-val" style="color:${col}">${has?v.toFixed(0)+'/100':'—'}</span></div>`
       +`<div class="osc-bar"><div class="osc-fill" style="left:${v}%;background:${col}"></div></div>`
       +`<div class="osc-info">${s.info?escapeHtml(s.info):''}</div>`
-      +(rows?`<div class="osc-metrics">${rows}</div>`:'')+`</div>`;
+      +(s.bias?`<div style="margin-top:9px">${biasBadgeRelval(s.bias)}</div>`:'')
+      +(rows?`<div class="osc-metrics">${rows}</div>`:'')
+      +verdictBox(s.verdict)+`</div>`;
   });
   h+='</div><div class="osc-legend">≤10 = vicino al <b style="color:#5fd07f">BUY</b> · ≥90 = vicino al <b style="color:#f1a06a">SELL</b> · in mezzo = in attesa. Aggiornato ~ogni 15s.</div>';
   return h;
 }
+function marketBlockHtml(d){
+  if(!d||!d.available) return '';
+  let h=`<div class="mk-head"><div class="mk-sym">${d.symbol}</div><div class="mk-sub">${t('last_bar')} ${d.t} · close ${d.close}</div></div>`;
+  if(d.bias) h+=`<div style="margin:2px 0 11px">${biasBadgeBase(d.bias)} <span style="font-size:11px;color:var(--muted)">contesto di mercato, non un segnale</span></div>`;
+  h+='<div class="mk-chips">';
+  (d.price_vs||[]).forEach(p=>{h+=`<span class="mk-chip ${p.pos==='sopra'?'pos':'neg'}">${escapeHtml(p.pos)} ${escapeHtml(String(p.ma))} (${p.dist>=0?'+':''}${p.dist}%)</span>`;});
+  h+='</div>';
+  h+=`<table class="mk-table"><thead><tr><th>${t('feature')}</th><th>${t('current')}</th><th>${t('average')}</th><th>${t('percentile')}</th></tr></thead><tbody>`;
+  (d.features||[]).forEach(f=>{
+    h+=`<tr><td><div style="font-weight:600">${escapeHtml(String(f.name))}</div>`
+      +(f.desc?`<div style="font-size:11px;color:var(--muted);margin-top:2px;max-width:260px;line-height:1.35">${escapeHtml(String(f.desc))}</div>`:'')
+      +`</td><td class="v">${f.value}</td><td class="mu">${f.avg}</td>`
+      +`<td><span class="lvl ${f.level}">${f.pct}° · ${f.level}</span></td></tr>`;
+  });
+  h+='</tbody></table>';
+  h+=verdictBox(d.verdict);
+  return h;
+}
 async function loadMercato(){
-  $('mk-scope').textContent=activeSymbol?('· '+activeSymbol):'';
+  loadMkFilter();
+  $('mk-scope').textContent=mkFilter?('· '+mkFilter):'';
   const body=$('mk-body'); body.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
-  // Stato strategie Reversione (oscillatore live) - mostrato in cima
+  // 1) Oscillatore Reversione (in cima): il simbolo filtrato o tutti
   let oscHtml='';
   try{
     const sr=await fetch('/api/strategy-state');
     if(sr.ok){ const sd=await sr.json(); let sts=(sd.symbols||[]);
-      if(activeSymbol) sts=sts.filter(x=>x.symbol===activeSymbol);
-      if(sts.length) oscHtml=renderOscPanel(sts)+'<div style="height:14px"></div>';
+      if(mkFilter) sts=sts.filter(x=>x.symbol===mkFilter);
+      if(sts.length) oscHtml=renderOscPanel(sts)+'<div style="height:16px"></div>';
     }
   }catch(e){}
-  const r=await fetch('/api/market-state'+(activeSymbol?('?symbol='+encodeURIComponent(activeSymbol)):'')); if(r.status===401){location.href='/';return;}
-  const d=await r.json(); body.innerHTML=oscHtml;
-  if(!d.available){ if(!oscHtml) body.innerHTML='<div class="hist-empty">'+t('no_feat')+'<br><b>import_features.py</b></div>'; return;}
-  const hd=document.createElement('div'); hd.className='mk-head';
-  const sym=document.createElement('div'); sym.className='mk-sym'; sym.textContent=d.symbol;
-  const sub=document.createElement('div'); sub.className='mk-sub'; sub.textContent=`${t('last_bar')} ${d.t} · close ${d.close}`;
-  hd.appendChild(sym); hd.appendChild(sub); body.appendChild(hd);
-  const chips=document.createElement('div'); chips.className='mk-chips';
-  d.price_vs.forEach(p=>{const c=document.createElement('span'); c.className='mk-chip '+(p.pos==='sopra'?'pos':'neg'); c.textContent=`${p.pos} ${p.ma} (${p.dist>=0?'+':''}${p.dist}%)`; chips.appendChild(c);});
-  body.appendChild(chips);
-  const tbl=document.createElement('table'); tbl.className='mk-table';
-  tbl.innerHTML=`<thead><tr><th>${t('feature')}</th><th>${t('current')}</th><th>${t('average')}</th><th>${t('percentile')}</th></tr></thead>`;
-  const tb=document.createElement('tbody');
-  d.features.forEach(f=>{
-    const tr=document.createElement('tr');
-    const td=(c,t)=>{const e=document.createElement('td');if(c)e.className=c;e.textContent=t;return e;};
-    const nm=document.createElement('td'); nm.innerHTML=`<div style="font-weight:600">${f.name}</div>`+(f.desc?`<div style="font-size:11px;color:var(--muted);margin-top:2px;max-width:260px;line-height:1.35">${f.desc}</div>`:''); tr.appendChild(nm);
-    tr.appendChild(td('v',f.value));
-    tr.appendChild(td('mu',f.avg));
-    const last=document.createElement('td'); const lvl=document.createElement('span'); lvl.className='lvl '+f.level; lvl.textContent=`${f.pct}° · ${f.level}`; last.appendChild(lvl); tr.appendChild(last);
-    tb.appendChild(tr);
-  });
-  tbl.appendChild(tb); body.appendChild(tbl);
-  body.insertAdjacentHTML('beforeend', `<div style="font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.55;border-top:1px solid var(--border);padding-top:10px"><b>Come leggere:</b> <b>Attuale</b> = valore in questo momento · <b>Media</b> = media storica · <b>Percentile</b> = dove si trova rispetto a tutta la storia (0–100): <b style="color:#7fb0ff">basso</b> ≤30, <b>media</b> 30–70, <b style="color:#f1a06a">alto</b> ≥70. I valori vicino allo 0 e al 100 sono gli estremi. Le etichette in alto (es. "sotto MA365 −1,75%") dicono quanto il prezzo dista dalle medie chiave.</div>`);
+  // 2) Feature dei Base: il simbolo filtrato, oppure TUTTI se nessuno selezionato
+  const probe=await fetch('/api/market-state'+(mkFilter?('?symbol='+encodeURIComponent(mkFilter)):''));
+  if(probe.status===401){location.href='/';return;}
+  const pd=await probe.json();
+  const featSyms = mkFilter ? (pd.available?[mkFilter]:[]) : (pd.symbols||[]);
+  let featHtml='';
+  for(const fs of featSyms){
+    const rr=await fetch('/api/market-state?symbol='+encodeURIComponent(fs));
+    if(rr.status===401){location.href='/';return;}
+    const blk=marketBlockHtml(await rr.json());
+    if(blk) featHtml+=`<div class="mk-block">${blk}</div>`;
+  }
+  const legend = featHtml?`<div style="font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.55;border-top:1px solid var(--border);padding-top:10px"><b>Come leggere:</b> <b>Attuale</b> = valore in questo momento · <b>Media</b> = media storica · <b>Percentile</b> = dove si trova rispetto a tutta la storia (0–100): <b style="color:#7fb0ff">basso</b> ≤30, <b>media</b> 30–70, <b style="color:#f1a06a">alto</b> ≥70. Le etichette in alto dicono quanto il prezzo dista dalle medie chiave.</div>`:'';
+  body.innerHTML = (oscHtml+featHtml+legend) || ('<div class="hist-empty">'+t('no_feat')+'</div>');
 }
 
 /* ---------- Markdown (sicuro) ---------- */

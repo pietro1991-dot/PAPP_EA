@@ -1,7 +1,7 @@
 /* Service Worker PAPP EA — offline shell + cache statica.
    Regole: /api e /ws sempre dalla rete (dati live), statici cache-first,
    navigazione network-first con fallback offline. */
-const CACHE = 'papp-ea-v3';
+const CACHE = 'papp-ea-v4';
 const ASSETS = [
   '/static/icon-192.png',
   '/static/icon-512.png',
@@ -47,9 +47,9 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Navigazione (apertura pagina): rete prima, fallback offline
+  // Navigazione (apertura pagina): SEMPRE rete fresca (no cache), fallback offline
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).catch(() => caches.match('/static/offline.html')));
+    e.respondWith(fetch(req, { cache: 'no-store' }).catch(() => caches.match('/static/offline.html')));
     return;
   }
 });

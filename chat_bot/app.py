@@ -566,7 +566,10 @@ def _serve_page(name: str, request: Request) -> HTMLResponse:
 async def index(request: Request):
     token = request.cookies.get(auth.COOKIE_NAME)
     if token and auth.verify_session_token(token):
-        return HTMLResponse(open("templates/index.html").read())
+        return HTMLResponse(
+            open("templates/index.html").read(),
+            headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
+        )
     return _serve_page("landing", request)   # pubblico → landing marketing multilingua
 
 
@@ -1816,6 +1819,10 @@ async def _market_state_data(symbol: str = ""):
         syms = sorted(s for s in syms if s)
         if not syms:
             return {"available": False, "symbols": []}
+        if symbol and symbol not in syms:
+            # simbolo richiesto senza feature (es. Reversione): niente fallback fuorviante,
+            # la vista mostrera' solo il pannello oscillatore.
+            return {"available": False, "symbols": syms, "symbol": symbol}
         sym = symbol if symbol in syms else syms[0]
         last = (
             await session.execute(
@@ -1886,6 +1893,8 @@ async def _market_state_data(symbol: str = ""):
         "close": last.close,
         "price_vs": price_vs,
         "features": feats,
+        "bias": metrics.base_regime(last.d_ma365, last.velocity),
+        "verdict": metrics.market_verdict_base(last.order_score, last.velocity),
     }
 
 
@@ -2029,6 +2038,8 @@ async def get_strategy_state(user: User = Depends(auth.current_user)):
                 "to_buy": r.to_buy,
                 "to_sell": r.to_sell,
                 "bars_out": r.bars_out,
+                "bias": metrics.relval_bias(r.to_buy, r.to_sell),
+                "verdict": metrics.market_verdict_relval(metrics.relval_bias(r.to_buy, r.to_sell)),
                 "t": r.t.isoformat() if r.t else None,
             }
     return {
