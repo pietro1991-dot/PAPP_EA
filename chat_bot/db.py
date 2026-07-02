@@ -142,6 +142,34 @@ class EaState(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class EquityPoint(Base):
+    """Campione LEGGERO di equity/balance nel tempo (1/ora per utente, con retention):
+    alimenta il grafico 'andamento del conto'. Separato dagli snapshot live (che tengono
+    solo l'ultimo) e dai trade. Spazio limitato: ~2.160 punti/utente a 90 giorni."""
+    __tablename__ = "equity_points"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, index=True, nullable=True)
+    t: Mapped[datetime] = mapped_column(DateTime, index=True)
+    balance: Mapped[float | None] = mapped_column(Float, nullable=True)
+    equity: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PriceBar(Base):
+    """Barra OHLC (timeframe D1) per simbolo, GLOBALE — il prezzo del cross è uguale per
+    tutti i clienti, quindi NON scala col numero di utenti. Upsert per (symbol, t).
+    Piccola: ~250 barre/anno per simbolo. Alimenta il grafico navigabile del cross."""
+    __tablename__ = "price_bars"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String(20), index=True)
+    t: Mapped[datetime] = mapped_column(DateTime, index=True)
+    o: Mapped[float | None] = mapped_column(Float, nullable=True)
+    h: Mapped[float | None] = mapped_column(Float, nullable=True)
+    l: Mapped[float | None] = mapped_column(Float, nullable=True)
+    c: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class PushSubscription(Base):
     __tablename__ = "push_subscriptions"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

@@ -359,6 +359,23 @@ void LogFeatures()
 }
 
 //+------------------------------------------------------------------+
+// Barre OHLC (D1) del cross per il grafico navigabile. Ultime `count` barre.
+void LogBars(int count)
+{
+   if(g_logHandle < 0) return;
+   MqlRates r[]; ArraySetAsSeries(r, true);
+   int n = CopyRates(_Symbol, PERIOD_D1, 0, count, r);
+   if(n <= 0) return;
+   string arr = "";
+   for(int i=n-1; i>=0; i--){ if(arr!="") arr+=",";
+      arr += StringFormat("{\"t\":%d,\"o\":%.5f,\"h\":%.5f,\"l\":%.5f,\"c\":%.5f}",
+             (int)r[i].time, r[i].open, r[i].high, r[i].low, r[i].close); }
+   string bj = StringFormat("{\"symbol\":\"%s\",\"action\":\"bars\",\"bars\":[%s]}\n", _Symbol, arr);
+   FileSeek(g_logHandle, 0, SEEK_END); FileWriteString(g_logHandle, bj); FileFlush(g_logHandle);
+   PhaiSend(bj);
+}
+
+//+------------------------------------------------------------------+
 int CheckCrossD1(int buf)
 {
    if(buf < 0) return 0;
@@ -948,6 +965,7 @@ void OnTimer()
    LogMarketSnapshot();
    LogAccountSnapshot();
    LogFeatures();
+   { static bool _bi=false; LogBars(_bi?5:300); _bi=true; }   // backfill al 1° giro, poi aggiorna
    PrintFormat("PAPP %s: snapshot mercato+conto+feature inviato | equity=%.2f | bal=%.2f",
                _Symbol, AccountInfoDouble(ACCOUNT_EQUITY), AccountInfoDouble(ACCOUNT_BALANCE));
 }

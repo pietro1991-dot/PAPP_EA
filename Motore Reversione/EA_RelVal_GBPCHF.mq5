@@ -140,6 +140,7 @@ int OnInit()
    PrintFormat("PAPP %s avviato | TF=%s | server=%s | key=%s | logfile=%s",
                _Symbol, EnumToString((ENUM_TIMEFRAMES)_Period),
                (InpUseServer?"on":"off"), (StringLen(InpLicenseKey)>0?"si":"no"), _lf);
+   PappBars(_Symbol, PERIOD_D1, 300);   // backfill storico per il grafico del cross
    return INIT_SUCCEEDED;
   }
 void OnDeinit(const int reason){ if(g_hMA!=INVALID_HANDLE) IndicatorRelease(g_hMA); EventKillTimer(); PappLogClose(); }
@@ -177,6 +178,7 @@ void OnTimer()
    g_timerN++;
    bool beat = (g_timerN <= 3 || g_timerN % 20 == 0);   // log: primi 3 + poi ogni ~5 min
    PappAccount(_Symbol);                 // conto: SEMPRE (non dipende dalle barre)
+   if(g_timerN % 40 == 0) PappBars(_Symbol, PERIOD_D1, 5);   // aggiorna il grafico ~ogni 10 min
    double osc, dist, vol; int bars = BarsCalculated(g_hMA);
    if(!ComputeRelval(osc, dist, vol))    // stato + metriche: solo se ci sono abbastanza barre
      {

@@ -4,3 +4,4 @@ __pycache__/
 chat_bot/vapid_private.pem
 backtests/*.csv
 backtests/ANALISI_*.md
+UTENTI_TEST.md

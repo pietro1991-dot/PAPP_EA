@@ -209,4 +209,26 @@ void PappRelval(string symbol, double osc, double dist, double vol,
    PappLogLine("{"+j+"}"); PappEvent(j);
 }
 
+// BARRE OHLC del cross per il grafico navigabile (di solito D1). Invia le ultime
+// `count` barre (dalla piu' vecchia alla piu' recente). Lato server sono GLOBALI per
+// simbolo. Locale (ponte) + HTTP. Chiamare con count alto all'avvio (backfill) e
+// count basso ad ogni nuova barra (aggiornamento).
+void PappBars(string symbol, ENUM_TIMEFRAMES tf, int count)
+{
+   MqlRates r[];
+   ArraySetAsSeries(r, true);
+   int n = CopyRates(symbol, tf, 0, count, r);
+   if(n <= 0) return;
+   string arr = "";
+   for(int i = n-1; i >= 0; i--)
+   {
+      if(arr != "") arr += ",";
+      arr += StringFormat("{\"t\":%d,\"o\":%.5f,\"h\":%.5f,\"l\":%.5f,\"c\":%.5f}",
+             (int)r[i].time, r[i].open, r[i].high, r[i].low, r[i].close);
+   }
+   string j = StringFormat("\"symbol\":\"%s\",\"action\":\"bars\",\"bars\":[%s]", symbol, arr);
+   PappLogLine("{" + j + "}");   // ponte locale (owner)
+   PappEvent(j);                 // HTTP (clienti con key)
+}
+
 #endif

@@ -9,12 +9,14 @@ import httpx
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import select, desc, delete, extract, case, or_, func as sa_func
 
 from db import (
     EaState,
+    EquityPoint,
+    PriceBar,
     init_db,
     AsyncSession,
     Signal,
@@ -107,7 +109,11 @@ def _scope(q, col, user: User):
 async def _user_plan(user: User) -> str:
     """Piano EFFETTIVO dell'utente ('starter'|'pro'|'elite'), '' se nessuno o
     abbonamento non valido (revocato/inattivo/scaduto). Così uno scaduto perde
-    gli accessi (segnali/EA/chatbot tornano al livello demo)."""
+    gli accessi (segnali/EA/chatbot tornano al livello demo).
+    L'OWNER ha accesso pieno a prescindere dalla licenza (è l'admin del prodotto)."""
+    oid = _owner_id()
+    if oid is not None and getattr(user, "id", None) == oid:
+        return "portfolio"      # owner: tutti gli EA + segnali + assistente premium
     if not getattr(user, "license_key", None):
         return ""
     async with AsyncSession() as session:
@@ -333,6 +339,12 @@ async def _signal_recipients(user_id: int | None) -> "set[int]":
     return {user_id}
 
 
+# Campione storico equity (grafico "andamento conto"): 1/ora per utente, bounded.
+EQUITY_SAMPLE_SEC = int(os.getenv("EQUITY_SAMPLE_SEC", "3300"))       # ~1 ora tra i campioni
+EQUITY_RETENTION_DAYS = int(os.getenv("EQUITY_RETENTION_DAYS", "90"))  # quanti giorni tenere
+_equity_last: dict = {}   # user_id -> ultimo campionamento (throttle in memoria, no query extra)
+
+
 async def _upsert_latest(session, Model, user_id, symbol, fields: dict):
     """Stato LIVE scalabile: tiene UNA sola riga per (user_id, symbol). Aggiorna la
     piu' recente coi valori freschi e cancella eventuali duplicati piu' vecchi, così
@@ -366,6 +378,19 @@ async def process_event(data: dict, user_id: int | None = None):
                 sym_profit=data.get("sym_profit"), sym_pct=data.get("sym_pct"),
                 sym_open=data.get("sym_open"),
             ))
+            # campione storico equity 1/ora (throttle in memoria) + retention -> spazio bounded
+            eq = data.get("equity")
+            if eq is not None:
+                now = datetime.now()
+                last = _equity_last.get(user_id)
+                if last is None or (now - last).total_seconds() >= EQUITY_SAMPLE_SEC:
+                    _equity_last[user_id] = now
+                    session.add(EquityPoint(user_id=user_id, t=now,
+                                            balance=data.get("balance"), equity=eq))
+                    await session.execute(delete(EquityPoint).where(
+                        EquityPoint.user_id == user_id,
+                        EquityPoint.t < now - timedelta(days=EQUITY_RETENTION_DAYS),
+                    ))
             await session.commit()
         return
 
@@ -375,6 +400,29 @@ async def process_event(data: dict, user_id: int | None = None):
                 t=data.get("t"), bid=data.get("bid"), ask=data.get("ask"),
                 spread_pts=data.get("spread_pts"),
             ))
+            await session.commit()
+        return
+
+    if data.get("action") == "bars":
+        # Barre OHLC (D1) del cross: GLOBALI per simbolo (prezzo uguale per tutti), upsert per (symbol, t).
+        sym = (data.get("symbol") or "").upper()
+        bars = data.get("bars") or []
+        if not sym or not bars:
+            return
+        async with AsyncSession() as session:
+            for b in bars[-400:]:
+                tv = b.get("t")
+                if isinstance(tv, (int, float)):
+                    tv = datetime.fromtimestamp(tv)
+                if tv is None:
+                    continue
+                existing = (await session.execute(
+                    select(PriceBar).where(PriceBar.symbol == sym, PriceBar.t == tv).limit(1)
+                )).scalar_one_or_none()
+                if existing is not None:
+                    existing.o, existing.h, existing.l, existing.c = b.get("o"), b.get("h"), b.get("l"), b.get("c")
+                else:
+                    session.add(PriceBar(symbol=sym, t=tv, o=b.get("o"), h=b.get("h"), l=b.get("l"), c=b.get("c")))
             await session.commit()
         return
 
@@ -463,12 +511,18 @@ async def process_event(data: dict, user_id: int | None = None):
         pat = f"P{sig.pattern}" if sig.pattern is not None else ""
         dirs = sig.dir or ""
         if sig.action == "open":
-            title = f"🟢 Ordine aperto — {sym} {pat} {dirs}".strip()
-            body = ""
+            verb = "COMPRA" if (dirs or "").upper().startswith("B") or dirs == "1" else ("VENDI" if dirs else "SEGNALE")
+            title = f"🟢 {verb} {sym}".strip()
+            parts = []
             if sig.entry:
-                body += f"Entrata @{sig.entry:.5f}. "
-            if sig.reason:
-                body += sig.reason
+                parts.append(f"Entra @ {sig.entry:.5f}")
+            if sig.tp:
+                parts.append(f"🎯 TP {sig.tp:.5f}")
+            if sig.sl:
+                parts.append(f"🛑 SL {sig.sl:.5f}")
+            body = " · ".join(parts)
+            if not body:
+                body = sig.reason or "Nuovo segnale"
         else:
             neg = sig.pnl_pt is not None and sig.pnl_pt < 0
             title = f"{'🔴' if neg else '🟢'} Ordine chiuso — {sym} {pat} {dirs}".strip()
@@ -1601,6 +1655,54 @@ async def get_signals(
     ]
 
 
+@app.get("/api/signals/radar")
+async def signals_radar(user: User = Depends(auth.current_user)):
+    """Radar segnali: UNA card per simbolo, sempre presente. Mostra la vicinanza al
+    segnale (osc/verdetto 'siamo vicini/lontani') e, se c'è un trade APERTO, diventa
+    'attivo' con entrata/TP/SL per tutto il periodo. Alimenta la tab Segnali."""
+    if not entitlements.can_signals(await _user_plan(user)):
+        return {"available": False, "cards": []}
+    async with AsyncSession() as session:
+        st_rows = (await session.execute(
+            _scope(select(EaState), EaState.user_id, user).order_by(desc(EaState.t)).limit(300)
+        )).scalars().all()
+        sig_rows = (await session.execute(
+            _scope(select(Signal), Signal.user_id, user).order_by(desc(Signal.id)).limit(300)
+        )).scalars().all()
+    state = {}
+    for r in st_rows:
+        if r.symbol and r.symbol not in state:
+            state[r.symbol] = r
+    last_sig = {}
+    for r in sig_rows:
+        if r.symbol and r.symbol not in last_sig:
+            last_sig[r.symbol] = r
+    cards = []
+    for sym in sorted(set(state) | set(last_sig)):
+        r = state.get(sym)
+        bias = metrics.relval_bias(r.to_buy, r.to_sell) if r else None
+        verdict = metrics.market_verdict_relval(bias) if bias else None
+        ls = last_sig.get(sym)
+        active = bool(ls and ls.action == "open")
+        ea = catalog.EA_BY_ID.get(sym)
+        card = {
+            "symbol": sym,
+            "name": ea["name"] if ea else sym,
+            "osc": r.osc if r else None,
+            "info": r.info if r else None,
+            "verdict": verdict,
+            "active": active,
+            "t": (r.t.isoformat() if (r and r.t) else None),
+        }
+        if active:
+            card["signal"] = {
+                "dir": ls.dir, "entry": ls.entry, "tp": ls.tp, "sl": ls.sl,
+                "lot": ls.lot, "t": ls.t.isoformat() if ls.t else None,
+            }
+        cards.append(card)
+    return {"available": True, "cards": cards}
+
+
 @app.get("/api/market")
 async def get_market(user: User = Depends(auth.current_user)):
     async with AsyncSession() as session:
@@ -2091,6 +2193,37 @@ async def get_account(user: User = Depends(auth.current_user)):
         "profit": latest.profit,
         "symbols": sorted(per.values(), key=lambda x: x["symbol"]),
     }
+
+
+@app.get("/api/equity-history")
+async def equity_history(user: User = Depends(auth.current_user)):
+    """Serie storica leggera di equity/balance nel tempo (grafico 'andamento conto')."""
+    async with AsyncSession() as session:
+        rows = (await session.execute(
+            _scope(select(EquityPoint), EquityPoint.user_id, user)
+            .order_by(EquityPoint.t).limit(3000)
+        )).scalars().all()
+    return {"points": [
+        {"t": r.t.isoformat() if r.t else None, "equity": r.equity, "balance": r.balance}
+        for r in rows
+    ]}
+
+
+@app.get("/api/price-history")
+async def price_history(symbol: str = "", user: User = Depends(auth.current_user)):
+    """Barre OHLC (D1) del cross per il grafico navigabile. Globale: il prezzo è uguale
+    per tutti i clienti, quindi una sola serie per simbolo."""
+    sym = (symbol or "").upper()
+    if not sym:
+        return {"symbol": sym, "bars": []}
+    async with AsyncSession() as session:
+        rows = (await session.execute(
+            select(PriceBar).where(PriceBar.symbol == sym).order_by(PriceBar.t).limit(2000)
+        )).scalars().all()
+    return {"symbol": sym, "bars": [
+        {"t": r.t.isoformat() if r.t else None, "o": r.o, "h": r.h, "l": r.l, "c": r.c}
+        for r in rows
+    ]}
 
 
 @app.get("/api/strategy-state")
