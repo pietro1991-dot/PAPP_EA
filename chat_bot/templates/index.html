@@ -217,6 +217,14 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .mk-head{margin-bottom:10px}
 .mk-block{margin-bottom:22px}
 .mk-block:last-child{margin-bottom:0}
+.mk-details{margin-top:12px;border-top:1px solid var(--border)}
+.mk-details>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:11px 2px 6px;font-size:12px;font-weight:600;color:var(--muted);user-select:none}
+.mk-details>summary::-webkit-details-marker{display:none}
+.mk-details>summary:hover{color:#e8eefc}
+.mk-details[open]>summary{color:#e8eefc}
+.mk-details .mk-count{background:#1a2236;color:var(--muted);font-size:11px;padding:1px 8px;border-radius:999px}
+.mk-details .mk-chevron{margin-left:auto;transition:transform .2s;font-size:13px}
+.mk-details[open] .mk-chevron{transform:rotate(180deg)}
 .mk-filter{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
 .mk-fbtn{font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
 .mk-fbtn.on{background:var(--accent);border-color:var(--accent);color:#0e1420}
@@ -319,7 +327,12 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
   .panel{height:auto}
   .chat-panel{min-height:56dvh}
   .signals-panel{width:100%}
-  .signal-list{max-height:62dvh}
+  /* le sezioni a lista fluiscono col body (niente scroll interno che schiaccia) */
+  #sec-signals,#sec-storico,#sec-mercato{overflow:visible;height:auto;min-height:0}
+  #sec-signals .panel,#sec-storico .panel,#sec-mercato .panel{height:auto}
+  .signal-list{max-height:none;overflow:visible}
+  .sig-radar{margin:18px 0 16px}
+  .sec-head{padding-bottom:6px}
   .cards{flex-wrap:wrap}
   .cards.account .card{flex:1 1 calc(33.333% - 8px)}
   .cards.stats-row .card{flex:1 1 calc(50% - 6px)}
@@ -342,7 +355,7 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:20px 2px 9px}
 .group-title:first-child{margin-top:2px}
 /* Radar segnali */
-.sig-radar{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:14px;flex-shrink:0}
+.sig-radar{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:16px 0 16px;flex-shrink:0}
 .rd-card{border:1px solid var(--border);border-radius:12px;padding:12px 13px;background:var(--panel);position:relative;transition:.2s}
 .rd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .rd-sym{font-weight:800;font-size:14px}
@@ -837,6 +850,17 @@ async function renderPriceChart(symbol){
     const c=LightweightCharts.createChart(el,Object.assign({},_CHART_THEME,{autoSize:true,timeScale:{timeVisible:false,borderColor:'rgba(255,255,255,.08)'}}));
     const s=c.addCandlestickSeries({upColor:'#5fd07f',downColor:'#f1a06a',borderUpColor:'#5fd07f',borderDownColor:'#f1a06a',wickUpColor:'#7fd499',wickDownColor:'#f4b183'});
     s.setData(bars.map(b=>({time:b.t.slice(0,10),open:b.o,high:b.h,low:b.l,close:b.c})));
+    // marker entrate/uscite dell'utente (i SUOI trade) sul prezzo comune
+    try{
+      const barDays=new Set(bars.map(b=>b.t.slice(0,10)));
+      const mk=((await (await fetch('/api/trade-markers?symbol='+encodeURIComponent(symbol))).json()).markers||[]).filter(m=>barDays.has(m.day));
+      if(mk.length) s.setMarkers(mk.map(m=>{
+        if(m.action==='open'){ const buy=(m.dir==='BUY');
+          return {time:m.day,position:buy?'belowBar':'aboveBar',color:buy?'#5fd07f':'#f1a06a',shape:buy?'arrowUp':'arrowDown',text:buy?'BUY':'SELL'}; }
+        const win=(m.pnl==null||m.pnl>=0);
+        return {time:m.day,position:'inBar',color:win?'#5fd07f':'#f1a06a',shape:'circle',text:'chiuso'+(m.pnl!=null?(' '+(m.pnl>=0?'+':'')+m.pnl.toFixed(0)):'')};
+      }));
+    }catch(_){}
     c.timeScale().fitContent(); _priceChart=c;
   }catch(e){ el.innerHTML='<div class="hist-empty">Grafico non disponibile</div>'; }
 }
@@ -1427,6 +1451,10 @@ function marketBlockHtml(d){
   h+='<div class="mk-chips">';
   (d.price_vs||[]).forEach(p=>{h+=`<span class="mk-chip ${p.pos==='sopra'?'pos':'neg'}">${escapeHtml(p.pos)} ${escapeHtml(String(p.ma))} (${p.dist>=0?'+':''}${p.dist}%)</span>`;});
   h+='</div>';
+  h+=verdictBox(d.verdict);
+  const nf=(d.features||[]).length;
+  h+=`<details class="mk-details"><summary><span class="mk-dt">Dettaglio feature</span>`
+    +`<span class="mk-count">${nf}</span><span class="mk-chevron">▾</span></summary>`;
   h+=`<table class="mk-table"><thead><tr><th>${t('feature')}</th><th>${t('current')}</th><th>${t('average')}</th><th>${t('percentile')}</th></tr></thead><tbody>`;
   (d.features||[]).forEach(f=>{
     h+=`<tr><td><div style="font-weight:600">${escapeHtml(String(f.name))}</div>`
@@ -1434,8 +1462,7 @@ function marketBlockHtml(d){
       +`</td><td class="v">${f.value}</td><td class="mu">${f.avg}</td>`
       +`<td><span class="lvl ${f.level}">${f.pct}° · ${f.level}</span></td></tr>`;
   });
-  h+='</tbody></table>';
-  h+=verdictBox(d.verdict);
+  h+='</tbody></table></details>';
   return h;
 }
 async function loadMercato(){

@@ -2226,6 +2226,28 @@ async def price_history(symbol: str = "", user: User = Depends(auth.current_user
     ]}
 
 
+@app.get("/api/trade-markers")
+async def trade_markers(symbol: str = "", user: User = Depends(auth.current_user)):
+    """Entrate/uscite dell'utente sul grafico del cross (scoped per tenant: ognuno vede
+    solo i PROPRI trade, sovrapposti al prezzo che è comune a tutti)."""
+    sym = (symbol or "").upper()
+    if not sym:
+        return {"markers": []}
+    async with AsyncSession() as session:
+        rows = (await session.execute(
+            _scope(select(Signal), Signal.user_id, user)
+            .where(Signal.symbol == sym, Signal.action.in_(["open", "close"]))
+            .order_by(Signal.t).limit(500)
+        )).scalars().all()
+    out = []
+    for r in rows:
+        if not r.t:
+            continue
+        out.append({"day": r.t.date().isoformat(), "action": r.action,
+                    "dir": (r.dir or "").upper(), "pnl": r.pnl_pt})
+    return {"markers": out}
+
+
 @app.get("/api/strategy-state")
 async def get_strategy_state(user: User = Depends(auth.current_user)):
     """Stato LIVE delle strategie Reversione: oscillatore (0-100) + nota 'dove siamo',
