@@ -40,7 +40,23 @@ LLM_REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "low").strip()
 # vendita. Per attivare Claude sui paganti: imposta LLM_PAID_MODEL (e, se non passa
 # da Zen, LLM_PAID_BASE_URL + LLM_PAID_API_KEY). LLM_PREMIUM_MODEL = Elite.
 LLM_FREE_MODEL = os.getenv("LLM_FREE_MODEL", ZEN_MODEL)
+# Catena di riserva: modelli VELOCI provati in ordine se il primo va in rate-limit/vuoto.
+# Metti solo modelli rapidi (es. "*-flash-free"), separati da virgola.
 LLM_FREE_FALLBACK = os.getenv("LLM_FREE_FALLBACK", "deepseek-v4-flash-free").strip()
+LLM_FREE_FALLBACKS = os.getenv("LLM_FREE_FALLBACKS", LLM_FREE_FALLBACK).strip()
+
+
+def _chain(*models) -> list:
+    """Costruisce una catena ordinata di modelli, deduplicata, ignorando i vuoti.
+    Ogni voce può essere una lista separata da virgole."""
+    seen, out = set(), []
+    for m in models:
+        for part in (m or "").split(","):
+            part = part.strip()
+            if part and part not in seen:
+                seen.add(part)
+                out.append(part)
+    return out
 LLM_PAID_MODEL = os.getenv("LLM_PAID_MODEL", "").strip()        # es. un modello Claude (Pro)
 LLM_PREMIUM_MODEL = os.getenv("LLM_PREMIUM_MODEL", "").strip()  # es. Claude più capace (Elite)
 LLM_PAID_BASE_URL = os.getenv("LLM_PAID_BASE_URL", "").strip()  # vuoto = stesso endpoint del free (Zen)
@@ -51,13 +67,20 @@ def resolve_llm(tier: str = "free") -> dict:
     """Config LLM per tier: {base_url, api_key, model, fallback}.
     tier: 'free' (Demo/Starter) · 'paid' (Pro) · 'premium' (Elite).
     Se i modelli a pagamento non sono impostati, ricade sul free (zero rework)."""
-    free = {"base_url": ZEN_BASE_URL, "api_key": _api_key(), "model": LLM_FREE_MODEL, "fallback": LLM_FREE_FALLBACK}
+    free_chain = _chain(LLM_FREE_MODEL, LLM_FREE_FALLBACKS)
+
+    def _pack(base_url, api_key, chain):
+        return {"base_url": base_url, "api_key": api_key, "models": chain,
+                "model": chain[0], "fallback": (chain[1] if len(chain) > 1 else "")}
+
+    free = _pack(ZEN_BASE_URL, _api_key(), free_chain)
     paid_base = LLM_PAID_BASE_URL or ZEN_BASE_URL
     paid_key = LLM_PAID_API_KEY or _api_key()
     if tier == "premium" and LLM_PREMIUM_MODEL:
-        return {"base_url": paid_base, "api_key": paid_key, "model": LLM_PREMIUM_MODEL, "fallback": LLM_PAID_MODEL or LLM_FREE_MODEL}
+        # premium -> free: sempre la catena veloce come rete di sicurezza finale
+        return _pack(paid_base, paid_key, _chain(LLM_PREMIUM_MODEL, LLM_PAID_MODEL, *free_chain))
     if tier in ("paid", "premium") and LLM_PAID_MODEL:
-        return {"base_url": paid_base, "api_key": paid_key, "model": LLM_PAID_MODEL, "fallback": LLM_FREE_MODEL}
+        return _pack(paid_base, paid_key, _chain(LLM_PAID_MODEL, *free_chain))
     return free
 
 

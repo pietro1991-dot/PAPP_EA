@@ -125,6 +125,25 @@ async def _user_tier(user: User) -> str:
     """Tier LLM dal piano (free/paid/premium): quale modello usa l'assistente."""
     return entitlements.chatbot_tier(await _user_plan(user))
 
+
+# Tetto giornaliero di messaggi per il tier FREE: protegge la quota gratuita condivisa
+# e spinge all'upgrade. 0 = illimitato. Le domande comuni precalcolate non contano.
+FREE_DAILY_MSGS = int(os.getenv("FREE_DAILY_MSGS", "5"))
+
+
+async def _free_msgs_used_today(user_id: int) -> int:
+    """Messaggi del free-user da mezzanotte locale. Le domande comuni precalcolate
+    bypassano comunque il controllo (vengono sempre risposte, 0 quota LLM)."""
+    since = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    async with AsyncSession() as session:
+        n = (await session.execute(
+            select(sa_func.count(ChatHistory.id)).where(
+                ChatHistory.user_id == user_id,
+                ChatHistory.created_at >= since,
+            )
+        )).scalar()
+    return n or 0
+
 # Domande "comuni" servite dal riassunto condiviso precalcolato (0 quota LLM).
 COMMON_KEYWORDS = (
     "come va", "come sta andando", "com'è andata", "comè andata",
@@ -314,23 +333,37 @@ async def _signal_recipients(user_id: int | None) -> "set[int]":
     return {user_id}
 
 
+async def _upsert_latest(session, Model, user_id, symbol, fields: dict):
+    """Stato LIVE scalabile: tiene UNA sola riga per (user_id, symbol). Aggiorna la
+    piu' recente coi valori freschi e cancella eventuali duplicati piu' vecchi, così
+    lo spazio resta FISSO (non cresce ogni 15s). NON tocca trade/chat/backtest."""
+    row = (await session.execute(
+        select(Model).where(Model.user_id == user_id, Model.symbol == symbol)
+        .order_by(desc(Model.t)).limit(1)
+    )).scalar_one_or_none()
+    if row is None:
+        session.add(Model(user_id=user_id, symbol=symbol, **fields))
+    else:
+        for k, v in fields.items():
+            setattr(row, k, v)
+        await session.execute(
+            delete(Model).where(
+                Model.user_id == user_id, Model.symbol == symbol, Model.id != row.id
+            )
+        )
+
+
 async def process_event(data: dict, user_id: int | None = None):
     """Ingestione di un evento dell'EA (da bridge locale o da /api/ea/ingest),
     taggato con il tenant `user_id`. Gestisce account, market e segnali."""
     if data.get("action") == "account":
         async with AsyncSession() as session:
-            session.add(AccountSnapshot(
+            await _upsert_latest(session, AccountSnapshot, user_id, data.get("symbol") or "?", dict(
                 t=data.get("t"),
-                user_id=user_id,
-                symbol=data.get("symbol"),
-                balance=data.get("balance"),
-                equity=data.get("equity"),
-                margin=data.get("margin"),
-                free_margin=data.get("free_margin"),
-                margin_level=data.get("margin_level"),
-                profit=data.get("profit"),
-                sym_profit=data.get("sym_profit"),
-                sym_pct=data.get("sym_pct"),
+                balance=data.get("balance"), equity=data.get("equity"),
+                margin=data.get("margin"), free_margin=data.get("free_margin"),
+                margin_level=data.get("margin_level"), profit=data.get("profit"),
+                sym_profit=data.get("sym_profit"), sym_pct=data.get("sym_pct"),
                 sym_open=data.get("sym_open"),
             ))
             await session.commit()
@@ -338,15 +371,10 @@ async def process_event(data: dict, user_id: int | None = None):
 
     if data.get("action") == "market":
         async with AsyncSession() as session:
-            snap = MarketSnapshot(
-                t=data.get("t"),
-                user_id=user_id,
-                symbol=data.get("symbol") or "EURUSD",
-                bid=data.get("bid"),
-                ask=data.get("ask"),
+            await _upsert_latest(session, MarketSnapshot, user_id, data.get("symbol") or "EURUSD", dict(
+                t=data.get("t"), bid=data.get("bid"), ask=data.get("ask"),
                 spread_pts=data.get("spread_pts"),
-            )
-            session.add(snap)
+            ))
             await session.commit()
         return
 
@@ -382,8 +410,7 @@ async def process_event(data: dict, user_id: int | None = None):
     if data.get("action") == "state":
         # stato periodico di una strategia (oscillatore + nota): "dove siamo" tra i trade.
         async with AsyncSession() as session:
-            session.add(EaState(
-                user_id=user_id, symbol=(data.get("symbol") or "?"),
+            await _upsert_latest(session, EaState, user_id, data.get("symbol") or "?", dict(
                 t=data.get("t"), osc=data.get("osc"), info=(data.get("info") or "")[:200],
                 dist=data.get("dist"), vol=data.get("vol"),
                 to_buy=data.get("to_buy"), to_sell=data.get("to_sell"),
@@ -621,49 +648,89 @@ async def risultati_page():
     def money(v):
         return f"{v:,.0f}".replace(",", ".")
     blocks = []
-    for ek, eng in catalog.ENGINES.items():
-        eas = [e for e in catalog.EAS if e["engine"] == ek]
-        if not eas:
-            continue
-        cards = []
-        for e in eas:
-            d = await _overview_data(e["symbol"]) if e["live"] else None
-            has = bool(d and d.get("available"))
-            if has:
-                tt = d["totals"]
-                chart = _equity_svg(d)
-                kpis = (
-                    f'<div class="rk"><b class="{"pos" if tt["cagr_pct"]>=0 else "neg"}">{tt["cagr_pct"]:+.1f}%</b><span>Crescita/anno</span></div>'
-                    f'<div class="rk"><b>{tt["winrate"]}%</b><span>Win rate</span></div>'
-                    f'<div class="rk"><b>{tt["trades"]}</b><span>Trade</span></div>'
-                )
-                cap = (f'<div class="rcap">Capitale {money(d["initial_capital"])}€ → '
-                       f'<b>{money(d["initial_capital"]+tt["pnl_money"])}€</b> '
-                       f'<span class="rspan">({d["years"]} anni di backtest)</span></div>')
-            else:
-                chart = ('<div class="rsoon">⚠️ Backtest non ancora disponibile nel database.</div>'
-                         if e["live"] else '<div class="rsoon">🔜 In arrivo</div>')
-                kpis = ""; cap = ""
-            badge = (f'<span class="rstat soon">In arrivo</span>' if not e["live"]
-                     else '<span class="rstat live">Validato</span>')
-            if e["live"]:
-                cta = (f'<a class="rbtn gold" href="/checkout?sku=single:{e["id"]}">Attiva da {int(catalog.SINGLE_PRICE)}€/mese</a>'
-                       f'<a class="rbtn ghost" href="/demo">Vedi nella Demo</a>')
-            else:
-                cta = '<a class="rbtn ghost" href="/report">Avvisami quando esce</a>'
-            cards.append(
-                f'<div class="rcard"><div class="rtop"><div><div class="rname">{e["name"]}</div>'
-                f'<div class="rtag">{catalog.tr(e["tagline"])}</div></div>{badge}</div>'
-                f'{cap}<div class="rchart">{chart}</div><div class="rkpis">{kpis}</div>'
-                f'<div class="rsec"><h4>Cosa fa</h4><p>{catalog.tr(e["mechanism"])}</p></div>'
-                f'<div class="rsec"><h4>Rischio</h4><p>{catalog.tr(e["risk"])}</p></div>'
-                f'<div class="rcta">{cta}</div></div>'
+
+    async def _ea_card(e):
+        d = await _overview_data(e["symbol"]) if e["live"] else None
+        has = bool(d and d.get("available"))
+        if has:
+            tt = d["totals"]
+            chart = _equity_svg(d)
+            kpis = (
+                f'<div class="rk"><b class="{"pos" if tt["cagr_pct"]>=0 else "neg"}">{tt["cagr_pct"]:+.1f}%</b><span>Crescita/anno</span></div>'
+                f'<div class="rk"><b>{tt["winrate"]}%</b><span>Win rate</span></div>'
+                f'<div class="rk"><b>{tt["trades"]}</b><span>Trade</span></div>'
             )
-        blocks.append(
-            f'<section class="rengine"><div class="reng-h"><span class="dot" style="background:{eng["color"]}"></span>'
-            f'<span class="reng-nm">{catalog.tr(eng["name"])}</span><span class="reng-tg">{catalog.tr(eng["tagline"])}</span></div>'
-            f'<div class="rgrid">{"".join(cards)}</div></section>'
+            cap = (f'<div class="rcap">Capitale {money(d["initial_capital"])}€ → '
+                   f'<b>{money(d["initial_capital"]+tt["pnl_money"])}€</b> '
+                   f'<span class="rspan">({d["years"]} anni di backtest)</span></div>')
+        else:
+            chart = ('<div class="rsoon">⚠️ Backtest non ancora disponibile nel database.</div>'
+                     if e["live"] else '<div class="rsoon">🔜 In arrivo</div>')
+            kpis = ""; cap = ""
+        if e.get("flagship"):
+            badge = '<span class="rstat live" style="background:#c9a14a;color:#111">★ Best-seller</span>'
+        elif not e["live"]:
+            badge = '<span class="rstat soon">In arrivo</span>'
+        else:
+            badge = '<span class="rstat live">Validato</span>'
+        if e["live"]:
+            cta = (f'<a class="rbtn gold" href="/checkout?sku=single:{e["id"]}">Attiva da {int(catalog.SINGLE_PRICE)}€/mese</a>'
+                   f'<a class="rbtn ghost" href="/demo">Vedi nella Demo</a>')
+        else:
+            cta = '<a class="rbtn ghost" href="/report">Avvisami quando esce</a>'
+        eng = catalog.ENGINES.get(e["engine"], {})
+        etag = (f'<span class="rtag" style="color:{eng.get("color","#888")};font-weight:700">{catalog.tr(eng.get("name",""))}</span>'
+                if eng else '')
+        return (
+            f'<div class="rcard"><div class="rtop"><div><div class="rname">{e["name"]}</div>'
+            f'<div class="rtag">{catalog.tr(e["tagline"])}</div>{etag}</div>{badge}</div>'
+            f'{cap}<div class="rchart">{chart}</div><div class="rkpis">{kpis}</div>'
+            f'<div class="rsec"><h4>Cosa fa</h4><p>{catalog.tr(e["mechanism"])}</p></div>'
+            f'<div class="rsec"><h4>Rischio</h4><p>{catalog.tr(e["risk"])}</p></div>'
+            f'<div class="rcta">{cta}</div></div>'
         )
+
+    # 1) l'EROE in evidenza
+    hero = next((e for e in catalog.EAS if e.get("flagship")), catalog.EAS[0] if catalog.EAS else None)
+    if hero:
+        blocks.append('<section class="rengine"><div class="reng-h">'
+                      '<span class="reng-nm">🏆 Il nostro cavallo di battaglia</span></div>'
+                      f'<div class="rgrid">{await _ea_card(hero)}</div></section>')
+    # 2) gli altri singoli
+    others = [e for e in catalog.EAS if e is not hero]
+    if others:
+        cards = [await _ea_card(e) for e in others]
+        blocks.append('<section class="rengine"><div class="reng-h">'
+                      '<span class="reng-nm">Altri singoli</span></div>'
+                      f'<div class="rgrid">{"".join(cards)}</div></section>')
+    # 3) i pacchetti (si vendono sul drawdown basso)
+    pcards = []
+    for p in catalog.PACKS:
+        st = p.get("stats") or {}
+        stat_html = (f'<div class="rkpis"><div class="rk"><b class="pos">+{st.get("cagr",0):.1f}%</b><span>Crescita/anno</span></div>'
+                     f'<div class="rk"><b>{st.get("dd","–")}%</b><span>Max drawdown</span></div>'
+                     f'<div class="rk"><b>{len(p["eas"])}</b><span>EA inclusi</span></div></div>') if st else ''
+        rec = ' <span class="rstat live">Consigliato</span>' if p.get("recommended") else ''
+        pcards.append(
+            f'<div class="rcard"><div class="rtop"><div><div class="rname">{catalog.tr(p["name"])}{rec}</div>'
+            f'<div class="rtag">{catalog.tr(p["tagline"])}</div></div></div>{stat_html}'
+            f'<div class="rcta"><a class="rbtn gold" href="/checkout?sku={p["id"]}">Attiva da {int(p["price"])}€/mese</a></div></div>'
+        )
+    if pcards:
+        blocks.append('<section class="rengine"><div class="reng-h">'
+                      '<span class="reng-nm">📦 Pacchetti — più strategie, drawdown più basso</span></div>'
+                      f'<div class="rgrid">{"".join(pcards)}</div></section>')
+    # 4) piano Assistente + Segnali (senza EA): l'ingresso a più bassa frizione
+    a = catalog.ASSISTANT
+    feats = "".join(f'<li>{f}</li>' for f in catalog.tr(a["features"]))
+    blocks.append('<section class="rengine"><div class="reng-h">'
+                  '<span class="reng-nm">🔔 Non vuoi installare un EA? Parti da qui</span></div>'
+                  f'<div class="rgrid"><div class="rcard"><div class="rtop"><div>'
+                  f'<div class="rname">{catalog.tr(a["name"])}</div>'
+                  f'<div class="rtag">{catalog.tr(a["tagline"])}</div></div></div>'
+                  f'<ul style="margin:10px 2px;padding-left:18px;line-height:1.85;font-size:13.5px">{feats}</ul>'
+                  f'<div class="rcta"><a class="rbtn gold" href="/checkout?sku=signals">Attiva da {int(a["price"])}€/mese</a></div>'
+                  '</div></div></section>')
     html = f"""<!DOCTYPE html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PHAI · Risultati e backtest in chiaro</title>
@@ -711,9 +778,13 @@ a{{color:inherit}}
 @media(max-width:560px){{.hero h1{{font-size:26px}}.rgrid{{grid-template-columns:1fr}}.pn-links{{display:none}}}}
 </style></head><body>
 {_public_nav("risultati")}
-<div class="hero"><h1>I risultati, in chiaro.</h1>
-<p>Ogni strategia PHAI con il suo backtest reale: grafico del capitale, win rate e numero di operazioni. Niente screenshot finti — vedi tutto <b>prima</b> di registrarti.</p></div>
-<div class="wrap">{"".join(blocks)}
+<div class="hero">
+<div style="display:inline-block;font-size:12px;font-weight:700;color:var(--accent);border:1px solid var(--border);border-radius:999px;padding:5px 14px;margin-bottom:16px">✓ Validato su 16 anni di dati reali · disdici quando vuoi</div>
+<h1>Smetti di indovinare.<br>Metti al lavoro strategie testate su <span style="color:var(--accent)">16 anni</span> di mercato.</h1>
+<p>Ogni strategia PHAI la vedi <b>prima</b> di pagare: grafico del capitale, win rate, drawdown — in chiaro, niente screenshot finti. La attivi sul tuo conto in automatico, oppure ricevi <b>solo i segnali via notifica push</b>. Da <b>4€/mese</b>, disdici quando vuoi.</p>
+<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px"><a class="rbtn gold" href="#strategie" style="padding:12px 22px;font-size:15px">Scegli la tua strategia ↓</a><a class="rbtn ghost" href="/demo" style="padding:12px 22px;font-size:15px">Provala nella Demo</a></div>
+</div>
+<div class="wrap" id="strategie">{"".join(blocks)}
 <div class="disc">Backtest = simulazione storica su dati reali, non promessa di rendimenti futuri. Il trading comporta rischi: puoi perdere il capitale. La garanzia è sul software, mai sui profitti.</div>
 </div></body></html>"""
     return HTMLResponse(html)
@@ -1063,6 +1134,7 @@ async def api_catalog(lang: str = "it", user: User = Depends(auth.current_user))
         is_owned = e["id"] in owned
         item = {
             "id": e["id"], "engine": e["engine"], "symbol": e["symbol"], "live": e["live"],
+            "flagship": e.get("flagship", False),
             "name": e["name"], "tagline": L(e["tagline"]), "mechanism": L(e["mechanism"]),
             "risk": L(e["risk"]), "owned": is_owned,
             "engine_name": L(catalog.ENGINES[e["engine"]]["name"]),
@@ -1073,14 +1145,20 @@ async def api_catalog(lang: str = "it", user: User = Depends(auth.current_user))
         eas.append(item)
     engines = {k: {"key": k, "name": L(v["name"]), "tagline": L(v["tagline"]), "color": v["color"]}
                for k, v in catalog.ENGINES.items()}
-    packs = [{"id": p["id"], "engine": p["engine"], "name": L(p["name"]), "tagline": L(p["tagline"]),
-              "eas": p["eas"], "price": p["price"], "owned": set(p["eas"]).issubset(owned)}
+    packs = [{"id": p["id"], "name": L(p["name"]), "tagline": L(p["tagline"]),
+              "eas": p["eas"], "price": p["price"], "stats": p.get("stats"),
+              "recommended": p.get("recommended", False),
+              "owned": set(p["eas"]).issubset(owned)}
              for p in catalog.PACKS]
     portfolio = {"id": "portfolio", "name": L(catalog.PORTFOLIO["name"]), "tagline": L(catalog.PORTFOLIO["tagline"]),
                  "eas": catalog.PORTFOLIO["eas"], "price": catalog.PORTFOLIO["price"],
                  "owned": set(catalog.ALL_EA_IDS).issubset(owned)}
+    assistant = {"id": catalog.ASSISTANT["id"], "name": L(catalog.ASSISTANT["name"]),
+                 "tagline": L(catalog.ASSISTANT["tagline"]), "features": L(catalog.ASSISTANT["features"]),
+                 "price": catalog.ASSISTANT["price"], "owned": entitlements.can_signals(plan)}
     return {
         "engines": engines, "eas": eas, "packs": packs, "portfolio": portfolio,
+        "assistant": assistant,
         "single_price": catalog.SINGLE_PRICE, "signals_price": catalog.SIGNALS_PRICE,
         "owned": sorted(owned), "plan": plan or "",
     }
@@ -1527,7 +1605,7 @@ async def get_signals(
 async def get_market(user: User = Depends(auth.current_user)):
     async with AsyncSession() as session:
         q = _scope(select(MarketSnapshot), MarketSnapshot.user_id, user).order_by(
-            desc(MarketSnapshot.id)
+            desc(MarketSnapshot.t)
         ).limit(1)
         row = (await session.execute(q)).scalar_one_or_none()
     if not row:
@@ -1987,7 +2065,7 @@ async def get_account(user: User = Depends(auth.current_user)):
         rows = (
             await session.execute(
                 _scope(select(AccountSnapshot), AccountSnapshot.user_id, user)
-                .order_by(desc(AccountSnapshot.id)).limit(200)
+                .order_by(desc(AccountSnapshot.t)).limit(200)
             )
         ).scalars().all()
     if not rows:
@@ -2023,7 +2101,7 @@ async def get_strategy_state(user: User = Depends(auth.current_user)):
         rows = (
             await session.execute(
                 _scope(select(EaState), EaState.user_id, user)
-                .order_by(desc(EaState.id)).limit(200)
+                .order_by(desc(EaState.t)).limit(200)
             )
         ).scalars().all()
     per = {}
@@ -2150,6 +2228,22 @@ async def delete_conversation(conv_id: int, user: User = Depends(auth.current_us
     return {"ok": True}
 
 
+@app.get("/api/chat-quota")
+async def chat_quota(user: User = Depends(auth.current_user)):
+    """Quota messaggi giornaliera del tier free (per il contatore fisso in chat).
+    Paid/premium (o tetto 0) = illimitato."""
+    tier = await _user_tier(user)
+    if tier != "free" or FREE_DAILY_MSGS <= 0:
+        return {"limited": False}
+    used = await _free_msgs_used_today(user.id)
+    return {
+        "limited": True,
+        "used": used,
+        "limit": FREE_DAILY_MSGS,
+        "remaining": max(0, FREE_DAILY_MSGS - used),
+    }
+
+
 @app.post("/api/chat")
 async def chat(request: Request, user: User = Depends(auth.current_user)):
     body = await request.json()
@@ -2178,7 +2272,22 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
     if lang == "it" and not symbol and _is_common_question(question):
         precomputed = await _latest_summary("perf_today")
 
+    # Tetto giornaliero del tier free: se esaurito (e non è una domanda comune gratis),
+    # rispondi con l'invito all'upgrade senza consumare quota LLM.
+    limit_msg = None
+    if tier == "free" and precomputed is None and FREE_DAILY_MSGS > 0:
+        if await _free_msgs_used_today(user.id) >= FREE_DAILY_MSGS:
+            limit_msg = (
+                f"⛔ Hai usato i tuoi **{FREE_DAILY_MSGS} messaggi gratuiti di oggi**.\n\n"
+                "Passa a **Pro** per messaggi **illimitati** e per l'assistente più potente e "
+                "preciso. Il limite si azzera a mezzanotte."
+            )
+
     async def event_stream():
+        if limit_msg is not None:
+            yield "data: " + json.dumps({"text": limit_msg}) + "\n\n"
+            yield "data: __DONE__\n\n"
+            return   # niente LLM, niente salvataggio: non consuma quota
         # Risposta precalcolata/cache → un solo evento {"text": ...}.
         # Risposta LLM → streaming: tanti eventi {"delta": pezzo} man mano che arrivano.
         # Ogni evento è un JSON: preserva newline e caratteri speciali nel framing SSE.

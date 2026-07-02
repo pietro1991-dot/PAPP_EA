@@ -3,8 +3,9 @@
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
 #property copyright "PaPP v2"
-#property version   "2.04"
+#property version   "2.05"
 #property description "Esporta D1-anchor MA + tutte le metriche PaPP in CSV"
+#property description "v2.05: attesa readiness robusta (barre stabili + indicatore calc.)"
 #property description "Crossover calcolati su D1 reali, non su valori interpolati"
 #property description "v2.04: sorgente UNICA = buffer iCustom. Crossover/cluster/vel/acc/vol"
 #property description "       derivati dalle stesse MA scritte nelle colonne (no iMA paralleli)."
@@ -65,12 +66,29 @@ void OnStart()
       9, false, true, true, C'20,20,25', true);
    if(g_ind==INVALID_HANDLE) { Print("ERRORE: iCustom fallito"); return; }
 
-   for(int att=0; att<100; att++)
+   // Attesa robusta: l'indicatore dev'essere calcolato su TUTTE le barre del
+   // grafico E il numero di barre deve essersi stabilizzato (la history del broker
+   // puo' ancora scaricarsi in background e allungare il grafico). Il vecchio check
+   // ">10" passava subito -> CopyBuffer restituiva EMPTY_VALUE sulle barre non ancora
+   // calcolate -> export a 0 righe. Ora aspettiamo readiness reale.
+   int prevBars=-1, stable=0;
+   bool ready=false;
+   for(int att=0; att<600; att++)               // fino a ~60s
    {
-      if(BarsCalculated(g_ind)>10) break;
+      int nb = Bars(_Symbol,_Period);
+      int bc = BarsCalculated(g_ind);
+      if(nb==prevBars) stable++; else stable=0;  // conteggio barre invariato?
+      prevBars = nb;
+      // pronto quando: barre stabili da >=5 cicli, indicatore calcolato su tutte le barre
+      if(nb>365 && bc>=nb && stable>=5) { ready=true; break; }
       Sleep(100);
    }
-   if(BarsCalculated(g_ind)<=10) { Print("ERRORE: indicatore non pronto"); IndicatorRelease(g_ind); return; }
+   if(!ready)
+   {
+      Print(StringFormat("ERRORE: indicatore non pronto (bars=%d, calcolate=%d) - riprova quando la history e' caricata",
+            Bars(_Symbol,_Period), BarsCalculated(g_ind)));
+      IndicatorRelease(g_ind); return;
+   }
 
    datetime g_startTime = StringToTime(InpStartDate);
    datetime g_endTime   = StringToTime(InpEndDate)+86399;

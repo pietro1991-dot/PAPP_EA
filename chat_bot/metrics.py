@@ -68,26 +68,29 @@ def market_verdict_relval(bias):
 
 
 def market_verdict_base(order_score, velocity):
-    """Verdetto di ORIENTAMENTO Base (contesto di mercato, non un segnale garantito):
-    stack di medie (order_score -6..+6) + momentum (velocity)."""
+    """Verdetto di ORIENTAMENTO Base (contesto di mercato, non un segnale garantito).
+    order_score = stack di medie, sempre PARI in -6..+6 (#coppie in ordine - #contro).
+    Verdetto GRADUATO: ±2 debole, ±4 chiaro, ±6 forte. Il momentum (velocity) deve
+    concordare, altrimenti CAUTELA."""
     if order_score is None:
         return None
     os_, mom = order_score, (velocity or 0)
-    strong = abs(os_) >= 3
-    if strong and os_ > 0 and mom >= 0:
-        return {"action": "ORIENTAMENTO: COMPRA", "tone": "buy",
-                "reason": f"medie in ordine rialzista (order {os_:+.0f}) e struttura in salita"}
-    if strong and os_ < 0 and mom <= 0:
-        return {"action": "ORIENTAMENTO: VENDI", "tone": "sell",
-                "reason": f"medie in ordine ribassista (order {os_:+.0f}) e struttura in discesa"}
-    if strong and os_ > 0:
-        return {"action": "CAUTELA (rialzo che frena)", "tone": "wait",
-                "reason": f"medie rialziste (order {os_:+.0f}) ma momentum in calo"}
-    if strong and os_ < 0:
-        return {"action": "CAUTELA (ribasso che frena)", "tone": "wait",
-                "reason": f"medie ribassiste (order {os_:+.0f}) ma momentum in ripresa"}
-    return {"action": "ASPETTA", "tone": "wait",
-            "reason": f"medie intrecciate (order {os_:+.0f}): mercato laterale/incerto"}
+    if os_ == 0:
+        return {"action": "ASPETTA", "tone": "wait",
+                "reason": "medie perfettamente intrecciate (order 0): mercato laterale"}
+    buy = os_ > 0
+    mag = abs(os_)
+    forza = "forte" if mag >= 6 else ("chiaro" if mag >= 4 else "debole")
+    concorde = (mom >= 0) if buy else (mom <= 0)
+    if not concorde:
+        return {"action": f"CAUTELA ({'rialzo' if buy else 'ribasso'} che frena)", "tone": "wait",
+                "reason": f"medie {'rialziste' if buy else 'ribassiste'} (order {os_:+.0f}/6) "
+                          f"ma il momentum va contro"}
+    act = "COMPRA" if buy else "VENDI"
+    suff = " (debole)" if forza == "debole" else (" FORTE" if forza == "forte" else "")
+    return {"action": f"ORIENTAMENTO: {act}{suff}", "tone": ("buy" if buy else "sell"),
+            "reason": f"stack di medie {forza} ({os_:+.0f}/6) "
+                      + ("in salita" if buy else "in discesa") + " col momentum a favore"}
 
 
 def _scope_user(q, col, user_id, owner_id):
@@ -201,7 +204,7 @@ async def build_digest(symbol: str = "", user_id: int | None = None, owner_id: i
         acc_rows = (
             await session.execute(
                 _scope_user(select(AccountSnapshot), AccountSnapshot.user_id, user_id, owner_id)
-                .order_by(desc(AccountSnapshot.id)).limit(300)
+                .order_by(desc(AccountSnapshot.t)).limit(300)
             )
         ).scalars().all()
         parts.append("=== STATO CONTO ===")
@@ -389,7 +392,7 @@ async def build_digest(symbol: str = "", user_id: int | None = None, owner_id: i
         for s in st_targets:
             row = (await session.execute(
                 _scope_user(select(EaState).where(EaState.symbol == s), EaState.user_id, user_id, owner_id)
-                .order_by(desc(EaState.id)).limit(1)
+                .order_by(desc(EaState.t)).limit(1)
             )).scalar_one_or_none()
             if row is not None:
                 oscs = f"{row.osc:.0f}/100" if row.osc is not None else "?"
@@ -419,7 +422,7 @@ async def build_digest(symbol: str = "", user_id: int | None = None, owner_id: i
         # Prezzi LIVE: ultimo MarketSnapshot (bid/ask) per simbolo - piu' fresco delle feature
         px = (await session.execute(
             _scope_user(select(MarketSnapshot), MarketSnapshot.user_id, user_id, owner_id)
-            .order_by(desc(MarketSnapshot.id)).limit(60)
+            .order_by(desc(MarketSnapshot.t)).limit(60)
         )).scalars().all()
         seen_px = {}
         for r in px:

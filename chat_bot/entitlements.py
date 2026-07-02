@@ -25,11 +25,12 @@ _TIER_RANK = {"free": 0, "paid": 1, "premium": 2}
 
 def _sku_tier(sku: str) -> str:
     sku = (sku or "").strip().lower()
-    if sku in ("portfolio", "elite"):
+    if sku in ("portfolio", "elite", "pack_completo"):
         return "premium"
-    if sku in ("starter", "signals", ""):
+    if sku in ("starter", ""):
         return "free"
-    if sku == "pro" or sku.startswith("pack_") or sku.startswith("single:"):
+    # "signals" = piano Assistente + Segnali (a pagamento): sblocca l'assistente vero.
+    if sku == "signals" or sku == "pro" or sku.startswith("pack_") or sku.startswith("single:"):
         return "paid"
     return "free"
 
@@ -77,6 +78,7 @@ def features(plan: str | None) -> dict:
     eas = sorted(owned_eas(plan))
     return {
         "signals": can_signals(plan),
+        "push": can_signals(plan),        # push dei segnali = incluse con i segnali
         "ea": bool(eas),
         "eas": eas,                       # quali simboli sono attivi
         "chatbot": chatbot_tier(plan),

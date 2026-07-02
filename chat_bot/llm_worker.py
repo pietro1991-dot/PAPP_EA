@@ -244,24 +244,27 @@ async def _handle_stream_job(job: _Job):
         return
 
     cfg = resolve_llm(job.tier)   # modello/endpoint in base al piano del cliente
+    models = cfg["models"]        # catena: [primario, riserva1, riserva2, ...]
     full = ""
     try:
         await _bucket.acquire()
-        async for delta in ask_stream(job.question, job.context, model=cfg["model"],
+        async for delta in ask_stream(job.question, job.context, model=models[0],
                                       base_url=cfg["base_url"], api_key=cfg["api_key"],
                                       timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang):
             if delta:
                 full += delta
                 await q.put(delta)
-        # Niente output (es. free tier vuoto o errore): prova il modello di riserva (non-stream).
-        if not full and cfg["fallback"]:
-            log.warning("Stream primario vuoto, provo il fallback %s", cfg["fallback"])
-            await _bucket.acquire()
-            ans = await ask(job.question, job.context, model=cfg["fallback"],
-                            base_url=cfg["base_url"], api_key=cfg["api_key"], lang=job.lang)
-            if ans:
-                full = ans
-                await q.put(ans)
+        # Primo modello vuoto (rate-limit/errore): scorri la catena di riserva veloce (non-stream).
+        if not full:
+            for fb in models[1:]:
+                log.warning("Stream vuoto, provo il modello di riserva %s", fb)
+                await _bucket.acquire()
+                ans = await ask(job.question, job.context, model=fb,
+                                base_url=cfg["base_url"], api_key=cfg["api_key"], lang=job.lang)
+                if ans:
+                    full = ans
+                    await q.put(ans)
+                    break
         if full:
             _lru_put(job.key, full)
             await _db_put(job.key, job.question, full)
@@ -293,27 +296,26 @@ async def _worker():
             # Il free tier può restituire risposte vuote in modo transitorio:
             # ritenta qualche volta prima di mostrare il fallback all'utente.
             cfg = resolve_llm(job.tier)   # modello/endpoint in base al piano del cliente
+            models = cfg["models"]        # catena: [primario, riserva1, riserva2, ...]
             answer = None
-            for attempt in range(LLM_RETRIES + 1):
-                await _bucket.acquire()
-                answer = await ask(job.question, job.context, model=cfg["model"],
-                                   base_url=cfg["base_url"], api_key=cfg["api_key"],
-                                   timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang)
+            for i, model in enumerate(models):
+                # Sul PRIMO modello ritenta le risposte vuote transitorie; sugli altri
+                # (usati perche' il primo e' in rate-limit) una sola prova, veloce.
+                tries = (LLM_RETRIES + 1) if i == 0 else 1
+                for attempt in range(tries):
+                    await _bucket.acquire()
+                    answer = await ask(job.question, job.context, model=model,
+                                       base_url=cfg["base_url"], api_key=cfg["api_key"],
+                                       timeout=LLM_PRIMARY_TIMEOUT, lang=job.lang)
+                    if answer:
+                        break
+                    if attempt < tries - 1:
+                        log.warning("Risposta vuota da %s (%d/%d), ritento", model, attempt + 1, tries)
+                        await asyncio.sleep(LLM_RETRY_DELAY)
                 if answer:
                     break
-                if attempt < LLM_RETRIES:
-                    log.warning(
-                        "Risposta LLM vuota (tentativo %d/%d), ritento",
-                        attempt + 1, LLM_RETRIES + 1,
-                    )
-                    await asyncio.sleep(LLM_RETRY_DELAY)
-
-            # Primario fallito: prova il modello di riserva del tier.
-            if not answer and cfg["fallback"]:
-                log.warning("Primario fallito, provo il fallback %s", cfg["fallback"])
-                await _bucket.acquire()
-                answer = await ask(job.question, job.context, model=cfg["fallback"],
-                                   base_url=cfg["base_url"], api_key=cfg["api_key"], lang=job.lang)
+                if i + 1 < len(models):
+                    log.warning("Modello %s non ha risposto, passo al successivo", model)
 
             if answer:
                 _lru_put(job.key, answer)

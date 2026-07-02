@@ -235,6 +235,21 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 .verdict.sell .vt{color:#f1a06a}
 .verdict.wait{background:#141b2b;border-color:var(--border)}
 .verdict.wait .vt{color:#b9c2d6}
+.chat-quota{margin:0 12px 10px;padding:9px 13px;border-radius:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  font-size:12.5px;line-height:1.3;color:var(--muted);
+  background:linear-gradient(180deg,#18212f,#131a27);border:1px solid var(--border);box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
+.chat-quota .cq-ico{font-size:15px;flex-shrink:0;line-height:1}
+.chat-quota .cq-text{flex:1 1 auto;min-width:130px}
+.chat-quota .cq-text b{color:#e8eefc;font-weight:700}
+.chat-quota .cq-dots{display:flex;gap:5px;flex-shrink:0}
+.chat-quota .cq-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.15);transition:background .2s}
+.chat-quota .cq-dots i.on{background:var(--accent);box-shadow:0 0 6px rgba(203,166,92,.5)}
+.chat-quota .cq-cta{flex-shrink:0;margin-left:auto;padding:5px 13px;border-radius:999px;background:var(--accent);color:#0e1420;
+  font-weight:800;font-size:12px;letter-spacing:.2px;text-decoration:none;white-space:nowrap}
+.chat-quota.low{background:linear-gradient(180deg,rgba(241,160,106,.16),rgba(241,160,106,.05));border-color:rgba(241,160,106,.42);color:#f4b183}
+.chat-quota.low .cq-text b{color:#f1a06a}
+.chat-quota.low .cq-dots i.on{background:#f1a06a;box-shadow:0 0 6px rgba(241,160,106,.55)}
+@media(max-width:430px){.chat-quota{gap:8px;padding:8px 11px;font-size:12px}.chat-quota .cq-text{min-width:100%;order:-1}}
 .mk-sym{font-size:20px;font-weight:800;letter-spacing:1px}
 .mk-sub{font-size:11px;color:var(--muted);margin-top:2px}
 .mk-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
@@ -339,6 +354,7 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
 /* ---------- Showroom Strategie (catalogo EA) ---------- */
 .strat-h{font-size:20px;font-weight:800;margin:2px 2px 2px}
 .strat-sub{font-size:12px;color:var(--muted);margin:0 2px 16px}
+.strat-lbl{font-size:14px;font-weight:800;margin:22px 2px 10px;letter-spacing:.2px}
 .eng-block{margin-bottom:22px}
 .eng-block-h{display:flex;align-items:center;gap:10px;margin:0 2px 10px}
 .eng-block-h .dot{width:11px;height:11px;border-radius:50%;background:var(--ec)}
@@ -559,6 +575,7 @@ header{background:linear-gradient(180deg,#101627,#0a0e18);border-bottom:1px soli
         </div>
         <div class="messages" id="chat-messages"></div>
         <div class="history" id="history-view" hidden></div>
+        <div class="chat-quota" id="chat-quota" hidden></div>
         <div class="input-bar" id="chat-inputbar">
           <input type="text" id="chat-input" placeholder="Chiedi qualcosa sull'EA…" data-i18n-ph="chat_ph" autocomplete="off"/>
           <button class="mic-btn" id="mic-btn" data-i18n-title="dictation" aria-label="Dettatura vocale">
@@ -595,10 +612,10 @@ function showSection(name){
 
 /* ===== i18n (IT/EN/FR/ES) ===== */
 const I18N={
- it:{nav_overview:'Panoramica',grp_account:'Il tuo conto',grp_activity:'Attività',grp_proof:'Track record',language:'Lingua',sitemap:'Mappa del sito',strategie:'Strategie',strat_sub:'Ogni EA con il suo backtest e cosa fa, in chiaro. Attiva ciò che vuoi.',ea_active:'Attivo',ea_unlock:'Sblocca',ea_soon:'In arrivo',ea_what:'Cosa fa',ea_risk:'Profilo di rischio',ea_back:'← Tutte le strategie',ea_owned_msg:'Attivo sul tuo conto',unlock_from:'Sbloccala da',per_month:'/mese',recommended:'Consigliato',best_value:'Miglior valore',waitlist:'Avvisami quando esce',cta_unlock:'Sblocca →',bt_download:'⤓ Scarica i risultati (CSV)',bt_download_all:'⤓ Scarica tutti i backtest (CSV)',bt_nodata:'Backtest non ancora disponibile nel database per questo strumento.',market:'Mercato',history:'Storico',install:'⤓ Installa',logout:'Esci',balance:'Balance',equity:'Equity',free_margin:'Margine libero',margin_level:'Livello margine',floating_pl:'P/L flottante',open_n:'Aperte',closed_n:'Chiuse',skip_n:'Skip',pnl_closed:'PnL chiuse (punti)',signals:'Segnali',all:'Tutti',assistant:'Assistente',chat_ph:"Chiedi qualcosa sull'EA…",send:'Invia',hist_title:'Cronologia',new_chat:'Nuova chat',close:'Chiudi',dictation:'Dettatura vocale',storico_title:'Storico backtest',market_title:'Stato mercato',loading:'Carico…',trades:'Trade',winrate:'Win rate',pnl_pts:'PnL punti',pnl_cur:'PnL valuta',feature:'Feature',current:'Attuale',average:'Media',percentile:'Percentile',no_bt:'Nessun dato di backtest ancora.',no_feat:'Nessuna feature di mercato.',no_conv:'Nessuna conversazione salvata.',start_chat:'Inizia a chattare per crearne una.',last_bar:'ultima barra',welcome:"Ciao! Chiedimi pattern, segnali e performance dell'EA. Usa <b>+</b> per una nuova conversazione e <b>☰</b> per la cronologia.",order_open:'Ordine aperto',order_close:'Ordine chiuso',notif_on:'Notifiche attive',notif_off:'Attiva notifiche',notif_on_msg:'Riceverai gli avvisi di apertura e chiusura ordini.',notif_off_msg:'Notifiche disattivate'},
- en:{nav_overview:'Overview',grp_account:'Your account',grp_activity:'Activity',grp_proof:'Track record',language:'Language',sitemap:'Sitemap',strategie:'Strategies',strat_sub:'Every EA with its own backtest and exactly what it does. Activate what you want.',ea_active:'Active',ea_unlock:'Unlock',ea_soon:'Coming soon',ea_what:'What it does',ea_risk:'Risk profile',ea_back:'← All strategies',ea_owned_msg:'Active on your account',unlock_from:'Unlock from',per_month:'/mo',recommended:'Recommended',best_value:'Best value',waitlist:'Notify me at launch',cta_unlock:'Unlock →',bt_download:'⤓ Download results (CSV)',bt_download_all:'⤓ Download all backtests (CSV)',bt_nodata:'Backtest not yet available in the database for this instrument.',market:'Market',history:'History',install:'⤓ Install',logout:'Log out',balance:'Balance',equity:'Equity',free_margin:'Free margin',margin_level:'Margin level',floating_pl:'Floating P/L',open_n:'Open',closed_n:'Closed',skip_n:'Skip',pnl_closed:'Closed PnL (points)',signals:'Signals',all:'All',assistant:'Assistant',chat_ph:'Ask about the EA…',send:'Send',hist_title:'History',new_chat:'New chat',close:'Close',dictation:'Voice dictation',storico_title:'Backtest history',market_title:'Market state',loading:'Loading…',trades:'Trades',winrate:'Win rate',pnl_pts:'PnL points',pnl_cur:'PnL currency',feature:'Feature',current:'Current',average:'Average',percentile:'Percentile',no_bt:'No backtest data yet.',no_feat:'No market features.',no_conv:'No saved conversations.',start_chat:'Start chatting to create one.',last_bar:'last bar',welcome:'Hi! Ask me about patterns, signals and EA performance. Use <b>+</b> for a new conversation and <b>☰</b> for history.',order_open:'Order opened',order_close:'Order closed',notif_on:'Notifications on',notif_off:'Enable notifications',notif_on_msg:"You'll get alerts on order open and close.",notif_off_msg:'Notifications disabled'},
- fr:{nav_overview:"Vue d'ensemble",grp_account:'Votre compte',grp_activity:'Activité',grp_proof:'Track record',language:'Langue',sitemap:'Plan du site',strategie:'Stratégies',strat_sub:'Chaque EA avec son backtest et ce qu’il fait, en clair. Activez ce que vous voulez.',ea_active:'Actif',ea_unlock:'Débloquer',ea_soon:'Bientôt',ea_what:'Ce qu’il fait',ea_risk:'Profil de risque',ea_back:'← Toutes les stratégies',ea_owned_msg:'Actif sur votre compte',unlock_from:'Débloquez dès',per_month:'/mois',recommended:'Recommandé',best_value:'Meilleure offre',waitlist:'Préviens-moi au lancement',cta_unlock:'Débloquer →',bt_download:'⤓ Télécharger les résultats (CSV)',bt_download_all:'⤓ Télécharger tous les backtests (CSV)',bt_nodata:'Backtest pas encore disponible dans la base de données pour cet instrument.',market:'Marché',history:'Historique',install:'⤓ Installer',logout:'Déconnexion',balance:'Balance',equity:'Equity',free_margin:'Marge libre',margin_level:'Niveau de marge',floating_pl:'P/L flottant',open_n:'Ouvertes',closed_n:'Fermées',skip_n:'Skip',pnl_closed:'PnL clôturé (points)',signals:'Signaux',all:'Tous',assistant:'Assistant',chat_ph:"Posez une question sur l'EA…",send:'Envoyer',hist_title:'Historique',new_chat:'Nouvelle conversation',close:'Fermer',dictation:'Dictée vocale',storico_title:'Historique backtest',market_title:'État du marché',loading:'Chargement…',trades:'Trades',winrate:'Taux de réussite',pnl_pts:'PnL points',pnl_cur:'PnL devise',feature:'Indicateur',current:'Actuel',average:'Moyenne',percentile:'Percentile',no_bt:'Aucune donnée de backtest.',no_feat:'Aucune feature de marché.',no_conv:'Aucune conversation enregistrée.',start_chat:'Commencez à discuter pour en créer une.',last_bar:'dernière barre',welcome:"Bonjour ! Posez-moi des questions sur les patterns, signaux et performances de l'EA. Utilisez <b>+</b> pour une nouvelle conversation et <b>☰</b> pour l'historique.",order_open:'Ordre ouvert',order_close:'Ordre fermé',notif_on:'Notifications activées',notif_off:'Activer les notifications',notif_on_msg:"Vous serez alerté à l'ouverture et la fermeture des ordres.",notif_off_msg:'Notifications désactivées'},
- es:{nav_overview:'Resumen',grp_account:'Tu cuenta',grp_activity:'Actividad',grp_proof:'Track record',language:'Idioma',sitemap:'Mapa del sitio',strategie:'Estrategias',strat_sub:'Cada EA con su backtest y qué hace, claro. Activa lo que quieras.',ea_active:'Activo',ea_unlock:'Desbloquear',ea_soon:'Próximamente',ea_what:'Qué hace',ea_risk:'Perfil de riesgo',ea_back:'← Todas las estrategias',ea_owned_msg:'Activo en tu cuenta',unlock_from:'Desbloquéala desde',per_month:'/mes',recommended:'Recomendado',best_value:'Mejor valor',waitlist:'Avísame al lanzamiento',cta_unlock:'Desbloquear →',bt_download:'⤓ Descargar resultados (CSV)',bt_download_all:'⤓ Descargar todos los backtests (CSV)',bt_nodata:'Backtest aún no disponible en la base de datos para este instrumento.',market:'Mercado',history:'Historial',install:'⤓ Instalar',logout:'Salir',balance:'Balance',equity:'Equity',free_margin:'Margen libre',margin_level:'Nivel de margen',floating_pl:'P/L flotante',open_n:'Abiertas',closed_n:'Cerradas',skip_n:'Skip',pnl_closed:'PnL cerrado (puntos)',signals:'Señales',all:'Todos',assistant:'Asistente',chat_ph:'Pregunta sobre el EA…',send:'Enviar',hist_title:'Historial',new_chat:'Nuevo chat',close:'Cerrar',dictation:'Dictado por voz',storico_title:'Historial de backtest',market_title:'Estado del mercado',loading:'Cargando…',trades:'Operaciones',winrate:'Tasa de acierto',pnl_pts:'PnL puntos',pnl_cur:'PnL divisa',feature:'Indicador',current:'Actual',average:'Media',percentile:'Percentil',no_bt:'Aún no hay datos de backtest.',no_feat:'Sin features de mercado.',no_conv:'Sin conversaciones guardadas.',start_chat:'Empieza a chatear para crear una.',last_bar:'última barra',welcome:'¡Hola! Pregúntame sobre patrones, señales y rendimiento del EA. Usa <b>+</b> para una nueva conversación y <b>☰</b> para el historial.',order_open:'Orden abierta',order_close:'Orden cerrada',notif_on:'Notificaciones activas',notif_off:'Activar notificaciones',notif_on_msg:'Recibirás avisos de apertura y cierre de órdenes.',notif_off_msg:'Notificaciones desactivadas'}
+ it:{nav_overview:'Panoramica',grp_account:'Il tuo conto',grp_activity:'Attività',grp_proof:'Track record',language:'Lingua',sitemap:'Mappa del sito',strategie:'Strategie',strat_sub:'Ogni EA con il suo backtest e cosa fa, in chiaro. Attiva ciò che vuoi.',bestseller:'Best-seller',flagship_lbl:'Il nostro cavallo di battaglia',others_lbl:'Altri singoli',packs_lbl:'Pacchetti — più strategie insieme, drawdown più basso',assist_lbl:'Non vuoi installare un EA? Parti da qui',ea_active:'Attivo',ea_unlock:'Sblocca',ea_soon:'In arrivo',ea_what:'Cosa fa',ea_risk:'Profilo di rischio',ea_back:'← Tutte le strategie',ea_owned_msg:'Attivo sul tuo conto',unlock_from:'Sbloccala da',per_month:'/mese',recommended:'Consigliato',best_value:'Miglior valore',waitlist:'Avvisami quando esce',cta_unlock:'Sblocca →',bt_download:'⤓ Scarica i risultati (CSV)',bt_download_all:'⤓ Scarica tutti i backtest (CSV)',bt_nodata:'Backtest non ancora disponibile nel database per questo strumento.',market:'Mercato',history:'Storico',install:'⤓ Installa',logout:'Esci',balance:'Balance',equity:'Equity',free_margin:'Margine libero',margin_level:'Livello margine',floating_pl:'P/L flottante',open_n:'Aperte',closed_n:'Chiuse',skip_n:'Skip',pnl_closed:'PnL chiuse (punti)',signals:'Segnali',all:'Tutti',assistant:'Assistente',chat_ph:"Chiedi qualcosa sull'EA…",send:'Invia',hist_title:'Cronologia',new_chat:'Nuova chat',close:'Chiudi',dictation:'Dettatura vocale',storico_title:'Storico backtest',market_title:'Stato mercato',loading:'Carico…',trades:'Trade',winrate:'Win rate',pnl_pts:'PnL punti',pnl_cur:'PnL valuta',feature:'Feature',current:'Attuale',average:'Media',percentile:'Percentile',no_bt:'Nessun dato di backtest ancora.',no_feat:'Nessuna feature di mercato.',no_conv:'Nessuna conversazione salvata.',start_chat:'Inizia a chattare per crearne una.',last_bar:'ultima barra',welcome:"Ciao! Chiedimi pattern, segnali e performance dell'EA. Usa <b>+</b> per una nuova conversazione e <b>☰</b> per la cronologia.",order_open:'Ordine aperto',order_close:'Ordine chiuso',notif_on:'Notifiche attive',notif_off:'Attiva notifiche',notif_on_msg:'Riceverai gli avvisi di apertura e chiusura ordini.',notif_off_msg:'Notifiche disattivate'},
+ en:{nav_overview:'Overview',grp_account:'Your account',grp_activity:'Activity',grp_proof:'Track record',language:'Language',sitemap:'Sitemap',strategie:'Strategies',strat_sub:'Every EA with its own backtest and exactly what it does. Activate what you want.',bestseller:'Best-seller',flagship_lbl:'Our flagship',others_lbl:'Other singles',packs_lbl:'Packages — more strategies together, lower drawdown',assist_lbl:"Don't want to install an EA? Start here",ea_active:'Active',ea_unlock:'Unlock',ea_soon:'Coming soon',ea_what:'What it does',ea_risk:'Risk profile',ea_back:'← All strategies',ea_owned_msg:'Active on your account',unlock_from:'Unlock from',per_month:'/mo',recommended:'Recommended',best_value:'Best value',waitlist:'Notify me at launch',cta_unlock:'Unlock →',bt_download:'⤓ Download results (CSV)',bt_download_all:'⤓ Download all backtests (CSV)',bt_nodata:'Backtest not yet available in the database for this instrument.',market:'Market',history:'History',install:'⤓ Install',logout:'Log out',balance:'Balance',equity:'Equity',free_margin:'Free margin',margin_level:'Margin level',floating_pl:'Floating P/L',open_n:'Open',closed_n:'Closed',skip_n:'Skip',pnl_closed:'Closed PnL (points)',signals:'Signals',all:'All',assistant:'Assistant',chat_ph:'Ask about the EA…',send:'Send',hist_title:'History',new_chat:'New chat',close:'Close',dictation:'Voice dictation',storico_title:'Backtest history',market_title:'Market state',loading:'Loading…',trades:'Trades',winrate:'Win rate',pnl_pts:'PnL points',pnl_cur:'PnL currency',feature:'Feature',current:'Current',average:'Average',percentile:'Percentile',no_bt:'No backtest data yet.',no_feat:'No market features.',no_conv:'No saved conversations.',start_chat:'Start chatting to create one.',last_bar:'last bar',welcome:'Hi! Ask me about patterns, signals and EA performance. Use <b>+</b> for a new conversation and <b>☰</b> for history.',order_open:'Order opened',order_close:'Order closed',notif_on:'Notifications on',notif_off:'Enable notifications',notif_on_msg:"You'll get alerts on order open and close.",notif_off_msg:'Notifications disabled'},
+ fr:{nav_overview:"Vue d'ensemble",grp_account:'Votre compte',grp_activity:'Activité',grp_proof:'Track record',language:'Langue',sitemap:'Plan du site',strategie:'Stratégies',strat_sub:'Chaque EA avec son backtest et ce qu’il fait, en clair. Activez ce que vous voulez.',bestseller:'Best-seller',flagship_lbl:'Notre cheval de bataille',others_lbl:'Autres EA',packs_lbl:'Packs — plus de stratégies, drawdown plus bas',assist_lbl:"Pas envie d'installer un EA ? Commencez ici",ea_active:'Actif',ea_unlock:'Débloquer',ea_soon:'Bientôt',ea_what:'Ce qu’il fait',ea_risk:'Profil de risque',ea_back:'← Toutes les stratégies',ea_owned_msg:'Actif sur votre compte',unlock_from:'Débloquez dès',per_month:'/mois',recommended:'Recommandé',best_value:'Meilleure offre',waitlist:'Préviens-moi au lancement',cta_unlock:'Débloquer →',bt_download:'⤓ Télécharger les résultats (CSV)',bt_download_all:'⤓ Télécharger tous les backtests (CSV)',bt_nodata:'Backtest pas encore disponible dans la base de données pour cet instrument.',market:'Marché',history:'Historique',install:'⤓ Installer',logout:'Déconnexion',balance:'Balance',equity:'Equity',free_margin:'Marge libre',margin_level:'Niveau de marge',floating_pl:'P/L flottant',open_n:'Ouvertes',closed_n:'Fermées',skip_n:'Skip',pnl_closed:'PnL clôturé (points)',signals:'Signaux',all:'Tous',assistant:'Assistant',chat_ph:"Posez une question sur l'EA…",send:'Envoyer',hist_title:'Historique',new_chat:'Nouvelle conversation',close:'Fermer',dictation:'Dictée vocale',storico_title:'Historique backtest',market_title:'État du marché',loading:'Chargement…',trades:'Trades',winrate:'Taux de réussite',pnl_pts:'PnL points',pnl_cur:'PnL devise',feature:'Indicateur',current:'Actuel',average:'Moyenne',percentile:'Percentile',no_bt:'Aucune donnée de backtest.',no_feat:'Aucune feature de marché.',no_conv:'Aucune conversation enregistrée.',start_chat:'Commencez à discuter pour en créer une.',last_bar:'dernière barre',welcome:"Bonjour ! Posez-moi des questions sur les patterns, signaux et performances de l'EA. Utilisez <b>+</b> pour une nouvelle conversation et <b>☰</b> pour l'historique.",order_open:'Ordre ouvert',order_close:'Ordre fermé',notif_on:'Notifications activées',notif_off:'Activer les notifications',notif_on_msg:"Vous serez alerté à l'ouverture et la fermeture des ordres.",notif_off_msg:'Notifications désactivées'},
+ es:{nav_overview:'Resumen',grp_account:'Tu cuenta',grp_activity:'Actividad',grp_proof:'Track record',language:'Idioma',sitemap:'Mapa del sitio',strategie:'Estrategias',strat_sub:'Cada EA con su backtest y qué hace, claro. Activa lo que quieras.',bestseller:'Best-seller',flagship_lbl:'Nuestro caballo de batalla',others_lbl:'Otros EA',packs_lbl:'Packs — más estrategias juntas, menor drawdown',assist_lbl:'¿No quieres instalar un EA? Empieza aquí',ea_active:'Activo',ea_unlock:'Desbloquear',ea_soon:'Próximamente',ea_what:'Qué hace',ea_risk:'Perfil de riesgo',ea_back:'← Todas las estrategias',ea_owned_msg:'Activo en tu cuenta',unlock_from:'Desbloquéala desde',per_month:'/mes',recommended:'Recomendado',best_value:'Mejor valor',waitlist:'Avísame al lanzamiento',cta_unlock:'Desbloquear →',bt_download:'⤓ Descargar resultados (CSV)',bt_download_all:'⤓ Descargar todos los backtests (CSV)',bt_nodata:'Backtest aún no disponible en la base de datos para este instrumento.',market:'Mercado',history:'Historial',install:'⤓ Instalar',logout:'Salir',balance:'Balance',equity:'Equity',free_margin:'Margen libre',margin_level:'Nivel de margen',floating_pl:'P/L flotante',open_n:'Abiertas',closed_n:'Cerradas',skip_n:'Skip',pnl_closed:'PnL cerrado (puntos)',signals:'Señales',all:'Todos',assistant:'Asistente',chat_ph:'Pregunta sobre el EA…',send:'Enviar',hist_title:'Historial',new_chat:'Nuevo chat',close:'Cerrar',dictation:'Dictado por voz',storico_title:'Historial de backtest',market_title:'Estado del mercado',loading:'Cargando…',trades:'Operaciones',winrate:'Tasa de acierto',pnl_pts:'PnL puntos',pnl_cur:'PnL divisa',feature:'Indicador',current:'Actual',average:'Media',percentile:'Percentil',no_bt:'Aún no hay datos de backtest.',no_feat:'Sin features de mercado.',no_conv:'Sin conversaciones guardadas.',start_chat:'Empieza a chatear para crear una.',last_bar:'última barra',welcome:'¡Hola! Pregúntame sobre patrones, señales y rendimiento del EA. Usa <b>+</b> para una nueva conversación y <b>☰</b> para el historial.',order_open:'Orden abierta',order_close:'Orden cerrada',notif_on:'Notificaciones activas',notif_off:'Activar notificaciones',notif_on_msg:'Recibirás avisos de apertura y cierre de órdenes.',notif_off_msg:'Notificaciones desactivadas'}
 };
 const MONTHS_I18N={
  it:['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
@@ -877,8 +894,28 @@ chatBtn.onclick=async()=>{
     }
   }catch(e){ bot.innerHTML='<span class="who">PHAI Assistant</span>Errore: '+e.message; }
   chatBtn.disabled=false; chatInput.focus();
+  loadChatQuota();
 };
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter')chatBtn.click()});
+async function loadChatQuota(){
+  const box=$('chat-quota'); if(!box) return;
+  try{
+    const r=await fetch('/api/chat-quota'); if(!r.ok){box.hidden=true;return;}
+    const d=await r.json();
+    if(!d.limited){ box.hidden=true; return; }   // paid/premium: illimitato, niente banner
+    const rem=d.remaining, lim=d.limit;
+    box.className='chat-quota'+(rem<=1?' low':'');
+    let dots='';
+    if(lim<=10){ dots='<span class="cq-dots">'; for(let i=0;i<lim;i++) dots+=`<i class="${i<rem?'on':''}"></i>`; dots+='</span>'; }
+    const ico=rem>0?'✦':'⛔';
+    const txt=(rem>0
+      ? `Ti rimangono <b>${rem}</b> di <b>${lim}</b> messaggi gratuiti oggi`
+      : `Hai finito i <b>${lim}</b> messaggi gratuiti di oggi`);
+    box.innerHTML=`<span class="cq-ico">${ico}</span><span class="cq-text">${txt}</span>${dots}`
+      +`<a class="cq-cta" href="#" onclick="showSection('strategie');return false;">Pro</a>`;
+    box.hidden=false;
+  }catch(_){ box.hidden=true; }
+}
 
 /* ---------- Dettatura vocale (Web Speech API): trascrive nel campo, NON invia ---------- */
 (function(){
@@ -914,7 +951,7 @@ function addBotMsg(){const d=document.createElement('div');d.className='msg bot'
 /* ---------- Drawer chat + conversazioni ---------- */
 let currentConvId=null;
 function openChat(){showSection('assistant');}
-function showChatView(){$('history-view').hidden=true;$('chat-messages').hidden=false;$('chat-inputbar').style.display='';}
+function showChatView(){$('history-view').hidden=true;$('chat-messages').hidden=false;$('chat-inputbar').style.display='';loadChatQuota();}
 function showHistoryView(){$('chat-messages').hidden=true;$('chat-inputbar').style.display='none';$('history-view').hidden=false;loadConversations();}
 $('hist-btn').onclick=()=>{$('history-view').hidden?showHistoryView():showChatView();};
 $('new-btn').onclick=()=>{currentConvId=null;chatMsg.innerHTML=welcomeHtml();showChatView();chatInput.focus();};
@@ -959,20 +996,20 @@ function btQuery(extra){return (activeSymbol?('symbol='+encodeURIComponent(activ
 /* ---------- I due motori PHAI (Base vs Reversione) — distinzione sempre visibile ---------- */
 const ENGINES=[
   {key:'base',syms:['EURUSD','GBPUSD','USDCHF'],
-   name:{it:'Motore Base',en:'Base Engine',fr:'Moteur Base',es:'Motor Base'},
+   name:{it:'Trend · linee-prezzo',en:'Trend · price-lines',fr:'Trend · lignes-prix',es:'Trend · líneas-precio'},
    desc:{it:'linee-prezzo · trada la struttura del prezzo di un singolo strumento · win ~97%',
          en:'price-lines · trades the price structure of a single instrument · ~97% win',
          fr:"lignes-prix · trade la structure de prix d'un seul instrument · ~97% gagnants",
          es:'líneas-precio · opera la estructura de precio de un instrumento · ~97% aciertos'}},
   {key:'rev',syms:['EURGBP','EURCHF','GBPCHF','AUDNZD','AUDCAD','NZDCAD'],
-   name:{it:'Motore Reversione',en:'Reversion Engine',fr:'Moteur Réversion',es:'Motor Reversión'},
+   name:{it:'Reversione',en:'Reversion',fr:'Réversion',es:'Reversión'},
    desc:{it:'valore relativo tra due valute correlate · mean-reversion sui cross · win ~65%',
          en:'relative value between two correlated currencies · cross mean-reversion · ~65% win',
          fr:'valeur relative entre deux devises corrélées · mean-reversion sur cross · ~65% gagnants',
          es:'valor relativo entre dos divisas correlacionadas · reversión en cruces · ~65% aciertos'}},
 ];
 const ENG_I18N={
-  h:{it:'I due motori PHAI',en:'The two PHAI engines',fr:'Les deux moteurs PHAI',es:'Los dos motores PHAI'},
+  h:{it:'Come funziona la strategia',en:'How the strategy works',fr:'Comment la stratégie fonctionne',es:'Cómo funciona la estrategia'},
   soon:{it:'in arrivo',en:'coming soon',fr:'bientôt',es:'próximamente'},
 };
 function engTr(o){return o[lang]||o.it;}
@@ -1116,23 +1153,45 @@ async function loadStrategie(){
   list.innerHTML='<div class="hist-empty">'+t('loading')+'</div>';
   try{ CATALOG=await (await fetch('/api/catalog?lang='+lang)).json(); }
   catch(_){ list.innerHTML='<div class="hist-empty">—</div>'; return; }
+  const eas=CATALOG.eas||[];
+  const hero=eas.find(e=>e.flagship)||eas[0];
+  const others=eas.filter(e=>e!==hero);
+  const engTag=e=>`<span class="ea-eng-tag" style="background:${e.engine_color}">${e.engine_name}</span>`;
+  const singleCard=(e,isHero)=>{
+    const status=e.owned?`<span class="ea-status on">${t('ea_active')}</span>`:(e.live?`<span class="ea-status lock">🔒 ${t('ea_unlock')}</span>`:`<span class="ea-status soon">${t('ea_soon')}</span>`);
+    const star=e.flagship?`<span style="background:#c9a14a;color:#111;font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;margin-left:8px;vertical-align:middle">★ ${t('bestseller')}</span>`:'';
+    return `<div class="ea-card" style="--ec:${e.engine_color}${isHero?';border-color:#c9a14a;box-shadow:0 0 0 1px #c9a14a55':''}" onclick="openEA('${e.id}')">`
+      +`<div class="ea-top"><span class="ea-nm">${e.name}${star}</span>${status}</div>`
+      +`<div class="ea-tg">${e.tagline}</div><div style="margin:5px 0">${engTag(e)}</div>`
+      +`<div class="ea-spark" id="spark-${e.id}"></div><div class="ea-kpis" id="kpis-${e.id}"></div></div>`;
+  };
   let html=`<div class="strat-h">${t('strategie')}</div><div class="strat-sub">${t('strat_sub')}</div>`;
-  for(const ek of Object.keys(CATALOG.engines)){
-    const eng=CATALOG.engines[ek];
-    if(!CATALOG.eas.some(e=>e.engine===ek)) continue;
-    html+=`<div class="eng-block"><div class="eng-block-h" style="--ec:${eng.color}"><span class="dot"></span><span class="nm">${eng.name}</span><span class="tg">${eng.tagline}</span></div><div class="ea-grid" id="grid-${ek}"></div></div>`;
+  if(hero){ html+=`<div class="strat-lbl">🏆 ${t('flagship_lbl')}</div>${singleCard(hero,true)}`; }
+  if(others.length){ html+=`<div class="strat-lbl">${t('others_lbl')}</div><div class="ea-grid">${others.map(e=>singleCard(e,false)).join('')}</div>`; }
+  const packs=CATALOG.packs||[];
+  if(packs.length){
+    html+=`<div class="strat-lbl">📦 ${t('packs_lbl')}</div><div class="ea-grid">`;
+    packs.forEach(p=>{
+      const badge=p.recommended?`<span class="obadge" style="position:absolute;top:10px;right:10px">${t('recommended')}</span>`:'';
+      const st=p.stats?`<div class="ea-kpis"><span class="k">Crescita/anno<b>${fmtPct(p.stats.cagr)}</b></span><span class="k">Max DD<b>${p.stats.dd}%</b></span><span class="k">EA inclusi<b>${p.eas.length}</b></span></div>`:'';
+      const btn=p.owned?`<span class="owned">✓ ${t('ea_owned_msg')}</span>`
+        :`<button style="background:#c9a14a;color:#111;border:0;border-radius:9px;padding:9px 14px;font-weight:800;cursor:pointer;width:100%;margin-top:10px" onclick="location.href='/checkout?sku='+encodeURIComponent('${p.id}')">${t('unlock_from')} ${p.price}€${t('per_month')}</button>`;
+      html+=`<div class="ea-card" style="position:relative;--ec:#c9a14a">${badge}<div class="ea-top"><span class="ea-nm">${p.name}</span></div><div class="ea-tg">${p.tagline}</div>${st}${btn}</div>`;
+    });
+    html+=`</div>`;
+  }
+  const ast=CATALOG.assistant;
+  if(ast){
+    const feats=(ast.features||[]).map(f=>`<li>${f}</li>`).join('');
+    const btn=ast.owned?`<span class="owned">✓ ${t('ea_owned_msg')}</span>`
+      :`<button style="background:#5b9dff;color:#08131f;border:0;border-radius:9px;padding:9px 14px;font-weight:800;cursor:pointer;width:100%;margin-top:10px" onclick="location.href='/checkout?sku='+encodeURIComponent('${ast.id}')">${t('unlock_from')} ${ast.price}€${t('per_month')}</button>`;
+    html+=`<div class="strat-lbl">🔔 ${t('assist_lbl')}</div><div class="ea-card" style="--ec:#5b9dff"><div class="ea-top"><span class="ea-nm">${ast.name}</span></div><div class="ea-tg">${ast.tagline}</div><ul style="margin:9px 0 2px;padding-left:18px;font-size:13px;line-height:1.75;color:var(--txt)">${feats}</ul>${btn}</div>`;
   }
   list.innerHTML=html;
-  for(const e of CATALOG.eas){
-    const grid=$('grid-'+e.engine); if(!grid) continue;
-    const card=document.createElement('div'); card.className='ea-card'; card.style.setProperty('--ec',e.engine_color);
-    const status=e.owned?`<span class="ea-status on">${t('ea_active')}</span>`:(e.live?`<span class="ea-status lock">🔒 ${t('ea_unlock')}</span>`:`<span class="ea-status soon">${t('ea_soon')}</span>`);
-    card.innerHTML=`<div class="ea-top"><span class="ea-nm">${e.name}</span>${status}</div><div class="ea-tg">${e.tagline}</div><div class="ea-spark" id="spark-${e.id}"></div><div class="ea-kpis" id="kpis-${e.id}"></div>`;
-    card.onclick=()=>openEA(e.id);
-    grid.appendChild(card);
-    if(e.live){ fetchOverview(e.symbol).then(d=>{ const sp=$('spark-'+e.id), kp=$('kpis-'+e.id);
+  for(const e of eas){ if(!e.live) continue;
+    fetchOverview(e.symbol).then(d=>{ const sp=$('spark-'+e.id), kp=$('kpis-'+e.id);
       if(!d){ if(sp)sp.innerHTML=`<div style="font-size:11px;color:var(--muted);padding:14px 2px">⚠️ ${t('bt_nodata')}</div>`; return; }
-      if(sp)sp.innerHTML=sparkline(d); if(kp){const tt=d.totals; kp.innerHTML=`<span class="k">${t('winrate')}<b>${tt.winrate}%</b></span><span class="k">Crescita/anno<b>${fmtPct(tt.cagr_pct)}</b></span><span class="k">Max DD<b>${tt.max_dd_pct}%</b></span><span class="k">Media/ordine<b>${fmtMoney(tt.avg_per_order)}€</b></span><span class="k">Ordini/anno<b>${Math.round(tt.orders_per_year)}</b></span>`;} }); }
+      if(sp)sp.innerHTML=sparkline(d); if(kp){const tt=d.totals; kp.innerHTML=`<span class="k">${t('winrate')}<b>${tt.winrate}%</b></span><span class="k">Crescita/anno<b>${fmtPct(tt.cagr_pct)}</b></span><span class="k">Max DD<b>${tt.max_dd_pct}%</b></span><span class="k">Media/ordine<b>${fmtMoney(tt.avg_per_order)}€</b></span><span class="k">Ordini/anno<b>${Math.round(tt.orders_per_year)}</b></span>`;} });
   }
 }
 async function openEA(id){
