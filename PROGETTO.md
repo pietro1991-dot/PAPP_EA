@@ -22,7 +22,7 @@ Tre simboli pronti: **EURUSD, GBPUSD, USDCHF** (un EA per simbolo).
 │   A. RICERCA (offline)   │   │  B. ESECUZIONE (MT5)     │   │  C. PRODOTTO (vendita)   │
 │   trovare i pattern      │   │  far girare l'EA         │   │  licenze + chatbot       │
 ├──────────────────────────┤   ├──────────────────────────┤   ├──────────────────────────┤
-│ Indicatore PaPP_Median   │   │ EA per simbolo           │   │ Server PHAI (app.phai.io)│
+│ Indicatore PHAI_Median   │   │ EA per simbolo           │   │ Server PHAI (app.phai.io)│
 │        ↓ (Export)        │   │ (motore base prezzo-     │   │  - valida licenza        │
 │ PAPP_Export.csv          │   │  linea)                  │   │  - kill-switch           │
 │        ↓ (Miner)         │──▶│        ↓                 │──▶│  - riceve telemetria     │
@@ -41,7 +41,7 @@ Pipeline in 4 passi (codice condiviso in `Motore base _linea-prezzo/Indicatore/`
 
 | Passo | File | Cosa fa | Output |
 |---|---|---|---|
-| 1. Indicatore | `PaPP_Median.mq5` | 7 medie mobili del **close D1** (3,7,14,30,121,182,365 gg) + la loro **mediana**. Ancorate a D1 → identiche su ogni timeframe. | linee sul grafico |
+| 1. Indicatore | `PHAI_Median.mq5` | 7 medie mobili del **close D1** (3,7,14,30,121,182,365 gg) + la loro **mediana**. Ancorate a D1 → identiche su ogni timeframe. | linee sul grafico |
 | 2. Export | `Export_PAPP.mq5` | Dump di una riga per barra: prezzi, medie, **crossover**, metriche. | `PAPP_Export.csv` |
 | 3. Miner | `pattern_mining.py` | Prova migliaia di combinazioni entrata/uscita, le valida **out-of-sample** (train ≤2020, test >2020), seleziona le robuste. | `analisi_oos.txt` |
 | 4. Schede | `genera_schede.py` | Documenta i pattern dell'EA con statistiche. | `PATTERNS_<SIM>.md` |

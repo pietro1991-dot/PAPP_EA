@@ -7,7 +7,7 @@
 
 ## In una frase
 
-Legge i valori dell'indicatore `PaPP_Median` e li salva in un **file CSV**, **una riga per barra**.
+Legge i valori dell'indicatore `PHAI_Median` e li salva in un **file CSV**, **una riga per barra**.
 Ogni riga contiene tutto ciò che serve per analizzare quel momento: prezzi, le 7 medie e la mediana,
 quanto il prezzo è lontano da ogni linea, le 4 metriche del fascio, i **crossover**, e una serie di
 "semafori" (flag) sulla struttura del fascio.
@@ -75,7 +75,7 @@ distanze del punto (b).
 
 ### e) Le 4 metriche + i loro percentili
 `cluster%, vel%, acc%, vol%` = il **valore della barra corrente** delle quattro metriche del fascio
-(stesse formule dell'indicatore: vedi [INDICATORE_PaPP_Median.md](INDICATORE_PaPP_Median.md) §4).
+(stesse formule dell'indicatore: vedi [INDICATORE_PHAI_Median.md](INDICATORE_PHAI_Median.md) §4).
 `cluPct, velPct, accPct, volPct` = il **percentile** di ciascuna sulla finestra di **252 giornate**
 (quanto è alta/bassa rispetto all'ultimo anno; per velocità e accelerazione il percentile è
 sull'intensità, ignorando il segno).

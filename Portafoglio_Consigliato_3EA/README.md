@@ -41,8 +41,8 @@ Per la versione ancora più stabile (DD ~10.3%) vedi `Portafoglio_Core_5EA` (5 E
 
 1. Copia i tre `.mq5` in `MQL5/Experts/` e **ricompila (F7)** — hanno il nuovo input `QuotaConto`.
 2. **Dipendenze obbligatorie** (già usate dagli altri EA del progetto):
-   - `PaPP_Median.ex5` in `MQL5/Indicators/`
-   - `papp_push.mqh` in `MQL5/Include/`
+   - `PHAI_Median.ex5` in `MQL5/Indicators/`
+   - `phai_push.mqh` in `MQL5/Include/`
 3. In MetaEditor apri ogni `.mq5` e premi **F7** per (ri)compilare.
 4. Trascina ogni EA sul grafico del **suo** simbolo:
    - EA_EURUSD → grafico **EUR/USD**

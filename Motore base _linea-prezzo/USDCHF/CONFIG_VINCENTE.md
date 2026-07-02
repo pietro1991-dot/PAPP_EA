@@ -1,7 +1,7 @@
 # USDCHF — Configurazione (rivista 2026-06-27)
 
 Config scelta **dopo** l'analisi del blow-up del backtest precedente (−1.291 €, DD equity 89,75%,
-margin call gen-2015). EA in **PIP**, indicatore `PaPP_Median` v2.02.
+margin call gen-2015). EA in **PIP**, indicatore `PHAI_Median` v2.02.
 
 Questi valori sono i **default attuali** di [EA_USDCHF.mq5](EA_USDCHF.mq5).
 

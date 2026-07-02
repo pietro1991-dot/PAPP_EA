@@ -4,7 +4,7 @@
 //|  ADX classico di Wilder ANCORATO a D1: forza (ADX) + direzione    |
 //|  (+DI/-DI), linea identica su ogni timeframe (firma PaPP).        |
 //+------------------------------------------------------------------+
-#property copyright "PaPP v2"
+#property copyright "PHAI v2"
 #property version   "1.00"
 #property description "ADX Wilder ancorato a D1 (forza + direzione, uguale su ogni TF)"
 #property indicator_separate_window

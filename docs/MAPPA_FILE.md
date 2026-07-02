@@ -85,7 +85,7 @@ ls ~/.wine/drive_c/Program\ Files/MetaTrader\ 5/MQL5/Files/
 
 | Componente | Sorgente | Compilato (.ex5) deployato in MT5 |
 |---|---|---|
-| Indicatore | `Motore base _linea-prezzo/Indicatore/PaPP_Median.mq5` | `~/.wine/.../MQL5/Indicators/` |
+| Indicatore | `Motore base _linea-prezzo/Indicatore/PHAI_Median.mq5` | `~/.wine/.../MQL5/Indicators/` |
 | Export dati | `Motore base _linea-prezzo/Indicatore/Export_PAPP.mq5` | `~/.wine/.../MQL5/Scripts/` |
 | Miner | `Motore base _linea-prezzo/Indicatore/pattern_mining.py` | — (Python) |
 | EA (per simbolo) | `Motore base _linea-prezzo/<SIMBOLO>/EA_<SIMBOLO>.mq5` | `~/.wine/.../MQL5/Experts/` |

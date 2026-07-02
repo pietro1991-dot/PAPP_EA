@@ -1,12 +1,12 @@
 //+------------------------------------------------------------------+
-//|                                                    papp_push.mqh  |
+//|                                                    phai_push.mqh  |
 //|  Telemetria PHAI condivisa: ogni EA include questo file e manda   |
 //|  i PROPRI eventi (segnali open/close, stato, feature) al server   |
 //|  chatbot via WebRequest. Multi-tenant: la license key identifica  |
 //|  il cliente. Niente WebRequest nel tester.                        |
 //|                                                                    |
 //|  Uso:                                                              |
-//|    #include "papp_push.mqh"                                        |
+//|    #include "phai_push.mqh"                                        |
 //|    OnInit():  PappInit(InpUseServer, InpServerUrl, InpLicenseKey); |
 //|    apertura:  PappSignal("open", _Symbol, dir, entry,sl,tp,lot,0,0,reason);|
 //|    chiusura:  PappSignal("close",_Symbol, dir, 0,0,0,0, exitPx,pnl, reason);|
@@ -157,7 +157,7 @@ bool PappValidate(string symbol, string account, string broker="")
    return licensed;
 }
 
-// FEATURE di mercato lette da PaPP_Median (Volatilità/Cluster/… + distanze dalle medie).
+// FEATURE di mercato lette da PHAI_Median (Volatilità/Cluster/… + distanze dalle medie).
 void PappFeatures(string symbol, double close, double d_med, double d_ma30, double d_ma365,
                   double cluster, double velocity, double accel, double volatility,
                   double order_score, double spread)

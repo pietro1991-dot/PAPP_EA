@@ -2,8 +2,8 @@
 //|                                                 PaPP_Features.mq5 |
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
-//| Gemello di PaPP_Median, ma disegna le FEATURE DI MERCATO.        |
-//| PaPP_Median  -> linee delle 7 MA + Mediana   (scala = prezzo)    |
+//| Gemello di PHAI_Median, ma disegna le FEATURE DI MERCATO.        |
+//| PHAI_Median  -> linee delle 7 MA + Mediana   (scala = prezzo)    |
 //| PaPP_Features-> linee delle 4 feature + MEDIA (scala = 0..1)     |
 //|                                                                  |
 //| Le feature (Cluster/Velocity/Accel/Volatility) hanno unita' e   |
@@ -11,9 +11,9 @@
 //| sullo stesso grafico ognuna e' espressa come PERCENTILE (0..1)   |
 //| sul proprio storico CLWIN. La linea oro = media dei 4 percentili |
 //| = indice di intensita'/stress del mercato.                       |
-//| Tutto ancorato a D1, come PaPP_Median -> linea uguale su ogni TF.|
+//| Tutto ancorato a D1, come PHAI_Median -> linea uguale su ogni TF.|
 //+------------------------------------------------------------------+
-#property copyright "PaPP v2"
+#property copyright "PHAI v2"
 #property version   "1.00"
 #property description "PaPP Features - linee delle feature di mercato + media (percentili 0..1)"
 #property description "Calcolo ancorato a D1 = linea uguale su ogni timeframe"

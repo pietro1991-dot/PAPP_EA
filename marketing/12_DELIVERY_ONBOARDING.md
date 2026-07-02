@@ -48,7 +48,7 @@ Tu prepari una VPS, installi MT5 loggato sul conto del cliente, installi l'EA.
 - ✅ Attrito ZERO per il cliente (non tocca niente).
 - ❌ Maneggi le **credenziali broker** del cliente (sicurezza, fiducia, responsabilità).
 - ❌ **Manuale** → non scala (ore-uomo per cliente).
-- Verdetto: ottimo come **upsell a pagamento** (+297 €, doc 03/11), NON come modello base.
+- Verdetto: ottimo come **servizio opzionale a pagamento una tantum** (setup DFY, doc 03/11), NON come modello base.
 
 > **Scelta:** Modello 1 (distribuito) come standard, con il Modello 3 (DFY) come
 > upsell per i non-tecnici. È esattamente la value ladder del doc 11.
@@ -141,7 +141,7 @@ Dal pagamento all'operatività:
      (sempre accesa, ~5–15 €/mese da provider tipo ForexVPS/Contabo).
    - *Fatto-Per-Te*: paga l'upsell e lo configuri tu.
 4. **Installazione** (guida con screenshot):
-   - Copia `PaPP_Median.ex5` (indicatore) e `EA_PHAI.ex5` nelle cartelle MT5.
+   - Copia `PHAI_Median.ex5` (indicatore) e `EA_PHAI.ex5` nelle cartelle MT5.
    - Aggiungi il dominio PHAI alla whitelist WebRequest.
    - Trascina l'EA sul grafico (EURUSD/GBPUSD/USDCHF), incolla la **license key**
      negli input, abilita "Trading algoritmico".

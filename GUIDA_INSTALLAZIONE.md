@@ -21,11 +21,11 @@ L'EA trada da solo. Serve installarlo una volta e **tenerlo acceso 24/5**.
 
 ### Cosa ti serve
 - MetaTrader 5 (dal tuo broker), un **conto** (demo o reale), la tua **license key**.
-- I file: `PaPP_Median.ex5` (indicatore) e `EA_<SIMBOLO>.ex5` (es. `EA_EURUSD.ex5`).
+- I file: `PHAI_Median.ex5` (indicatore) e `EA_<SIMBOLO>.ex5` (es. `EA_EURUSD.ex5`).
 
 ### Passi
 1. **Copia i file in MT5** (menu *File → Apri cartella dati*):
-   - `PaPP_Median.ex5` → cartella `MQL5/Indicators/`
+   - `PHAI_Median.ex5` → cartella `MQL5/Indicators/`
    - `EA_EURUSD.ex5` (o GBPUSD/USDCHF) → cartella `MQL5/Experts/`
    - Riavvia MT5 (o tasto destro sul Navigatore → *Aggiorna*).
 2. **Autorizza il server PHAI**: *Strumenti → Opzioni → Expert Advisors* →

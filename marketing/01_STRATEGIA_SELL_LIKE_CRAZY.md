@@ -33,14 +33,17 @@ e un **assistente AI multilingua** che è come avere un analista accanto 24/7.
 Sabri insiste: non vendere la categoria ("un altro EA"), vendi un **meccanismo
 unico** con un nome. Il nostro:
 
-> ### I due motori PHAI (Base linee-prezzo + Reversione)
+> ### Le 5 strategie PHAI (trend + reversione, decorrelate)
 > Mentre tutti guardano grafici a 5 minuti pieni di rumore, PHAI lavora sul
-> **grafico giornaliero (D1)** e individua gli incroci tra prezzo e 8 linee chiave
-> (la Median + 7 medie da 3 a 365 giorni). Solo i pattern che hanno **superato la
-> validazione out-of-sample** (allenati fino al 2020, testati sul 2020→oggi)
-> diventano operativi. Niente curve-fitting, niente fuffa: matematica verificata.
+> **grafico giornaliero (D1)**. Le 5 strategie sono di **due tipi decorrelati**: quelle
+> **trend** (EUR/USD, GBP/USD, USD/CHF) seguono la struttura del prezzo tramite gli
+> incroci tra prezzo e 8 linee chiave (la Median + 7 medie da 3 a 365 giorni); quelle
+> **reversione** (EUR/GBP, GBP/CHF) fanno fade sul valore relativo tra valute correlate.
+> Sono decorrelate → **quando un tipo fatica, spesso l'altro lavora = drawdown più basso**.
+> Solo i pattern che hanno **superato la validazione out-of-sample** (allenati fino al
+> 2020, testati sul 2020→oggi) diventano operativi. Niente curve-fitting: matematica verificata.
 
-Il meccanismo unico ci rende **non confrontabili sul prezzo** con gli EA da 30€.
+Il meccanismo unico ci rende **non confrontabili** con gli EA-scatola-nera da 30€.
 
 ## 3. La Value Ladder (scala del valore)
 Sabri: prima dai, poi vendi, poi fai ascendere. La nostra scala:
@@ -48,13 +51,14 @@ Sabri: prima dai, poi vendi, poi fai ascendere. La nostra scala:
 | Gradino | Offerta | Prezzo | Scopo |
 |---|---|---|---|
 | **0 — Esca (HVCO)** | "Report PHAI" + demo dashboard read-only + mini-corso email | **Gratis** | Catturare il lead, dare valore, costruire fiducia → doc 04 |
-| **1 — Tripwire** (opz.) | Indicatore `PaPP_Median` + guida "leggere il mercato sul D1" | **27–47 €** | Trasformare lead in cliente pagante (prima transazione) |
-| **2 — Core Offer** (Godfather) | **PHAI Trading**: 5 EA su 2 motori + app multilingua + assistente AI | **da 49 €/mese (singolo) a 197 €/mese (Portfolio)** | Il cuore del business → doc 03 |
-| **3 — Ascensione** | Setup "fatto-per-te" su VPS, Pacchetti-motore, Portfolio, community privata | **+67–197 €/mese** | Massimizzare il valore per cliente (LTV) |
+| **1 — Ingresso a frizione minima** | **Assistente + Segnali**: segnali real-time + push + AI illimitato, senza EA | **5 €/mese** | Prima transazione a barriera bassissima |
+| **2 — Core Offer** | **1 EA automatico** (best-seller EUR/USD) — segnali + assistente AI **inclusi** | **4 €/mese** | Il cuore del business → doc 03 |
+| **3 — Ascensione (pacchetti)** | Pacchetti-portafoglio venduti sul **drawdown basso**: Difensivo/Bilanciato/Completo | **7 → 9 → 12 €/mese** | Massimizzare l'ARPU per cliente (LTV) |
 
-> Regola di Sabri sul prezzo: la maggior parte sotto-prezza. Il valore percepito
-> deve essere **10× il prezzo**. La nostra Godfather Offer (doc 03) impila bonus
-> finché 197 €/mese sembrano un affare.
+> Regola di Sabri sul prezzo: qui **non** competiamo alzando il prezzo, ma facendo
+> **volume**. Il valore percepito deve comunque essere **10× il prezzo**: a 4-12 €/mese
+> per un sistema che lavora 24/7 con app + assistente AI incluso, è facile. La leva
+> economica è l'ARPU (upsell ai pacchetti) e l'acquisizione/retention, non il prezzo alto.
 
 ## 4. La "Halo Strategy" / il funnel a 4 fasi
 Tutto il marketing segue le 4 fasi di Sabri (dettaglio operativo nel doc 05):

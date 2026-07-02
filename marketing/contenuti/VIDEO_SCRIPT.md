@@ -71,7 +71,7 @@ della Demo** + voce. Disclaimer a schermo **sempre** presente.
 # 2) VSL — Video Sales Letter (8–12 min, per la sales page)
 
 > Struttura Sabri: Hook → Problema → Agita → Soluzione (meccanismo unico) → Prova →
-> Offerta → Bonus → Garanzia → Scarsità → CTA → P.S. Disclaimer a schermo per tutto.
+> Offerta → Garanzia → CTA → P.S. Disclaimer a schermo per tutto.
 
 **[0:00–0:30 · HOOK]**
 "Se hai mai comprato un robot di trading e ti sei ritrovato a fissare lo schermo senza
@@ -92,7 +92,7 @@ perdi, vai nel panico e chiudi nel momento sbagliato. Il risultato? Hai perso so
 fiducia, e non sai più di chi fidarti. Lo capisco — ci sono passato anch'io."
 
 **[3:30–6:00 · SOLUZIONE + MECCANISMO UNICO]**
-"PHAI funziona con due motori indipendenti e decorrelati. Il primo legge le linee del prezzo, il secondo il valore relativo tra valute correlate. Mentre
+"PHAI funziona con 5 strategie di due tipi indipendenti e decorrelati. Quelle 'trend' leggono le linee del prezzo, quelle 'reversione' il valore relativo tra valute correlate. Sono decorrelate: quando un tipo fatica, spesso l'altro lavora, e il drawdown del portafoglio scende. Mentre
 tutti fissano grafici a 5 minuti pieni di rumore, PHAI lavora sul grafico giornaliero e
 individua gli incroci tra il prezzo e 8 linee chiave. Ma la parte importante è questa:
 operano SOLO i pattern che hanno superato la validazione fuori campione — allenati fino al
@@ -105,18 +105,19 @@ operazioni, win rate del 96,9%, profit factor 2,34. Ma ti mostro anche il rovesc
 drawdown massimo intorno al 20% e anni in perdita, come il 2017, il 2023 e il 2025. La
 trasparenza è la prova. E tra poco potrai vedere tutto questo dal vivo, nella dashboard."
 
-**[8:00–10:30 · OFFERTA + BONUS]**
-"Con PHAI ottieni: gli Expert Advisor — 5 strategie su 2 motori (EUR/USD, GBP/USD, USD/CHF + i cross EUR/GBP e GBP/CHF); l'app multilingua con il
-tuo assistente AI 24 ore su 24; l'indicatore; storico e backtest consultabili; le
-notifiche su ogni mossa. In più, quattro bonus: la guida sulla gestione del rischio, il
-mini-corso sui pattern, la guida all'installazione e la community privata. Valore
-complessivo oltre 4.500 euro. Ma non paghi tutto questo: inizi da 49 euro al mese per una
-singola strategia, 97 per un Pacchetto-motore, o 197 al mese per il Portfolio completo — con l'annuale che ti regala 2 mesi."
+**[8:00–10:30 · OFFERTA]**
+"Con PHAI ottieni: gli Expert Advisor — 5 strategie di due tipi decorrelati (EUR/USD, GBP/USD, USD/CHF + i cross EUR/GBP e GBP/CHF); l'app multilingua con il
+tuo assistente AI 24 ore su 24; i segnali in tempo reale con notifiche su ogni mossa;
+storico e backtest consultabili. E la cosa importante: segnali e assistente AI sono
+INCLUSI, senza costi extra, con ogni EA o pacchetto. I prezzi? Un micro-abbonamento:
+inizi da 4 euro al mese per una singola strategia; il Pacchetto Bilanciato a 9 euro,
+consigliato, con un drawdown storico intorno all'11,5%; o il Completo a 12 euro con
+tutti e 5 gli EA, drawdown storico intorno al 10,3% e assistente premium. Disdici quando vuoi."
 
-**[10:30–12:00 · GARANZIA + SCARSITÀ + CTA + P.S.]**
+**[10:30–12:00 · GARANZIA + CTA + P.S.]**
 "E il rischio dell'acquisto me lo prendo io: garanzia 30 giorni soddisfatti o rimborsati
-sul software. Apriamo 50 posti questo mese, perché l'assistente AI gira su un server
-condiviso e oltre quel numero la qualità calerebbe. Clicca qui sotto, oppure — meglio
+sul software. Entri ora al prezzo di lancio e lo mantieni finché resti abbonato — nessun
+trucco, nessun posto in scadenza. Clicca qui sotto, oppure — meglio
 ancora — apri prima la Demo gratuita e guarda tutto con i tuoi occhi.
 P.S.: nel trading l'unica cosa che non ti hanno mai dato è la verità. Noi partiamo da lì."
 *(Disclaimer a schermo per tutto il video.)*

@@ -92,16 +92,22 @@ LANG_NAMES = {
 }
 
 SYSTEM_PROMPT = (
-    "Sei l'assistente del PAPP_EA, un Expert Advisor di trading su MetaTrader 5. "
-    "Rispondi in modo chiaro e ben strutturato (usa elenchi puntati e "
-    "tabelle quando rendono la risposta più leggibile). "
+    "Sei l'assistente di PHAI, una piattaforma di trading algoritmico su MetaTrader 5: "
+    "5 strategie (EA) singole, 3 pacchetti-portafoglio, i segnali in tempo reale e questo "
+    "assistente. Aiuti gli utenti a: capire lo STATO ATTUALE del mercato e delle strategie "
+    "('dove siamo', quanto siamo vicini a un segnale), leggere i SEGNALI (entrata/TP/SL, radar), "
+    "analizzare la PERFORMANCE, e scegliere il PRODOTTO/abbonamento giusto (singolo, pacchetto, "
+    "o piano Assistente+Segnali). "
+    "Rispondi in modo chiaro e ben strutturato (elenchi puntati e tabelle quando aiutano). "
     "USA ESCLUSIVAMENTE i dati forniti nel contesto (stato conto, performance per simbolo e "
-    "per pattern, periodo, ultimi segnali) e la conoscenza sull'EA qui sotto: ogni numero che "
-    "fornisci deve provenire da lì, non inventarlo MAI. Se un dato non è presente nel contesto, "
+    "pattern, periodo, ultimi segnali, STATO STRATEGIE 'dove siamo ora') e la conoscenza qui "
+    "sotto: ogni numero deve provenire da lì, non inventarlo MAI. Se un dato non è nel contesto, "
     "dillo chiaramente invece di stimarlo. "
-    "Capisci sempre l'intento dell'utente: se la richiesta è ambigua o mancano informazioni per "
-    "rispondere bene, fai prima una breve domanda di chiarimento. "
-    "Completa sempre la risposta, senza troncarla a metà. Sii conciso ma esaustivo."
+    "REGOLA DI CONFORMITÀ (prodotto finanziario): i numeri sono BACKTEST storici (simulazioni), "
+    "NON promesse di rendimento futuro. Non garantire MAI profitti, non dare consigli finanziari "
+    "personalizzati come 'investi X'; ricorda che il trading comporta rischio di perdita. "
+    "Capisci l'intento: se la richiesta è ambigua o mancano informazioni, fai prima una breve "
+    "domanda di chiarimento. Completa sempre la risposta, senza troncarla. Conciso ma esaustivo."
 )
 
 # Base di conoscenza sull'EA, iniettata nel system prompt (modificabile senza toccare il codice).
@@ -121,7 +127,63 @@ def _load_knowledge() -> str:
 EA_KNOWLEDGE = _load_knowledge()
 
 
-def _system_content(lang: str = "it") -> str:
+def _split_sections(md: str):
+    """Divide la conoscenza in sezioni per header (#/##/###). Ognuna resta autonoma."""
+    if not md:
+        return []
+    out = []
+    for p in re.split(r"\n(?=#{1,3} )", md):
+        header = p.split("\n", 1)[0].strip("# ").strip()
+        out.append((header, p))
+    return out
+
+
+_KB_SECTIONS = _split_sections(EA_KNOWLEDGE)
+_SYMBOLS = ("eurusd", "gbpusd", "usdchf", "eurgbp", "gbpchf")
+
+
+def _relevant_knowledge(question: str) -> str:
+    """RAG leggero (sezioni + keyword multilingua): inietta SOLO le sezioni pertinenti
+    alla domanda, per tagliare i token SENZA perdere fatti. Include sempre un CORE; se la
+    domanda è ambigua/generica o il match è debole -> inietta TUTTA la conoscenza (mai
+    peggio di adesso). NON tocca i dati LIVE del conto (arrivano a parte, nel contesto)."""
+    if not _KB_SECTIONS:
+        return EA_KNOWLEDGE
+    q = (question or "").lower().replace("/", "")
+    if len(q) < 4:
+        return EA_KNOWLEDGE
+
+    def find(*subs):
+        return [b for h, b in _KB_SECTIONS if any(s in h.lower() for s in subs)]
+
+    chosen = list(find("due motori"))   # core: sempre incluso
+    strong = False
+    if any(k in q for k in ("install", "scaric", "avvi", "configur", "instalar", "installer")):
+        chosen += find("installare"); strong = True
+    if any(k in q for k in ("prezzo", "costa", "abbonam", "pacchett", "piano", "price", "cost", "precio", "prix", "paquet", "plan")):
+        chosen += find("pacchetti", "prezzi", "consigliare", "strategie singole", "assistente"); strong = True
+    syms = [s for s in _SYMBOLS if s in q]
+    if syms and any(k in q for k in ("backtest", "reso", "rend", "drawdown", "risultat", "performance", "anno", "result", "return", "year")):
+        chosen += find(*syms); strong = True
+    if any(k in q for k in ("revers", "cross", "valore relativo", "oscillat", "relative value")):
+        chosen += find("reversione", "basket"); strong = True
+    if any(k in q for k in ("pattern", "linee", "media", "trend", "moving average")):
+        chosen += find("motore base", "come funziona"); strong = True
+    if not strong:   # nessun tema forte -> keyword generico (top 3 sezioni)
+        scored = sorted(
+            ((sum(1 for w in set(re.findall(r"[a-zà-ù]{4,}", q)) if w in b.lower()), b)
+             for h, b in _KB_SECTIONS), key=lambda x: x[0], reverse=True)
+        chosen += [b for s, b in scored[:3] if s > 0]
+
+    seen = set()
+    picked = [c for c in chosen if not (c in seen or seen.add(c))]
+    joined = "\n\n".join(picked)
+    if len(joined) < 400:   # match debole -> sicurezza: tutta la conoscenza
+        return EA_KNOWLEDGE
+    return joined
+
+
+def _system_content(lang: str = "it", question: str = "") -> str:
     langname = LANG_NAMES.get(lang, LANG_NAMES["it"])
     directive = (
         f"IMPORTANTE: rispondi SEMPRE e SOLO in {langname}, qualunque sia la lingua "
@@ -130,8 +192,9 @@ def _system_content(lang: str = "it") -> str:
         f"giapponesi, coreani o altri simboli non latini.\n\n"
     )
     body = SYSTEM_PROMPT
-    if EA_KNOWLEDGE:
-        body += "\n\n--- Conoscenza sul PAPP_EA ---\n" + EA_KNOWLEDGE
+    kb = _relevant_knowledge(question) if question else EA_KNOWLEDGE
+    if kb:
+        body += "\n\n--- Conoscenza su PHAI ---\n" + kb
     return directive + body
 
 
@@ -179,7 +242,7 @@ async def ask(
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": _system_content(lang)},
+            {"role": "system", "content": _system_content(lang, question)},
             {"role": "user", "content": build_user_message(question, context)},
         ],
         "max_tokens": LLM_MAX_TOKENS,
@@ -226,7 +289,7 @@ async def ask_stream(
     payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content": _system_content(lang)},
+            {"role": "system", "content": _system_content(lang, question)},
             {"role": "user", "content": build_user_message(question, context)},
         ],
         "max_tokens": LLM_MAX_TOKENS,

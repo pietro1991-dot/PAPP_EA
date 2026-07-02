@@ -18,7 +18,7 @@ I valori di `QuotaConto` sono già impostati (risk-parity 48/52). Non tocchi alt
 
 ## Installazione
 1. Copia i 2 `.mq5` in `MQL5/Experts/` e **ricompila (F7)**.
-2. Dipendenze: `PaPP_Median.ex5` in `MQL5/Indicators/`, `papp_push.mqh` in `MQL5/Include/`.
+2. Dipendenze: `PHAI_Median.ex5` in `MQL5/Indicators/`, `phai_push.mqh` in `MQL5/Include/`.
 3. Ogni EA sul grafico del suo simbolo, **stesso conto**. Le quote sono già a posto.
 
 ## La scala dei pacchetti

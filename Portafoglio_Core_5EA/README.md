@@ -57,7 +57,7 @@ niente ribilanciamento manuale.
 ## Installazione
 
 1. Copia i 5 `.mq5` in `MQL5/Experts/` e **ricompila (F7)** — hanno il nuovo input `QuotaConto` (i `.ex5` vanno rigenerati).
-2. Dipendenze: `PaPP_Median.ex5` in `MQL5/Indicators/`, `papp_push.mqh` in `MQL5/Include/`.
+2. Dipendenze: `PHAI_Median.ex5` in `MQL5/Indicators/`, `phai_push.mqh` in `MQL5/Include/`.
 3. Metti ogni EA sul grafico del suo simbolo, **stesso conto per tutti**, e imposta `QuotaConto` come in tabella (50/19/15/9/7).
 
 ## Quando preferire questo al trio

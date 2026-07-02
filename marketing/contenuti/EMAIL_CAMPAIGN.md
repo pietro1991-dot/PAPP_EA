@@ -16,7 +16,7 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 | 5 | opt-in | +4g | Perché a volte PHAI non fa NIENTE (ed è un bene) |
 | 6 | opt-in | +5g | Cosa fa PHAI mentre tu vivi la tua vita |
 | 7 | opt-in | +6g | Ma funziona davvero? Le tue 6 domande |
-| 8 | opt-in | +7g | 50 posti. Poi lista d'attesa (e prezzo più alto). |
+| 8 | opt-in | +7g | Sblocca PHAI: da 5€/mese, assistente AI incluso |
 
 ### nurture-1 — Ecco il tuo accesso PHAI 👀 (e una cosa che nessuno ti dice)
 *Trigger: opt-in · invio: +0 giorni · preview: Apri questo prima di guardare qualsiasi cosa.*
@@ -109,13 +109,13 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 
 > [Nome], ecco com'è una giornata con PHAI:
 > 
-> • Gli EA monitorano fino a 5 coppie su 2 motori (EUR/USD, GBP/USD, USD/CHF + i cross EUR/GBP e GBP/CHF) e aprono/chiudono secondo i pattern validati.
+> • Gli EA monitorano fino a 5 coppie di due tipi decorrelati (trend: EUR/USD, GBP/USD, USD/CHF · reversione: i cross EUR/GBP e GBP/CHF) e aprono/chiudono secondo i pattern validati.
 > • Ogni mossa arriva sul tuo telefono con una notifica e una **spiegazione**.
 > • Apri l'app (in 4 lingue) e vedi conto, segnali, storico. Un dubbio? Lo chiedi all'assistente AI, che risponde subito.
 > 
 > Niente più scatole nere. Niente più 'ma perché ha fatto così?'.
 > 
-> Puoi iniziare come vuoi: **Demo gratis**, **Signals a 37€/mese** (segnali a mano), una **singola strategia da 49€**, o il **Portfolio completo a 197€**. Guardala prima tu 👉 {{demo}}
+> Puoi iniziare come vuoi: **Demo gratis**, **Assistente + Segnali a 3€/mese** (senza EA), una **singola strategia da 5€**, o il **Pacchetto Completo a 12€** (tutti e 5). Segnali e assistente AI **inclusi in ogni EA/pacchetto**. Guardala prima tu 👉 {{demo}}
 > 
 > Domani rispondo alle 6 domande che ricevo più spesso.
 > 
@@ -141,16 +141,16 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 > Il trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.
 > Non vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}
 
-### nurture-8 — 50 posti. Poi lista d'attesa (e prezzo più alto).
+### nurture-8 — Sblocca PHAI: da 5€/mese, assistente AI incluso
 *Trigger: opt-in · invio: +7 giorni · preview: Ci siamo. Oggi puoi sbloccare PHAI.*
 
 > [Nome], ci siamo.
 > 
-> Oggi puoi sbloccare **PHAI** completo: i 5 EA su 2 motori, l'app multilingua, il tuo **assistente AI 24/7**, l'indicatore, storico e backtest, le notifiche — più 4 bonus (oltre 900€ di valore).
+> Oggi puoi sbloccare **PHAI**: 5 strategie decorrelate (trend + reversione), l'app multilingua, il tuo **assistente AI 24/7** e i **segnali in tempo reale** — tutto **incluso, nessun costo extra**.
 > 
-> Valore totale ~4.500€. Oggi: **Portfolio a 197€/mese** (o **una singola strategia da 49€** per iniziare; **Annuale con 2 mesi gratis**). Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso totale. Il rischio me lo prendo io.
+> Scegli come iniziare: una **singola strategia da 5€/mese**, il **Pacchetto Bilanciato a 9€** (consigliato, drawdown storico ~11.5%), o il **Completo a 12€** (tutti e 5, AI premium). Disdici quando vuoi. Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso totale. Il rischio me lo prendo io.
 > 
-> Apriamo **50 posti** questo mese: l'assistente AI gira su un server condiviso e oltre quel numero la qualità calerebbe. Quando finiscono, lista d'attesa — e al prossimo giro il prezzo sale.
+> Entri ora al **prezzo di lancio** e lo mantieni finché resti abbonato. Nessun trucco, nessun posto "in scadenza": solo un prezzo onesto.
 > 
 > 👉 {{sblocca}}
 > 
@@ -283,9 +283,9 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 | 2 | trade_chiuso_profit | +0g | Com'è andata l'ultima operazione (e perché) |
 | 3 | mese_piatto | +0g | Questo mese PHAI ha aspettato. Ecco perché è un bene. |
 | 4 | ricorrente_mensile | +30g | Il tuo mese in PHAI |
-| 5 | starter_limite_coppie | +0g | Sblocca le altre 2 coppie (passa a Pro) |
-| 6 | pro_attivo_3mesi | +90g | Vuoi 2 mesi gratis? |
-| 7 | heavy_user_ai | +0g | Per chi usa molto l'assistente: il Portfolio |
+| 5 | singolo_ea_attivo | +0g | Abbassa il drawdown: passa a un pacchetto |
+| 6 | difensivo_o_bilanciato | +90g | Sali al Completo (tutti e 5, DD ~10.3%) |
+| 7 | heavy_user_ai | +0g | Per chi usa molto l'assistente: il Completo |
 | 8 | pre_disdetta_o_carta_fallita | +0g | Prima che tu vada… |
 | 9 | cliente_soddisfatto | +0g | Porta un amico, un mese gratis a entrambi 🎁 |
 
@@ -345,42 +345,42 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 > Il trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.
 > Non vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}
 
-### retention-upsell-pro — Sblocca le altre 2 coppie (passa a Pro)
-*Trigger: starter_limite_coppie · invio: +0 giorni · preview: Stai usando 1 coppia su 3.*
+### retention-upsell-pro — Abbassa il drawdown: passa a un pacchetto
+*Trigger: singolo_ea_attivo · invio: +0 giorni · preview: Stai usando 1 strategia su 5.*
 
-> [Nome], stai usando **1 strategia**. Ma PHAI ne ha **5 su 2 motori decorrelati**: quando un motore fatica, spesso l'altro lavora.
+> [Nome], stai usando **1 strategia**. Ma PHAI ne ha **5, di due tipi decorrelati** (trend + reversione): quando un tipo fatica, spesso l'altro lavora.
 > 
-> Con **Pro** sblocchi tutte e 3 le coppie + l'assistente AI completo + priorità. Più mercati sorvegliati, più opportunità colte — senza alzare un dito.
+> Ecco il punto: aggiungere strategie decorrelate **abbassa il drawdown** del tuo portafoglio. Il **Pacchetto Difensivo** (7€) porta il DD storico a ~12.5%, il **Bilanciato** (9€) a ~11.5%. Più mercati sorvegliati, meno oscillazioni — sempre con assistente AI e segnali inclusi.
 > 
-> Passa a Pro 👉 {{sblocca}}
+> Passa a un pacchetto 👉 {{sblocca}}
 > 
 > — Il team PHAI
 > ---
 > Il trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.
 > Non vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}
 
-### retention-upsell-annual — Vuoi 2 mesi gratis?
-*Trigger: pro_attivo_3mesi · invio: +90 giorni · preview: Un'idea per chi resta.*
+### retention-upsell-annual — Sali al Completo (tutti e 5, DD ~10.3%)
+*Trigger: difensivo_o_bilanciato · invio: +90 giorni · preview: Un'idea per chi resta.*
 
 > [Nome], sei con noi da qualche mese — grazie. 🙏
 > 
-> Se PHAI fa parte della tua routine, col piano **Annuale** ottieni **2 mesi gratis** rispetto al mensile. Stesso Pro, meno spesa, e niente da ricordare ogni mese.
+> Se PHAI fa parte della tua routine, col **Pacchetto Completo** (12€/mese) hai **tutti e 5 gli EA** in risk-parity: il drawdown storico scende a **~10.3%** e sblocchi l'**assistente AI premium**. Il portafoglio più stabile che offriamo, per il prezzo di un caffè al mese.
 > 
-> Passa all'Annuale 👉 {{sblocca}}
+> Sali al Completo 👉 {{sblocca}}
 > 
 > — Il team PHAI
 > ---
 > Il trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.
 > Non vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}
 
-### retention-elite — Per chi usa molto l'assistente: il Portfolio
+### retention-elite — Per chi usa molto l'assistente: il Completo
 *Trigger: heavy_user_ai · invio: +0 giorni · preview: AI premium, priorità, pattern in anteprima.*
 
 > [Nome], usi spesso l'assistente AI — bene, è fatto per questo.
 > 
-> Se vuoi il massimo, il **PHAI Portfolio** ti dà un'**AI premium e prioritaria** (nessuna coda nei picchi), **tutti i 5 EA** e i **nuovi pattern in anteprima**.
+> Se vuoi il massimo, il **Pacchetto Completo** (12€/mese) ti dà un'**AI premium e prioritaria** (nessuna coda nei picchi), **tutti e 5 gli EA** in risk-parity (DD ~10.3%) e i **nuovi pattern in anteprima**.
 > 
-> Scopri il Portfolio 👉 {{sblocca}}
+> Scopri il Completo 👉 {{sblocca}}
 > 
 > — Il team PHAI
 > ---
@@ -425,7 +425,7 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 | # | Trigger | Ritardo | Oggetto |
 |---|---|---|---|
 | 1 | no_acquisto | +9g | L'hai vista la Demo? (2 minuti) |
-| 2 | no_acquisto | +13g | Ultima chiamata: i posti del mese stanno finendo |
+| 2 | no_acquisto | +13g | Il prezzo di lancio non durerà per sempre |
 
 ### post-1 — L'hai vista la Demo? (2 minuti)
 *Trigger: no_acquisto · invio: +9 giorni · preview: Nessuna pressione, solo curiosità.*
@@ -439,12 +439,12 @@ Placeholder: `[Nome]`, `{{demo}}`, `{{sblocca}}`, `{{report}}`, `{{guida}}`, `{{
 > Il trading comporta rischi: puoi perdere parte o tutto il capitale. Nessun rendimento è garantito. I dati citati sono backtest storici, non indicativi di risultati futuri.
 > Non vuoi più ricevere queste email? Disiscriviti qui: {{unsubscribe}}
 
-### post-2 — Ultima chiamata: i posti del mese stanno finendo
-*Trigger: no_acquisto · invio: +13 giorni · preview: Poi lista d'attesa e prezzo più alto.*
+### post-2 — Il prezzo di lancio non durerà per sempre
+*Trigger: no_acquisto · invio: +13 giorni · preview: Entra ora e blocchi il prezzo introduttivo.*
 
-> [Nome], i **50 posti** di questo mese stanno per finire. Dopo: lista d'attesa, e al prossimo giro il prezzo di lancio sale.
+> [Nome], PHAI parte da **5€/mese** (assistente AI e segnali inclusi). È il **prezzo di lancio**: entri ora e lo mantieni finché resti abbonato.
 > 
-> Se ci stavi pensando, questo è il momento — col rischio tutto dalla mia parte (garanzia 30 giorni) 👉 {{sblocca}}
+> Se ci stavi pensando, questo è il momento — col rischio tutto dalla mia parte (garanzia 30 giorni) e la libertà di disdire quando vuoi 👉 {{sblocca}}
 > 
 > Preferisci ancora solo guardare? 👉 {{demo}}
 > 

@@ -2,7 +2,7 @@
 //|                                                   Export_PAPP.mq5 |
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
-#property copyright "PaPP v2"
+#property copyright "PHAI v2"
 #property version   "2.05"
 #property description "Esporta D1-anchor MA + tutte le metriche PaPP in CSV"
 #property description "v2.05: attesa readiness robusta (barre stabili + indicatore calc.)"
@@ -11,7 +11,7 @@
 #property description "       derivati dalle stesse MA scritte nelle colonne (no iMA paralleli)."
 #property script_show_inputs
 
-input string InpIndicatorName = "PaPP_Median.ex5";
+input string InpIndicatorName = "PHAI_Median.ex5";
 input string InpStartDate     = "2024.01.01";
 input string InpEndDate       = "2026.06.20";
 input string InpFileName      = "PAPP_Export.csv";
@@ -58,7 +58,7 @@ double PctlOf(double &arr[],int cc,double cur)
 void OnStart()
 {
    // IMPORTANTE: stessi parametri dell'EA (EA_Pattern OnInit) per ottenere
-   // valori MA IDENTICI. Mapping input PaPP_Median:
+   // valori MA IDENTICI. Mapping input PHAI_Median:
    //   FontSize=9, Smooth=false, ShowMA=true, ShowPanel=true, PanelBg, InpSignals=true
    // Smooth=false / InpSignals=true => valori RAW a gradino (no interpolazione,
    // no look-ahead) coerenti su qualunque timeframe, identici a quelli usati dall'EA.

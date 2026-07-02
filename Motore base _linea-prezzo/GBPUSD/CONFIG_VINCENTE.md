@@ -1,7 +1,7 @@
 # GBPUSD — Configurazione backtest (run 2026-06-26)
 
 Backtest MT5 del **2026-06-26** (deposito 10.000 €, GBPUSD D1, broker MetaQuotes-Demo).
-Indicatore `PaPP_Median` v2.02. EA in **PIP** (tutti gli input distanza uniformati a pip).
+Indicatore `PHAI_Median` v2.02. EA in **PIP** (tutti gli input distanza uniformati a pip).
 
 Questi valori sono i **default attuali** di [EA_GBPUSD.mq5](EA_GBPUSD.mq5).
 

@@ -8,7 +8,7 @@
 //|  datetime = "YYYY.MM.DD HH:MM" (formato atteso dal convertitore).  |
 //|  spread_pts = spread in PUNTI alla chiusura della barra (MqlRates).|
 //+------------------------------------------------------------------+
-#property copyright "PaPP v2"
+#property copyright "PHAI v2"
 #property version   "1.00"
 #property description "Export OHLC M1 + spread reale per barra -> CSV"
 #property script_show_inputs

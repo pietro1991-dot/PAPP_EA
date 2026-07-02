@@ -34,11 +34,11 @@ Non sei tecnico? Salta tutto: scegli **"Fatto-Per-Te"** e lo configuriamo noi. �
 ---
 
 ## ✅ Passo 3 — Aggiungi PHAI a MetaTrader *(2 minuti)*
-Ti abbiamo inviato 2 file: **`PHAI_EA.ex5`** e **`PaPP_Median.ex5`**.
+Ti abbiamo inviato 2 file: **`PHAI_EA.ex5`** e **`PHAI_Median.ex5`**.
 
 1. In MetaTrader: menu **File → Apri cartella dati**.
 2. Apri la cartella **MQL5**.
-3. Copia **`PaPP_Median.ex5`** dentro la cartella **Indicators**.
+3. Copia **`PHAI_Median.ex5`** dentro la cartella **Indicators**.
 4. Copia **`PHAI_EA.ex5`** dentro la cartella **Experts**.
 5. Chiudi e riapri MetaTrader (oppure: tasto destro su "Expert Advisors" →
    **Aggiorna**).
@@ -113,7 +113,7 @@ Hai bisogno di aiuto? Scrivici a **[supporto@phai.io]** o chiedi all'assistente 
 ---
 
 ## 🙌 Non vuoi farlo da solo?
-Scegli **PHAI Fatto-Per-Te**: configuriamo noi tutto (broker, server, installazione).
+Scegli **PHAI Fatto-Per-Te** (€20 una tantum): configuriamo noi tutto (broker, server, installazione).
 Tu non tocchi niente. → *[link upsell]*
 
 ---
@@ -125,7 +125,7 @@ Tu non tocchi niente. → *[link upsell]*
   NON funzionano sui conti dei clienti. Il dominio è quindi **prerequisito** per
   l'onboarding cliente (oltre che per PWA/notifiche su mobile).
 - Rinominare gli `.ex5` consegnati al cliente in `PHAI_EA.ex5` (uno per simbolo, o
-  un pacchetto con i 3) e l'indicatore in `PaPP_Median.ex5`.
+  un pacchetto con i 3) e l'indicatore in `PHAI_Median.ex5`.
 - I pattern di default negli EA = configurazione canonica: il cliente NON deve
   configurare nulla oltre ai 3 input server.
 - Preset `.set` (InpUseServer=true + URL) pronti da consegnare quando il dominio è

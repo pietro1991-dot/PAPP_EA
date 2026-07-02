@@ -107,7 +107,7 @@ function loadSdk(clientId, currency, subscription){
 
 function requireEmail(){ const e=emailVal(); if(!validEmail(e)){ $('msg').style.color='var(--red)'; $('msg').textContent=t('needEmail'); return false;} return true; }
 
-function priceHtml(info){ return (info.price!=null&&info.price!==''?info.price+'€ ':'') + '<small>'+t('perMonth')+'</small>'; }
+function priceHtml(info){ const per=(info&&info.kind==='order')?t('once'):t('perMonth'); return (info.price!=null&&info.price!==''?info.price+'€ ':'') + '<small>'+per+'</small>'; }
 
 (async function init(){
   let info;
@@ -117,10 +117,10 @@ function priceHtml(info){ return (info.price!=null&&info.price!==''?info.price+'
   // intestazione prodotto: SEMPRE visibile (anche se PayPal non è ancora pronto)
   $('plan-pill').textContent = info.label || SKU;
   $('price').innerHTML = priceHtml(info);
-  $('plan-desc').textContent = t('subDesc');
+  $('plan-desc').textContent = (info.kind==='order') ? t('orderDesc') : t('subDesc');
 
   // PayPal non configurato o senza plan_id per questo SKU -> mostra prodotto + bonifico
-  if(!info.configured || !info.client_id || !info.plan_id){
+  if(!info.configured || !info.client_id || (info.kind!=='order' && !info.plan_id)){
     $('loading').style.display='none';
     $('fallback').style.display='block';
     $('fallback').insertAdjacentHTML('afterbegin',
@@ -129,19 +129,28 @@ function priceHtml(info){ return (info.price!=null&&info.price!==''?info.price+'
   }
 
   $('loading').style.display='none'; $('content').style.display='block';
-  try{ await loadSdk(info.client_id, info.currency || 'EUR', true); }
+  try{ await loadSdk(info.client_id, info.currency || 'EUR', info.kind!=='order'); }
   catch(_){ return showFallback(); }
 
-  paypal.Buttons({
-    style:{shape:'pill',color:'gold',layout:'vertical',label:'subscribe'},
-    createSubscription:function(data, actions){
-      if(!requireEmail()) return actions.reject();
-      return actions.subscription.create({ plan_id: info.plan_id, custom_id: emailVal() });
-    },
-    onApprove:function(data){ confirmPayment({subscription_id: data.subscriptionID}); },
+  const _isOrder=(info.kind==='order');
+  const _btn={
+    style:{shape:'pill',color:'gold',layout:'vertical',label:_isOrder?'pay':'subscribe'},
+    onApprove:function(data){ confirmPayment(_isOrder?{order_id:data.orderID}:{subscription_id:data.subscriptionID}); },
     onError:function(){ $('msg').style.color='var(--red)'; $('msg').textContent=t('payError'); },
     onCancel:function(){ $('msg').style.color='var(--muted)'; $('msg').textContent=t('cancelled'); }
-  }).render('#paypal-container');
+  };
+  if(_isOrder){
+    _btn.createOrder=function(data, actions){
+      if(!requireEmail()) return actions.reject();
+      return actions.order.create({ purchase_units:[{ amount:{ value:String(info.price), currency_code:info.currency||'EUR' }, description:info.label, custom_id:emailVal() }] });
+    };
+  } else {
+    _btn.createSubscription=function(data, actions){
+      if(!requireEmail()) return actions.reject();
+      return actions.subscription.create({ plan_id: info.plan_id, custom_id: emailVal() });
+    };
+  }
+  paypal.Buttons(_btn).render('#paypal-container');
 })();
 </script>
 </body>

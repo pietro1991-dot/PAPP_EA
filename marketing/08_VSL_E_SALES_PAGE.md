@@ -31,10 +31,11 @@ Prova → Offerta → Bonus → Garanzia → Scarsità → CTA → P.S.**
 > a Marco che lo capisci meglio di chiunque.)*
 
 ### 4. La soluzione + meccanismo unico (3:30–6:00)
-> Presenta i **due motori PHAI** (Base linee-prezzo + Reversione valore relativo): il D1 contro il rumore, le 8
-> linee, gli incroci, i 6 pattern. Il concetto chiave: **validazione fuori
-> campione** (allenare ≤2020, testare 2020→oggi). Spiega perché abbiamo **spento i
-> 4 pattern più redditizi** (rischio). Questo è il "perché siamo diversi".
+> Presenta le **5 strategie PHAI di due tipi decorrelati** (trend linee-prezzo + reversione
+> valore relativo): il D1 contro il rumore, le 8 linee, gli incroci, i pattern. Sottolinea
+> la **decorrelazione** (quando un tipo fatica, spesso l'altro lavora → **drawdown più basso**).
+> Il concetto chiave: **validazione fuori campione** (allenare ≤2020, testare 2020→oggi).
+> Spiega perché abbiamo **spento i pattern più redditizi ma rischiosi**. Questo è il "perché siamo diversi".
 
 ### 5. La prova (6:00–8:00)
 > Screenshot della dashboard, storico per anno/mese, i numeri del backtest
@@ -42,14 +43,15 @@ Prova → Offerta → Bonus → Garanzia → Scarsità → CTA → P.S.**
 > 2,34 — **e** drawdown ~20% e anni negativi mostrati apertamente. La trasparenza
 > È la prova. Demo dal vivo dell'app e dell'assistente AI.
 
-### 6. L'offerta + stack + bonus (8:00–10:30)
-> Presenta tutto ciò che si riceve (stack del doc 03), assegna i valori, somma a
-> ~4.500 €, poi rivela l'ingresso a barriera bassa: **da 49 €/mese (un EA), 97 €/mese
-> (Pacchetto Base), o 197 €/mese (Portfolio completo)**. Ricorda la **Demo gratuita** e i 4 bonus.
+### 6. L'offerta + stack (8:00–10:30)
+> Presenta tutto ciò che si riceve (stack del doc 03) — **assistente AI e segnali inclusi
+> in ogni piano** — poi rivela i prezzi da micro-abbonamento: **una singola strategia 4 €/mese,
+> il Pacchetto Bilanciato 9 € (consigliato, DD ~11.5%), o il Completo 12 € (tutti e 5, DD ~10.3%,
+> AI premium)**. Ricorda la **Demo gratuita** e che si disdice quando si vuole.
 
-### 7. Garanzia + scarsità (10:30–12:00)
-> Garanzia 30 giorni soddisfatto-o-rimborsato **sul software**. 50 licenze/mese per
-> il limite reale del server AI. Bonus solo nella finestra.
+### 7. Garanzia + urgenza (10:30–12:00)
+> Garanzia 30 giorni soddisfatto-o-rimborsato **sul software**. Urgenza onesta: prezzo di
+> lancio basso mantenuto finché resti abbonato; niente scarsità finte (l'obiettivo è il volume).
 
 ### 8. CTA + P.S. (12:00–fine)
 > "Clicca il bottone qui sotto, scegli il tuo piano, e in pochi minuti hai accesso."
@@ -67,15 +69,15 @@ Ordine dei blocchi (ogni blocco ha un solo compito):
    > che risponde a ogni tua domanda — 24/7, nella tua lingua.
 2. **VSL** (video incorporato in alto).
 3. **Il problema** (i dolori del doc 02, in forma scritta + immagini).
-4. **La svolta / meccanismo unico** (PaPP, D1, validazione OOS, i 6 pattern).
-5. **Cosa è PHAI** (EA + app + AI), con screenshot reali della dashboard.
+4. **La svolta / meccanismo unico** (PaPP, D1, validazione OOS, le 5 strategie decorrelate).
+5. **Cosa è PHAI** (EA + app + AI + segnali, tutto incluso), con screenshot reali della dashboard.
 6. **La prova** (storico, backtest, drawdown mostrati — etichettati).
 7. **Per chi è / per chi NON è** (qualifica il lead — tecnica di Sabri: escludere
    rafforza chi resta).
-8. **L'offerta completa** (stack valori → prezzo, doc 03) con i due piani.
-9. **I bonus** (4 box con valore).
+8. **L'offerta** (stack "cosa ricevi", doc 03) con i piani (EA 5€ / Difensivo 7€ / Bilanciato 9€ / Completo 12€) — venduti sul **drawdown basso**.
+9. **Assistente AI + segnali INCLUSI** (box che ribadisce: nessun costo extra su ogni EA/pacchetto).
 10. **La garanzia** (box evidenziato, 30 giorni sul software).
-11. **Scarsità** (50 licenze, contatore/finestra).
+11. **Perché ora** (prezzo di lancio basso, disdici quando vuoi — niente scarsità finte).
 12. **FAQ** (le 6 obiezioni del doc 02, in forma Q&A).
 13. **CTA finale ripetuta** + ultimo richiamo emotivo (before/after, doc 02 §9).
 14. **Footer compliance** completo (doc 10).
@@ -101,14 +103,14 @@ Ordine dei blocchi (ogni blocco ha un solo compito):
 > sul servizio, non sui risultati di mercato.)*
 
 **CTA (bottone):**
-> 👉 **Sblocca PHAI Trading ora** — da **49 €/mese** (un EA) · **97 €/mese** (Pacchetto Base) ·
-> **197 €/mese** (Portfolio). Disdici quando vuoi. Oppure: ▶ **prima apri la Demo**.
+> 👉 **Sblocca PHAI Trading ora** — da **4 €/mese** (un EA) · **9 €/mese** (Bilanciato, consigliato) ·
+> **12 €/mese** (Completo). Assistente AI e segnali **inclusi**. Disdici quando vuoi. Oppure: ▶ **prima apri la Demo**.
 
 ## PARTE C — Checkout (riduci l'attrito)
-- Piani chiari: **Pacchetto Base 97€/mese in evidenza**, EA singolo 49€ come ingresso,
-  Portfolio 197€ e Annuale (2 mesi gratis) come **ancora**. Sempre visibile: ▶ **Apri la Demo** (rischio zero).
-- **Order bump**: "Aggiungi la Guida Risk & Sizing a 27 € (anziché 197 €)".
-- **Upsell post-acquisto** (one-click): Setup DFY +297 €.
+- Piani chiari: **Pacchetto Bilanciato 9€/mese in evidenza** (consigliato), EA singolo 5€ come
+  ingresso, Completo 12€ come top; **Assistente + Segnali 3€** per chi non vuole (ancora) un EA.
+  Ricorda che **assistente AI e segnali sono inclusi in ogni EA/pacchetto**. Sempre visibile: ▶ **Apri la Demo** (rischio zero).
+- **Upsell post-acquisto** (one-click): Setup DFY (broker+VPS+install) come servizio opzionale.
 - Pagamenti: carte + eventuale PayPal; **Paddle** per gestire IVA mondiale.
 - Email immediata con licenza + accesso + guida (onboarding, doc 07).
 

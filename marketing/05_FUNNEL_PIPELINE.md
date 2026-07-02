@@ -27,7 +27,7 @@ La "Halo Strategy" di Sabri (4 fasi) resta la spina dorsale, ma nel SaaS (doc 16
                                          ▼
   FASE 4         ┌─────────────────────────────────────────────────┐
   Conversione    │  VSL + SALES PAGE → GODFATHER OFFER              │ → doc 03/08
-                 │  Demo→ "sblocca": singolo 49€/Pacchetto 97€/Portf.│
+                 │  Demo→ "sblocca": EA 5€ / Bilanciato 9€ / Compl.12€│
                  └───────────────────────┬─────────────────────────┘
                                          ▼
   FASE 5 ⭐      ┌─────────────────────────────────────────────────┐
@@ -37,7 +37,7 @@ La "Halo Strategy" di Sabri (4 fasi) resta la spina dorsale, ma nel SaaS (doc 16
                                          ▼
   FASE 6 ⭐      ┌─────────────────────────────────────────────────┐
   RETENTION &    │  lifecycle (valore anche a mercato fermo) +      │ → doc 07
-  ESPANSIONE     │  upsell (Pacchetto/Portfolio/Annuale) + referral │
+  ESPANSIONE     │  upsell (EA→Difensivo→Bilanciato→Completo)+referral│
                  └─────────────────────────────────────────────────┘
 
   In parallelo a OGNI fase: RETARGETING.
@@ -61,14 +61,14 @@ La "Halo Strategy" di Sabri (4 fasi) resta la spina dorsale, ma nel SaaS (doc 16
 
 ### Fase 4 — Conversione (barriera bassa + rischio zero)
 - **VSL + sales page** (doc 08) con la Godfather Offer (doc 03).
-- Ingresso facile: **EA singolo 49€** o **Pacchetto Base 97€**, **garanzia 30 giorni** ("meglio che gratis").
-- **Order bump** (guida sizing 27€) + **upsell post-checkout** (DFY +297€).
+- Ingresso facile: **EA singolo 5€** o **Pacchetto Bilanciato 9€** (consigliato), **garanzia 30 giorni** ("meglio che gratis"). **Segnali + assistente AI inclusi in ogni EA/pacchetto.**
+- **Upsell post-checkout** (Setup DFY) + spinta ai pacchetti (venduti sul **drawdown basso**).
 - *Niente trial a tempo* (i trade D1 sono rari → mostrerebbe il vuoto, doc 16).
 
 ### Fase 5 — Attivazione ⭐ (dove si vince o si perde il business)
 Iscriversi è facile; il rischio è **pagare e non installare** → niente valore → churn.
 - **Onboarding immediato** (doc 07): "hai installato? serve aiuto?", guida "5 minuti" (doc 14).
-- **DFY** come salvagente: "non vuoi farlo? lo facciamo noi" (+297€) → frizione → ricavo.
+- **DFY** come salvagente: "non vuoi farlo? lo facciamo noi" (setup a pagamento una tantum) → frizione → ricavo.
 - **Trigger tecnico**: il server sa quando arriva il **primo dato** dell'EA del cliente →
   se non arriva entro X giorni, parte l'email/contatto di recupero.
 - **KPI**: *tasso di attivazione* (iscritti → EA che invia dati). È qui il collo di bottiglia.
@@ -77,7 +77,7 @@ Iscriversi è facile; il rischio è **pagare e non installare** → niente valor
 - **Valore anche a mercato fermo** (doc 16 §6): l'app/AI/notifiche danno motivi per
   tornare anche senza trade ("il sistema sta aspettando, è corretto").
 - **Lifecycle email**: educazione, dietro le quinte, "il tuo mese in PHAI".
-- **Upsell/ascensione**: singolo→Pacchetto, →Portfolio, →Annuale, +DFY (doc 03 §8).
+- **Upsell/ascensione**: singolo→Difensivo→Bilanciato→Completo, +DFY (doc 03 §8).
 - **Referral**: "porta un amico, un mese gratis a entrambi" (loop virale, Sabri).
 
 ## 3. Pipeline operativa — cosa costruire, in ordine

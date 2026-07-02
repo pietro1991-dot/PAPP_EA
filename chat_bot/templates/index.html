@@ -1360,10 +1360,10 @@ async function openEA(id){
     html+=`<div class="ea-sec"><h4>⤓ Scarica e installa</h4>`+
       `<p><a class="rep-link" href="/api/ea/file/${e.symbol}">⤓ EA (.ex5)</a>`+
       ` · <a class="rep-link" href="/api/ea/set/${e.symbol}">⤓ Preset .set (key già dentro)</a>`+
-      (e.engine==='base'?` · <a class="rep-link" href="/api/ea/file/PaPP_Median">⤓ Indicatore PaPP_Median</a>`:``)+
+      (e.engine==='base'?` · <a class="rep-link" href="/api/ea/file/PHAI_Median">⤓ Indicatore linee PHAI</a>`:``)+
       ` · <a class="rep-link" href="/api/ea/guide/${e.symbol}" target="_blank" rel="noopener">📖 Guida installazione</a>`+`</p>`+
       `<p style="font-size:12.5px;color:var(--muted);line-height:1.5">Metti l'<b>.ex5</b> in <b>MQL5/Experts</b>`+
-      (e.engine==='base'?` e <b>PaPP_Median</b> in <b>MQL5/Indicators</b>`:``)+
+      (e.engine==='base'?` e l'<b>indicatore linee PHAI</b> (file <b>PHAI_Median.ex5</b>) in <b>MQL5/Indicators</b>`:``)+
       `. Attacca l'EA al grafico <b>${e.symbol}</b>, poi nella scheda Input fai <b>Carica</b> e scegli il <b>.set</b> (la key si compila da sola) — oppure incolla la key a mano in <b>InpLicenseKey</b>. Autorizza l'URL in Strumenti → Opzioni → Expert Advisors → WebRequest.</p>`+
       `<div id="ea-key-${e.id}" style="font-size:12.5px;margin-top:6px;color:var(--muted)">…</div></div>`;
     fetch('/api/ea/downloads').then(r=>r.json()).then(dd=>{const k=$('ea-key-'+e.id); if(!k)return;

@@ -114,8 +114,8 @@ NURTURE = [
 "• Apri l'app (in 4 lingue) e vedi conto, segnali, storico. Un dubbio? Lo chiedi "
 "all'assistente AI, che risponde subito.\n\n"
 "Niente più scatole nere. Niente più 'ma perché ha fatto così?'.\n\n"
-"Puoi iniziare in 3 modi: **Demo gratis** (la vedi dal vivo), **Starter a 49€/mese** o "
-"**Pro a 97€/mese**. Guardala prima tu 👉 {{demo}}\n\n"
+"Puoi iniziare in 3 modi: **Demo gratis** (la vedi dal vivo), **Assistente + Segnali a 3€/mese** "
+"o una **strategia da 5€/mese** (segnali e assistente sempre inclusi). Guardala prima tu 👉 {{demo}}\n\n"
 "Domani rispondo alle 6 domande che ricevo più spesso.")),
 
     dict(id="nurture-7", step=7, delay_days=6, trigger="opt-in",
@@ -134,19 +134,19 @@ NURTURE = [
 "6. **Quanto costa?** Provi gratis con la Demo. Domani ti mostro l'offerta completa.")),
 
     dict(id="nurture-8", step=8, delay_days=7, trigger="opt-in",
-         subject="50 posti. Poi lista d'attesa (e prezzo più alto).",
+         subject="Ci siamo: oggi sblocchi PHAI (prezzo di lancio).",
          preview="Ci siamo. Oggi puoi sbloccare PHAI.",
          body=(
 "[Nome], ci siamo.\n\n"
 "Oggi puoi sbloccare **PHAI** completo: l'EA su 3 coppie, l'app multilingua, il tuo "
 "**assistente AI 24/7**, l'indicatore, storico e backtest, le notifiche — più 4 bonus "
 "(oltre 900€ di valore).\n\n"
-"Valore totale ~3.888€. Oggi: **97€/mese** (o **49€** per iniziare; **997€** una volta se "
-"preferisci il Lifetime). Protetto dalla **Garanzia Sereno 30 giorni**: se non è "
-"all'altezza, rimborso totale. Il rischio me lo prendo io.\n\n"
-"Apriamo **50 posti** questo mese: l'assistente AI gira su un server condiviso e oltre "
-"quel numero la qualità calerebbe. Quando finiscono, lista d'attesa — e al prossimo giro "
-"il prezzo sale.\n\n"
+"Valore totale ~3.888€. Oggi: il **Pacchetto Completo a 12€/mese** (tutti e 5 gli EA + "
+"assistente premium), oppure una **singola strategia da 5€** — segnali e assistente sempre "
+"inclusi. Protetto dalla **Garanzia Sereno 30 giorni**: se non è all'altezza, rimborso "
+"totale. Il rischio me lo prendo io.\n\n"
+"È il **prezzo di lancio**: bloccalo ora e resta tuo finché non disdici. Ogni mese che "
+"rimandi è un mese di segnali e operazioni che non ricevi.\n\n"
 "👉 {{sblocca}}\n\n"
 "Preferisci vedere prima? 👉 {{demo}}\n\n"
 "P.S. Nel trading l'unica cosa che non ti hanno mai dato è la verità. Noi partiamo da lì.")),
@@ -331,12 +331,13 @@ POSTSEQ = [
 "cose utili sul trading trasparente.")),
 
     dict(id="post-2", step=2, delay_days=13, trigger="no_acquisto",
-         subject="Ultima chiamata: i posti del mese stanno finendo",
-         preview="Poi lista d'attesa e prezzo più alto.",
+         subject="Ogni settimana di attesa è tempo perso",
+         preview="Parti da 5€/mese, disdici quando vuoi.",
          body=(
-"[Nome], i **50 posti** di questo mese stanno per finire. Dopo: lista d'attesa, e al "
-"prossimo giro il prezzo di lancio sale.\n\n"
-"Se ci stavi pensando, questo è il momento — col rischio tutto dalla mia parte "
+"[Nome], non c'è nessun conto alla rovescia — ma ogni settimana che rimandi è una "
+"settimana di segnali e operazioni che non ricevi.\n\n"
+"Puoi partire da pochissimo: **una strategia a 5€/mese** o **Assistente + Segnali a 3€** "
+"(segnali e assistente sempre inclusi), col rischio tutto dalla mia parte "
 "(garanzia 30 giorni) 👉 {{sblocca}}\n\n"
 "Preferisci ancora solo guardare? 👉 {{demo}}")),
 ]

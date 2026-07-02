@@ -56,7 +56,7 @@ Keyword: "expert advisor MT5", "robot forex", "trading automatico EURUSD",
 "EA forex recensioni", "miglior expert advisor".
 **Annuncio responsive:**
 - Titoli: "PHAI Trading — EA per MT5" · "Trasparente, non una scatola nera" ·
-  "Guardalo dal vivo (Demo)" · "App + Assistente AI · da 49€/mese"
+  "Guardalo dal vivo (Demo)" · "App + Assistente AI incluso · da 5€/mese"
 - Descrizioni: "Sistema automatico su EURUSD/GBPUSD/USDCHF con app multilingua e
   assistente AI che spiega ogni operazione. Apri la Demo gratuita, niente carta." ·
   "Pattern validati fuori campione. Storico consultabile. Il trading comporta rischi."

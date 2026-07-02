@@ -24,37 +24,40 @@ aggressivamente** di chi vende una tantum — un vantaggio competitivo reale.
 | **Attivazione ⭐** | **iscritto → EA che invia dati** | > 70% (sotto = perdi qui) |
 | **Ricavo** | **MRR** e crescita % | il battito del business |
 | **Ritenzione** | **Churn mensile** | < 8–10% (poi scendere) |
-| **Valore** | **LTV** | > 776 € (Pro × ~8 mesi) + ascensione |
-| **Efficienza** | **CAC** | < 250 € |
+| **Valore** | **LTV** | > ~72 € (Bilanciato 9€ × ~8 mesi) + ascensione |
+| **Efficienza** | **CAC** | ≪ LTV (obiettivo pochi €, non centinaia) |
 | **Salute** | **LTV:CAC** | ≥ 3:1 |
 | **Cassa** | **Payback period** | < 3–4 mesi |
-| **Mix** | **% Annuale** | più alta = meno churn, più cassa |
-| **Espansione** | tasso di **upsell** (DFY/Pacchetto/Portfolio) | leva del LTV |
+| **Volume** | **n° utenti paganti** | la leva: ~12–20k per ~100k€/mese |
+| **Espansione** | **ARPU** e tasso di **upsell** (EA→pacchetti) | la vera leva del LTV a questi prezzi |
 
-## 2. Funnel Math — esempio abbonamento (1.000 € di ads)
-Scenario prudente per leggere il modello (NON una promessa):
+## 2. Funnel Math — esempio micro-abbonamento di volume (1.000 € di ads)
+Scenario prudente per leggere il modello (NON una promessa). ⚠️ Nota di realtà: con ARPU
+di **pochi euro/mese**, un CPC alto **non** si ripaga in fretta → la crescita si regge su
+**volume, organico e virale** (referral, contenuti), non solo su ads a pagamento.
 ```
 Spesa ads:                       1.000 €
-CPC 0,50 €      → click:          2.000
-Conv. landing/Demo 30% → lead:      600     (CPL ≈ 1,67 €)
-Conv. lead→abbonato 1,5%        →     9 nuovi abbonati
-Attivazione 75%                →   ~7 attivi (i non-attivati → recupero/DFY)
-MRR aggiunto (9 × ~80 € medi*): ~  720 €/mese ricorrenti
-LTV (9 × ~800 €):             ~ 7.200 € nel tempo
-CAC ≈ 1.000 / 9 ≈ 111 €  ·  Payback ≈ 1,4 mesi  ·  LTV:CAC ≈ 7:1
+CPC 0,30 €      → click:          3.333
+Conv. landing/Demo 30% → lead:    1.000     (CPL ≈ 1,00 €)
+Conv. lead→abbonato 3%          →    30 nuovi abbonati
+Attivazione 75%                →   ~22 attivi (i non-attivati → recupero/DFY)
+ARPU ~7 € (mix EA 5€ + pacchetti)  → MRR aggiunto: ~ 210 €/mese ricorrenti
+LTV (30 × ~7 € × ~8 mesi ≈ 56 €):  ~ 1.680 € nel tempo
+CAC ≈ 1.000 / 30 ≈ 33 €  ·  Payback ≈ ~5 mesi  ·  LTV:CAC ≈ 1,7:1
 ```
-*media tra EA singolo 49€ e Pacchetto Base 97€, ipotesi. ⚠️ Scenario illustrativo: i tassi reali
-variano; conta IVA, fee pagamento, rimborsi, costo LLM (doc 15) nel margine vero.
+⚠️ Scenario illustrativo: a CPC/CPL alti il payback si allunga → per reggere LTV:CAC ≥ 3:1
+servono **CAC molto bassi** (organico/referral) o **ARPU più alto** (upsell ai pacchetti).
+Conta IVA, fee pagamento, rimborsi, costo LLM (doc 15) nel margine vero.
 
-> Lettura chiave: anche se il **mese 1** quasi non copre il CAC, il cliente paga per
-> **mesi** → profitto composto. È il motivo per cui puoi scalare gli ads finché
-> LTV:CAC ≥ 3:1 e il payback è accettabile.
+> Lettura chiave: a questi prezzi il numero che comanda è il **volume** (~12–20k utenti
+> paganti per ~100k€/mese) e l'**ARPU** (upsell). L'acquisizione a pagamento va tenuta
+> economica; le leve principali sono **contenuti organici, referral e retention**.
 
 ## 3. Pensiero per COORTI (non per singola vendita)
 - Raggruppa i clienti per **mese di acquisto** (coorte) e segui **MRR trattenuto** nel
   tempo: se la coorte di gennaio mantiene l'80% a marzo, sai quanto vale ogni nuovo cliente.
-- **Net Revenue Retention**: con l'upsell (singolo→Pacchetto→Portfolio) una coorte può **crescere**
-  di valore anche perdendo qualche cliente. È il sacro graal del SaaS.
+- **Net Revenue Retention**: con l'upsell (singolo→Difensivo→Bilanciato→Completo) una coorte può **crescere**
+  di valore anche perdendo qualche cliente. È il sacro graal del SaaS — e a questi prezzi è **la** leva.
 
 ## 4. Budget per fasi di crescita
 | Fase | Spesa ads/mese | Obiettivo | Focus |
@@ -88,9 +91,9 @@ variano; conta IVA, fee pagamento, rimborsi, costo LLM (doc 15) nel margine vero
 - **CTR basso** → hook/creatività (doc 06).
 - **Demo→pagante basso** → offerta, garanzia, prova nella sales page (doc 03/08).
 - **Attivazione bassa** → onboarding, guida "5 min", DFY, email di recupero (doc 07/14).
-- **Churn alto** → lifecycle, valore a mercato fermo, upsell ad Annuale (doc 07/16).
-- **CAC alto** → migliora le conversioni a valle *prima* di toccare gli ads.
-- **LTV basso** → rafforza ascensione (DFY/Pacchetto/Portfolio) e referral.
+- **Churn alto** → lifecycle, valore a mercato fermo, upsell ai pacchetti (doc 07/16).
+- **CAC alto** → a questi prezzi è fatale: privilegia organico/referral e migliora le conversioni a valle *prima* di toccare gli ads.
+- **LTV/ARPU basso** → rafforza ascensione (EA→Difensivo→Bilanciato→Completo) e referral.
 
 ## 8. Strumenti di misura
 GA4 + Meta Pixel + evento **attivazione** ("primo dato EA"); report nativi dell'email;

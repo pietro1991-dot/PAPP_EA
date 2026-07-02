@@ -179,11 +179,11 @@ footer{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font
 <!-- MECCANISMO -->
 <section class="sec" id="come-funziona" style="background:var(--panel2)"><div class="wrap">
 <div class="eyebrow">La révolution</div>
-<h2>Deux moteurs indépendants, une transparence totale</h2>
-<p class="lead" style="max-width:780px">PHAI n'est pas "un EA" : ce sont <b>deux moteurs qui génèrent des gains de façons différentes et décorrélées</b>. Quand l'un peine, l'autre travaille souvent — c'est ainsi que le risque se réduit sans faire de promesses.</p>
+<h2>Pourquoi combiner plusieurs stratégies fait chuter le risque</h2>
+<p class="lead" style="max-width:780px">PHAI n'est pas "un EA" : ce sont <b>5 stratégies qui génèrent des gains de 2 façons opposées et décorrélées</b> — tendance et réversion. Quand l'une peine, l'autre travaille souvent : en les combinant dans un pack, le <b>drawdown chute</b> (ex. une stratégie seule peut atteindre 54 % ; dans le Pack Complet, le drawdown combiné descend à ~10 %).</p>
 <div class="grid g3" style="margin-top:30px">
-<div class="card"><div class="ic" style="color:#5b9dff">📐</div><h3>Moteur de Base — lignes-prix</h3><p>Sur <b>le graphique journalier</b> Identifiez les croisements entre le prix et 8 lignes clés (Médiane + 7 moyennes). Seuls les patterns validés opèrent. <b>Hors échantillon</b>Sur EUR/USD, GBP/USD, USD/CHF.</p></div>
-<div class="card"><div class="ic" style="color:#c9a14a">🔄</div><h3>Moteur de Réversion — valeur relative</h3><p>N'utilise pas les lignes : mesure combien un <b>croisement</b> est "tiré" par rapport à sa moyenne et mise sur son retour (réversion vers la moyenne). Sur EUR/GBP et GBP/CHF — <b>décorrélé</b> du Base.</p></div>
+<div class="card"><div class="ic" style="color:#5b9dff">📐</div><h3>Tendance — lignes-prix</h3><p>Sur <b>le graphique journalier</b>, il identifie les croisements entre le prix et 8 lignes clés (Médiane + 7 moyennes). Seuls les patterns validés <b>hors échantillon</b> opèrent. Sur EUR/USD, GBP/USD, USD/CHF.</p></div>
+<div class="card"><div class="ic" style="color:#c9a14a">🔄</div><h3>Réversion — valeur relative</h3><p>Mesure combien un <b>croisement</b> est "tiré" par rapport à sa moyenne et mise sur son retour (réversion vers la moyenne). Sur EUR/GBP et GBP/CHF — <b>décorrélé</b> des stratégies de tendance.</p></div>
 <div class="card"><div class="ic">🛡️</div><h3>Le risque d'abord</h3><p>Validation hors échantillon (entraînement jusqu'en 2020, tests de 2020 à aujourd'hui) et schémas les plus dangereux désactivés délibérément. Pas de surajustement.</p></div>
 </div>
 </div></section>
@@ -248,15 +248,15 @@ footer{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font
 <li>5 Conseillers Experts sur 2 moteurs décorrélés, validés hors échantillon <b>2.000€</b></li>
 <li>Application PHAI multilingue (compte, signaux, performances en direct) <b>600€</b></li>
 <li>Assistant IA 24/7 qui t'explique chaque mouvement <b>480€</b></li>
-<li>Indicateur PaPP_Median (les 8 lignes sur le D1) <b>200€</b></li>
+<li>Indicateur PHAI_Median (les 8 lignes sur le D1) <b>200€</b></li>
 <li>Historique + backtest consultables et téléchargeables <b>150€</b></li>
 <li>Notifications push sur chaque opération <b>120€</b></li>
 <li>🎁 Guide "Risk &amp; Position Sizing PHAI" <b>197€</b></li>
-<li>🎁 Mini-cours "Comprendre les deux moteurs PHAI" <b>297€</b></li>
+<li>🎁 Mini-cours "Comprendre les stratégies PHAI" <b>297€</b></li>
 <li>🎁 Configuration broker + VPS pas à pas <b>197€</b></li>
 <li>🎩 Communauté privée PHAI <b>247€</b></li>
 </ul>
-<div class="vstack-tot">Valeur totale <b>~4.500€</b> — aujourd'hui à partir de <span class="hot-price">197€/mois</span> · ou une stratégie unique à <b>49€</b></div>
+<div class="vstack-tot">Valeur totale <b>~4.500€</b> — aujourd'hui le portefeuille complet à partir de <span class="hot-price">{{P_COM}}€/mois</span> · ou une stratégie unique à <b>{{P_SINGLE}}€</b> · signaux+assistant à <b>{{P_ASSIST}}€</b></div>
 </div>
 <div class="price-grid">
 <div class="plan">
@@ -265,23 +265,23 @@ footer{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font
 <a class="btn btn-ghost" href="/demo">Ouvrez la Démo</a>
 </div>
 <div class="plan">
-<div class="pn">PHAI Signaux</div><div class="pp">37€ <small>par mois</small></div>
-<ul><li>Tous les signaux en temps réel</li><li>Notifications sur téléphone et application</li><li>Historique, backtest et assistant IA</li><li>Vous les exécutez manuellement · aucun PC allumé</li></ul>
-<a class="btn btn-ghost" href="/checkout?sku=signals">Recevez les signaux</a>
+<div class="pn">Assistant + Signaux</div><div class="pp">{{P_ASSIST}}€ <small>/mois</small></div>
+<ul><li>Tous les signaux en temps réel + <b>notifications push</b> (entrée, TP, SL)</li><li>Assistant IA illimité</li><li>Historique et backtests complets</li><li>Sans EA · aucun PC à laisser allumé</li></ul>
+<a class="btn btn-ghost" href="/checkout?sku=signals">Commencez ici</a>
 </div>
 <div class="plan hot">
 <div class="pop">LE PLUS CHOISI</div>
-<div class="pn">Vos Stratégies</div><div class="pp">dès 49€ <small>/mois</small></div>
-<ul><li>Activez des <b>EA individuels</b> à 49€ chacun</li><li>ou un <b>Pack-moteur</b>: Base 97€ · Réversion 67€</li><li>Payez uniquement ce que vous utilisez · assistant IA inclus</li><li>Disdite quand vous voulez</li></ul>
+<div class="pn">Vos Stratégies</div><div class="pp">dès {{P_SINGLE}}€ <small>/mois</small></div>
+<ul><li>Activez des <b>EA individuels</b> à {{P_SINGLE}}€ chacun (EUR/USD est le best-seller)</li><li>ou un <b>Pack</b> : Défensif {{P_DIF}}€ · Équilibré {{P_BIL}}€ · Complet {{P_COM}}€</li><li>✅ <b>Signaux + assistant TOUJOURS inclus</b> avec chaque EA</li><li>Vous ne payez que ce que vous utilisez · résiliez quand vous voulez</li></ul>
 <a class="btn btn-gold" href="/risultati">Choisissez les stratégies →</a>
 </div>
 <div class="plan">
-<div class="pn">PHAI Portfolio</div><div class="pp">197€ <small>/mois</small></div>
-<ul><li>Les 5 EA, les deux moteurs inclus</li><li>Assistant IA premium (meilleur modèle)</li><li>Nouveaux EA inclus dès leur sortie</li><li>Onboarding + VPS inclus</li></ul>
-<a class="btn btn-ghost" href="/checkout?sku=portfolio">Activez le Portfolio</a>
+<div class="pn">Pack Complet</div><div class="pp">{{P_COM}}€ <small>/mois</small></div>
+<ul><li>Les 5 EA en risk-parity · drawdown ~10%</li><li>Assistant IA premium (meilleur modèle)</li><li>Signaux + push inclus · nouveaux EA dès leur sortie</li><li>La meilleure valeur de la gamme</li></ul>
+<a class="btn btn-ghost" href="/checkout?sku=pack_completo">Activez le Complet</a>
 </div>
 </div>
-<div class="annual-note">💡 Vous préférez économiser ? <b>Portfolio Annuel 1.970€/an</b> = 2 mois gratuits.</div>
+<div class="annual-note">💡 Chaque EA inclut <b>les signaux en temps réel et l'assistant IA</b>, sans frais supplémentaires. Résiliez quand vous voulez.</div>
 <div class="guarantee">
 <div class="g-ic">🛡️</div>
 <div><b>Garantie Sereno 30 jours.</b> Essayez PHAI pendant 30 jours. Si le logiciel et l'assistant ne sont pas à la hauteur de ce qui a été promis, nous vous rembourrons 100%. Sans poser de questions. <span style="color:var(--muted)">(Garantie sur le logiciel et le service, pas sur les résultats du marché.)</span></div>
@@ -296,8 +296,8 @@ footer{border-top:1px solid var(--border);padding:34px 0;color:var(--muted);font
 <details><summary>Garantissez-vous des gains ?</summary><p>Non, et méfiez-vous de ceux qui le font : le trading comporte des risques. Nous garantissons le logiciel avec 30 jours satisfait ou remboursé. Les décisions et les risques restent les vôtres.</p></details>
 <details><summary>Je ne comprends rien au trading.</summary><p>Parfait : l'assistant IA vous explique tout en termes simples, dans votre langue, quand vous le souhaitez.</p></details>
 <details><summary>Et si je perds ?</summary><p>Le profil est prudent (nous avons désactivé les schémas les plus risqués) et tout est transparent. Nous vous fournissons également un guide sur la gestion des risques. Mais le trading peut entraîner des pertes : n'investissez que ce que vous pouvez vous permettre.</p></details>
-<details><summary>Est-ce compliqué à installer ?</summary><p>Il y a un guide "5 minutes" pas à pas. Et si vous ne voulez rien toucher, avec l'option Fait-Pour-Vous, nous le configurons pour vous. Fonctionne 24/7 même avec votre PC éteint.</p></details>
-<details><summary>Combien ça coûte ?</summary><p>Essayez gratuitement avec la Démo. Ensuite, vous choisissez : <b>PHAI Signals 37€/mois</b> (signaux manuels), les <b>Stratégies individuelles à 49€/mois</b>, i <b>Packs moteurs</b> (Base 97€ · Reversion 67€) ou le <b>Portefeuille complet 197€/mois</b> (tous les 5 EA + IA premium). Il existe aussi l'<b>annuel</b> (2 mois gratuits). Tout est en abonnement, résiliez quand vous voulez.</p></details>
+<details><summary>Est-ce compliqué à installer ?</summary><p>Il y a un guide "5 minutes" pas à pas. Et si vous ne voulez rien toucher, avec <a href="/checkout?sku=dfy" style="color:var(--accent);font-weight:600">l'option Fait-Pour-Vous (€{{P_DFY}} paiement unique)</a>, nous le configurons pour vous. Fonctionne 24/7 même avec votre PC éteint.</p></details>
+<details><summary>Combien ça coûte ?</summary><p>Essayez gratuitement avec la Démo. Ensuite, vous choisissez : <b>Assistant + Signaux {{P_ASSIST}}€/mois</b> (alertes push, sans EA), les <b>stratégies individuelles à partir de {{P_SINGLE}}€/mois</b>, les <b>Packs</b> (Défensif {{P_DIF}}€ · Équilibré {{P_BIL}}€ · Complet {{P_COM}}€) ou le <b>Pack Complet {{P_COM}}€/mois</b> (tous les 5 EA + IA premium). <b>Les signaux et l'assistant sont inclus avec chaque EA</b>, sans frais supplémentaires. Tout est en abonnement, résiliez quand vous voulez.</p></details>
 </div>
 </div></section>
 <!-- LEAD CAPTURE -->

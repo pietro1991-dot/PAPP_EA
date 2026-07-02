@@ -427,7 +427,7 @@ async def process_event(data: dict, user_id: int | None = None):
         return
 
     if data.get("action") == "features":
-        # Feature di mercato (Volatilità/Cluster/…) pushate dall'EA leggendo PaPP_Median.
+        # Feature di mercato (Volatilità/Cluster/…) pushate dall'EA leggendo PHAI_Median.
         # Globali per simbolo (non per-tenant). Idempotente per barra: piu' client non duplicano.
         async with AsyncSession() as session:
             sym = data.get("symbol") or "EURUSD"
@@ -590,7 +590,7 @@ async def lifespan(app: FastAPI):
     llm_worker.stop_worker()
 
 
-app = FastAPI(title="PAPP EA Chat", version="1.0", lifespan=lifespan)
+app = FastAPI(title="PHAI Chat", version="1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -628,15 +628,36 @@ def _lang_selector(cur: str) -> str:
     )
 
 
+def _inject_prices(html: str) -> str:
+    """Prezzi DINAMICI: i token {{P_*}} nelle landing diventano i valori di catalog.py.
+    Così landing, app ed email restano sempre coerenti: cambi il prezzo in un solo posto."""
+    try:
+        prices = {
+            "P_SINGLE": catalog.SINGLE_PRICE,
+            "P_ASSIST": catalog.SIGNALS_PRICE,
+            "P_DIF": catalog.PACKS[0]["price"],
+            "P_BIL": catalog.PACKS[1]["price"],
+            "P_COM": catalog.PACKS[2]["price"],
+            "P_AUTO": catalog.PORTFOLIO["price"],
+            "P_DFY": catalog.DFY_PRICE,
+        }
+        for k, v in prices.items():
+            html = html.replace("{{" + k + "}}", f"{v:.0f}")
+    except Exception:
+        pass
+    return html
+
+
 def _serve_page(name: str, request: Request) -> HTMLResponse:
-    """Serve la pagina nella lingua del visitatore (file <name>.<lang>.html, fallback IT)
-    e inietta il selettore lingua. Le traduzioni si generano con pipeline/translate_pages.py."""
+    """Serve la pagina nella lingua del visitatore (file <name>.<lang>.html, fallback IT),
+    inietta i PREZZI dinamici (token {{P_*}}) e il selettore lingua."""
     lang = _req_lang(request)
     path = f"templates/{name}.{lang}.html" if lang != "it" else f"templates/{name}.html"
     if not os.path.exists(path):
         path = f"templates/{name}.html"
         lang = "it"
-    html_c = open(path, encoding="utf-8").read().replace("</body>", _lang_selector(lang) + "</body>", 1)
+    html_c = _inject_prices(open(path, encoding="utf-8").read())
+    html_c = html_c.replace("</body>", _lang_selector(lang) + "</body>", 1)
     resp = HTMLResponse(html_c)
     if (request.query_params.get("lang") or "").lower() in PAGE_LANGS:
         resp.set_cookie("lang", lang, max_age=31536000, samesite="lax")
@@ -855,6 +876,136 @@ async def report_page(request: Request):
     return _serve_page("squeeze", request)
 
 
+@app.get("/report/leggi", response_class=HTMLResponse)
+async def report_read(request: Request):
+    """Il report vero (lead magnet visionabile), multilingua, consegnato via {{report}} nella nurture."""
+    return _serve_page("report_read", request)
+
+
+# --- Mappa email (admin): mostra cosa parte a ogni trigger, letta dalla sequenza vera ---
+_TRIGGER_IT = {
+    "opt-in": "Qualcuno lascia l'email (squeeze/landing). Parte la sequenza che scalda il lead.",
+    "no_acquisto": "Il lead ha finito la nurture ma non ha comprato: ultimi richiami.",
+    "acquisto": "Il cliente ha comprato: benvenuto + licenza + come iniziare.",
+    "nessun_dato_24h": "Ha comprato ma dopo 24h l'EA non manda ancora dati: email di aiuto installazione.",
+    "primo_dato": "L'EA ha iniziato a mandare dati (è attivo!): email dei primi giorni d'uso.",
+    "ricorrente_settimanale": "Riepilogo settimanale automatico.",
+    "ricorrente_mensile": "Riepilogo mensile automatico.",
+    "trade_chiuso_profit": "Dopo un trade chiuso in profitto: email di trasparenza.",
+    "mese_piatto": "Un mese senza trade: email 'aspettare è parte della strategia'.",
+    "starter_limite_coppie": "Usa solo la strategia base: proposta di sbloccare le altre.",
+    "pro_attivo_3mesi": "Cliente Pro da 3 mesi: offerta piano annuale.",
+    "heavy_user_ai": "Usa molto l'assistente AI: proposta portfolio/elite.",
+    "pre_disdetta_o_carta_fallita": "Sta per disdire o carta fallita: win-back.",
+    "cliente_soddisfatto": "Cliente soddisfatto: invito a portare un amico (referral).",
+}
+_FLOWS = [
+    ("nurture", "🌱 NURTURE", "Lead freddo — ha lasciato l'email (dalla squeeze/annuncio)", "#3fcf8e"),
+    ("postseq", "🔁 RICHIAMO", "Non ha comprato dopo la nurture", "#cba65c"),
+    ("onboarding", "📦 ONBOARDING", "Ha comprato — attivazione e primi giorni", "#6ea8fe"),
+    ("retention", "💛 RETENTION", "Cliente attivo — fidelizza, upsell, referral", "#f1707b"),
+]
+_LINK_LABELS = {
+    "{{demo}}": "[link: Demo]", "{{sblocca}}": "[link: Checkout]", "{{report}}": "[link: Report]",
+    "{{guida}}": "[link: Guida]", "{{app}}": "[link: App]", "{{referral}}": "[link: Referral]",
+    "{{dfy}}": "[link: DFY]", "{{unsubscribe}}": "[link: Disiscrizione]",
+    "{{license_key}}": "[la sua license key]", "[Nome]": "[Nome cliente]",
+}
+
+
+def _email_preview_html(body: str) -> str:
+    import html as _html
+    try:
+        from email_drip import _price_map
+        for tok, val in _price_map().items():
+            body = body.replace(tok, val)
+    except Exception:
+        pass
+    for tok, lab in _LINK_LABELS.items():
+        body = body.replace(tok, lab)
+    return _html.escape(body).replace("\n", "<br>")
+
+
+@app.get("/admin/emails", response_class=HTMLResponse)
+async def admin_emails(user: User = Depends(auth.current_user)):
+    """Mappa leggibile delle pipeline email: cosa parte a ogni trigger (solo owner)."""
+    import html as _html
+    oid = _owner_id()
+    if oid is not None and user.id != oid:
+        return HTMLResponse("<h1 style='font-family:sans-serif'>Non autorizzato</h1>", status_code=403)
+    try:
+        with open("email_campaign.json", encoding="utf-8") as f:
+            camp = json.load(f)
+    except Exception as e:
+        return HTMLResponse(f"<pre>Errore lettura sequenza: {_html.escape(str(e))}</pre>", status_code=500)
+
+    # legenda trigger (solo quelli davvero usati, in ordine di prima comparsa)
+    seen, leg_rows = set(), []
+    for e in camp:
+        tr = e.get("trigger", "?")
+        if tr not in seen:
+            seen.add(tr)
+            leg_rows.append(f"<tr><td class='tg'>{_html.escape(tr)}</td><td>{_html.escape(_TRIGGER_IT.get(tr, '—'))}</td></tr>")
+    legend = "<table class='leg'>" + "".join(leg_rows) + "</table>"
+
+    flows_html = []
+    for seq, title, sub, col in _FLOWS:
+        rows = [e for e in camp if e.get("sequence") == seq]
+        rows.sort(key=lambda e: (e.get("delay_days", 0), e.get("step", 0)))
+        if not rows:
+            continue
+        cards = []
+        for e in rows:
+            dd = e.get("delay_days", 0)
+            when = "subito" if dd == 0 else f"+{dd} giorn{'o' if dd == 1 else 'i'}"
+            cards.append(
+                "<div class='card'>"
+                f"<div class='chead'><span class='when'>⏱ {when}</span>"
+                f"<span class='trig'>{_html.escape(e.get('trigger','?'))}</span></div>"
+                f"<div class='subj'>{_html.escape(e.get('subject',''))}</div>"
+                f"<details><summary>vedi email</summary>"
+                f"<div class='prev'>Anteprima: {_html.escape(e.get('preview',''))}</div>"
+                f"<div class='body'>{_email_preview_html(e.get('body',''))}</div></details>"
+                "</div>"
+            )
+        flows_html.append(
+            f"<section class='flow'><div class='fhead' style='border-color:{col}'>"
+            f"<h2 style='color:{col}'>{_html.escape(title)}</h2>"
+            f"<span class='fsub'>{_html.escape(sub)} · {len(rows)} email</span></div>"
+            + "".join(cards) + "</section>"
+        )
+
+    page = f"""<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHAI — Mappa email</title><style>
+:root{{--bg:#0a0e18;--panel:#121829;--panel2:#0e1422;--border:#283149;--text:#e9ebf2;--muted:#8b94ab;--accent:#cba65c}}
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.55;padding:26px 16px}}
+.wrap{{max-width:920px;margin:0 auto}}
+h1{{font-size:26px;margin-bottom:6px}} .intro{{color:var(--muted);margin-bottom:22px;font-size:15px}}
+.leg{{width:100%;border-collapse:collapse;margin-bottom:30px;font-size:13.5px;background:var(--panel);border-radius:12px;overflow:hidden}}
+.leg td{{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}}
+.leg tr:last-child td{{border-bottom:none}} .leg .tg{{color:var(--accent);font-weight:700;white-space:nowrap;font-family:ui-monospace,monospace}}
+.flow{{margin-bottom:26px}}
+.fhead{{border-left:4px solid;padding:4px 0 4px 12px;margin-bottom:12px}}
+.fhead h2{{font-size:18px}} .fsub{{color:var(--muted);font-size:13px}}
+.card{{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:9px}}
+.chead{{display:flex;gap:10px;align-items:center;margin-bottom:5px;flex-wrap:wrap}}
+.when{{font-size:12px;color:var(--muted);font-weight:600}}
+.trig{{font-size:11px;font-family:ui-monospace,monospace;color:var(--accent);background:rgba(203,166,92,.1);border:1px solid rgba(203,166,92,.3);padding:1px 8px;border-radius:999px}}
+.subj{{font-weight:600;font-size:15px}}
+details{{margin-top:8px}} summary{{cursor:pointer;color:var(--accent);font-size:13px}}
+.prev{{color:var(--muted);font-size:13px;font-style:italic;margin:8px 0 6px}}
+.body{{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13.5px;color:#c7cde0;white-space:normal}}
+</style></head><body><div class="wrap">
+<h1>📬 Mappa email — cosa parte a ogni trigger</h1>
+<p class="intro">Generata dalla sequenza reale (<code>email_campaign.json</code>): è sempre allineata a ciò che il sistema invia davvero. Prezzi già risolti dal listino; i link sono mostrati come etichette.</p>
+<h3 style="margin-bottom:8px">Legenda trigger</h3>{legend}
+{''.join(flows_html)}
+</div></body></html>"""
+    return HTMLResponse(page)
+
+
 @app.get("/unsub", response_class=HTMLResponse)
 async def unsub(e: str = ""):
     """Disiscrizione email marketing. Segna l'indirizzo come unsubscribed (crea il
@@ -1046,23 +1197,24 @@ async def ea_downloads(user: User = Depends(auth.current_user)):
             "id": e["id"], "symbol": e["symbol"], "name": e["name"], "engine": e["engine"],
             "owned": is_owned, "url": (f"/api/ea/file/{e['id']}" if (is_owned and has_file) else None),
         })
-    indic = "/api/ea/file/PaPP_Median" if os.path.isfile(os.path.join(EA_FILES_DIR, "PaPP_Median.ex5")) else None
+    indic = "/api/ea/file/PHAI_Median" if os.path.isfile(os.path.join(EA_FILES_DIR, "PHAI_Median.ex5")) else None
     return {"key": key, "eas": eas, "indicator_url": indic}
 
 
 @app.get("/api/ea/file/{ea_id}")
 async def ea_file(ea_id: str, user: User = Depends(auth.current_user)):
-    """Scarica il .ex5 di un EA, SOLO se il piano del cliente lo possiede. PaPP_Median e' libero
+    """Scarica il .ex5 di un EA, SOLO se il piano del cliente lo possiede. PHAI_Median e' libero
     (serve agli EA Base). Path-safe."""
     ea_id = os.path.basename(ea_id)
     path = os.path.join(EA_FILES_DIR, f"{ea_id}.ex5")
     if not os.path.isfile(path):
         return JSONResponse({"error": "file non disponibile"}, status_code=404)
-    if ea_id != "PaPP_Median":
+    if ea_id != "PHAI_Median":
         plan = await _user_plan(user)
         if ea_id not in entitlements.owned_eas(plan):
             return JSONResponse({"error": "non incluso nel tuo piano"}, status_code=403)
-    return FileResponse(path, filename=f"PHAI_{ea_id}.ex5", media_type="application/octet-stream")
+    dl_name = f"{ea_id}.ex5" if ea_id.startswith("PHAI_") else f"PHAI_{ea_id}.ex5"
+    return FileResponse(path, filename=dl_name, media_type="application/octet-stream")
 
 
 @app.get("/api/ea/set/{ea_id}")
@@ -1110,10 +1262,10 @@ async def ea_guide(ea_id: str, user: User = Depends(auth.current_user)):
     key = lk.key if lk else "(la trovi nel tuo account PHAI)"
     sym = e["symbol"]; tf = _EA_TF.get(ea_id, "D1"); is_base = (e["engine"] == "base")
     name = e["name"] if isinstance(e["name"], str) else e["name"].get("it", ea_id)
-    dl_ind = "<li>l'<b>indicatore PaPP_Median.ex5</b></li>" if is_base else ""
-    step_ind = "<li>Copia <b>PaPP_Median.ex5</b> in <code>MQL5\\Indicators</code></li>" if is_base else ""
+    dl_ind = "<li>l'<b>indicatore PHAI_Median.ex5</b></li>" if is_base else ""
+    step_ind = "<li>Copia <b>PHAI_Median.ex5</b> in <code>MQL5\\Indicators</code></li>" if is_base else ""
     note_ind = (" e l'<b>indicatore</b> in <code>Indicators</code>") if is_base else ""
-    err_ind = ("<li><b>(Base) Nessun segnale / errore indicatore</b> → PaPP_Median non è in "
+    err_ind = ("<li><b>(Base) Nessun segnale / errore indicatore</b> → PHAI_Median non è in "
                "<code>MQL5\\Indicators</code> o non è compilato.</li>") if is_base else ""
     html = f"""<!doctype html><html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1363,8 +1515,9 @@ async def pay_sku(sku: str = "pro", lang: str = "it"):
     (env PAYPAL_PLAN_<SKU>, p.es. PAYPAL_PLAN_SINGLE_EURUSD / PAYPAL_PLAN_PACK_BASE)."""
     label, price = catalog.sku_label_price(sku, lang)
     env_key = "PAYPAL_PLAN_" + (sku or "").upper().replace(":", "_").replace("-", "_")
+    kind = "order" if (sku or "").strip().lower() == "dfy" else "subscription"   # DFY = una tantum
     return {
-        "sku": sku, "label": label, "price": price, "kind": "subscription",
+        "sku": sku, "label": label, "price": price, "kind": kind,
         "plan_id": os.getenv(env_key, ""),
         "client_id": os.getenv("PAYPAL_CLIENT_ID", ""),
         "currency": os.getenv("PAYPAL_CURRENCY", "EUR"),
@@ -2434,8 +2587,9 @@ async def chat(request: Request, user: User = Depends(auth.current_user)):
         if await _free_msgs_used_today(user.id) >= FREE_DAILY_MSGS:
             limit_msg = (
                 f"⛔ Hai usato i tuoi **{FREE_DAILY_MSGS} messaggi gratuiti di oggi**.\n\n"
-                "Passa a **Pro** per messaggi **illimitati** e per l'assistente più potente e "
-                "preciso. Il limite si azzera a mezzanotte."
+                "Attiva **Assistente + Segnali** (5€/mese) — o un qualsiasi pacchetto — per messaggi "
+                "**illimitati**, l'assistente più potente e i **segnali con notifica push**. "
+                "Il limite gratuito si azzera a mezzanotte."
             )
 
     async def event_stream():

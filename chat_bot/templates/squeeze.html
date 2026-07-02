@@ -29,6 +29,7 @@ input:focus{border-color:var(--accent)}
 button{padding:14px 24px;border-radius:11px;border:none;background:var(--accent);color:#0a0e18;font-weight:700;font-size:15px;cursor:pointer}
 button:hover{filter:brightness(1.08)}
 .msg{font-size:14px;margin-top:12px;min-height:20px}
+.reassure{font-size:12.5px;color:var(--muted);margin-top:10px}
 .note{font-size:12px;color:#565d6a;margin-top:14px}
 .alt{display:block;margin-top:20px;font-size:14px;color:var(--muted)}
 .alt a{color:var(--accent);text-decoration:none}
@@ -49,8 +50,9 @@ button:hover{filter:brightness(1.08)}
   </div>
   <form onsubmit="return sendLead(event)">
     <input type="email" id="email" placeholder="La tua email" autocomplete="email" required>
-    <button type="submit">Inviami il report</button>
+    <button type="submit">Mandami il report gratis →</button>
   </form>
+  <div class="reassure">Gratis · nessuna carta · disiscrizione in 1 clic · lo leggi in 5 minuti</div>
   <div class="msg" id="msg"></div>
   <div class="note">Niente spam. Il trading comporta rischi: nessun rendimento è garantito.</div>
   <span class="alt">Preferisci vederlo dal vivo? <a href="/demo">▶ Apri la Demo</a></span>

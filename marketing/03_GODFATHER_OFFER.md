@@ -20,55 +20,54 @@ Sabri: dai più "veicoli" d'acquisto e fai entrare con **micro-impegni**. La sca
 | Gradino | Cosa | Prezzo | Ruolo psicologico |
 |---|---|---|---|
 | **Demo** | Dashboard read-only con dati reali + assistente AI a domande limitate | **Gratis** | *Value-in-advance*: vedi il prodotto prima di pagare → fiducia |
-| **PHAI Signals** | **Solo segnali** in tempo reale + app + AI base + notifiche (li esegui tu, niente PC acceso) | **37 €/mese** | *Micro-impegno*: "provo, disdico quando voglio" |
-| **EA singolo** ⚡ | **1 EA automatico** a scelta (es. EUR/USD) + AI + storico/backtest | **49 €/mese** | *Tripwire*: "provo una strategia" |
-| **Pacchetto Reversione** | I **2 EA del Motore Reversione** (cross EUR/GBP, GBP/CHF) | **67 €/mese** | Bundle-motore scontato |
-| **Pacchetto Base** ⭐ | I **3 EA del Motore Base** (EUR/USD, GBP/USD, USD/CHF) | **97 €/mese** | Il piano-cuore (la maggioranza) |
-| **PHAI Portfolio** | **Tutti i 5 EA** (2 motori) + AI premium + onboarding + VPS + nuovi EA inclusi | **197 €/mese** | *Eroe/decoy* |
-| **Annuale Portfolio** | Portfolio pagato annuale (**2 mesi gratis**) | **1.970 €/anno** | **Ancora** + anti-churn + cassa anticipata |
+| **Assistente + Segnali** | Segnali in tempo reale + **notifiche push** (entrata/TP/SL) + **assistente AI illimitato**, senza EA (li esegui tu) | **5 €/mese** | *Ingresso a più bassa frizione*: "provo, disdico quando voglio" |
+| **EA singolo** ⚡ | **1 EA automatico** a scelta (best-seller EUR/USD) — **segnali + assistente AI inclusi** + storico/backtest | **4 €/mese** | *Tripwire*: "provo una strategia" |
+| **Pacchetto Difensivo** | 2 EA (EUR/USD + EUR/GBP), **DD ~12.5%** | **7 €/mese** | Il portafoglio più tranquillo |
+| **Pacchetto Bilanciato** ⭐ | 3 EA (EUR/USD + EUR/GBP + GBP/CHF), **DD ~11.5%** — CONSIGLIATO | **9 €/mese** | Il piano-cuore (la maggioranza) |
+| **Pacchetto Completo** | **Tutti e 5 gli EA** in risk-parity, **DD ~10.3%**, CAGR storico ~12%/anno + **assistente PREMIUM** | **12 €/mese** | *Eroe*: massimo valore, minimo drawdown |
 
-> **Trucco di ancoraggio (Sabri):** mostra **prima** il value stack (~4.500 €, §3) e
-> l'Annuale (1.970 €). Dopo quell'ancora, **197 €/mese** (tutto) sembra niente, **97 €**
-> (un motore) ragionevole e **49 €** (una singola strategia) un no-brainer. L'ordine *è* persuasione.
+> **Trucco di ancoraggio (Sabri):** i pacchetti si vendono sul **drawdown basso**
+> (diversificazione trend+reversione). Mostra prima il **Completo** (12 €, tutto, DD ~10.3%):
+> dopo, il **Bilanciato 9 €** sembra la scelta ovvia, e **4 €** (una singola strategia) un
+> no-brainer per provare. **Segnali + assistente AI sono inclusi in ogni piano.**
 
 ## 2. La USP in una frase (componente 1)
 > **"Il primo sistema di trading automatico che ti SPIEGA ogni mossa — in tempo
 > reale, nella tua lingua, con un'AI che risponde a ogni domanda. Trasparenza totale
 > in un mercato pieno di scatole nere e truffe."**
 
-Il meccanismo unico (i **due motori PHAI** — *Base* linee-prezzo + *Reversione* valore
-relativo sui cross, doc 01) ci rende **non confrontabili sul prezzo**: non vendi "un EA",
-vendi un sistema con un nome e 5 strategie decorrelate.
+Il meccanismo unico (5 strategie di **due tipi decorrelati** — *trend* linee-prezzo +
+*reversione* valore relativo sui cross, doc 01) ci rende **non confrontabili**: non vendi
+"un EA", vendi un sistema con un nome e 5 strategie decorrelate (= drawdown più basso).
 
 ## 3. Lo stack di valore (componente 2: valore enorme)
-Cosa riceve un abbonato **Portfolio**, con valore assegnato a ciascun pezzo:
+Cosa riceve un abbonato **Pacchetto Completo** (tutto incluso, senza costi extra):
 
-| Cosa riceve | Valore percepito |
-|---|---|
-| **5 PHAI Trading EA** su 2 motori (EUR/USD, GBP/USD, USD/CHF, EUR/GBP, GBP/CHF), validati out-of-sample | 2.000 € |
-| **App PHAI multilingua** (conto/segnali/performance live, anche su telefono) | 600 € |
-| **Assistente AI 24/7** (IT/EN/FR/ES) che spiega ogni operazione e il mercato | 480 € |
-| **Indicatore `PaPP_Median`** (le 8 linee sul D1) | 200 € |
-| **Storico + backtest consultabile** (anno/mese/trade) | 150 € |
-| **Notifiche push** su ogni apertura/chiusura/segnale | 120 € |
-| **BONUS 1** — Guida "Risk & Position Sizing PHAI" (il fattore #1) | 197 € |
-| **BONUS 2** — Mini-corso "Capire i pattern PHAI sul D1" (video) | 297 € |
-| **BONUS 3** — Setup rapido: broker + VPS + installazione passo-passo | 197 € |
-| **BONUS 4** — Community privata PHAI (aggiornamenti, nuovi pattern) | 247 € |
-| **VALORE TOTALE** | **~4.500 €** |
+| Cosa riceve |
+|---|
+| **5 PHAI Trading EA** (EUR/USD, GBP/USD, USD/CHF, EUR/GBP, GBP/CHF), validati out-of-sample, in **risk-parity** (DD ~10.3%) |
+| **App PHAI multilingua** (conto/segnali/performance live, anche su telefono) |
+| **Assistente AI PREMIUM 24/7** (IT/EN/FR/ES) che spiega ogni operazione e il mercato — **incluso** |
+| **Segnali in tempo reale + notifiche push** su ogni apertura/chiusura/segnale — **inclusi** |
+| **Storico + backtest consultabile** (anno/mese/trade) |
 
-> **Pitch:** "Tutto questo — valore oltre 4.500 € — lo sblocchi con il **PHAI Portfolio
-> a 197 €/mese** (o **1.970 €/anno**, 2 mesi gratis). Vuoi solo un motore? **Pacchetto Base
-> 97 € / Reversione 67 €.** Una singola strategia? **49 €/mese.** Solo i segnali a mano?
-> **PHAI Signals 37 €/mese.**"
+> **Pitch:** "Tutto questo — 5 strategie decorrelate, app, **assistente AI e segnali inclusi**
+> — a **12 €/mese** col **Pacchetto Completo** (DD storico ~10.3%, CAGR ~12%/anno).
+> Vuoi qualcosa di più leggero? **Bilanciato 9 € (CONSIGLIATO) · Difensivo 7 €.**
+> Una singola strategia? **4 €/mese**, sempre con assistente AI e segnali inclusi.
+> Solo l'assistente e i segnali, senza EA? **5 €/mese.** Disdici quando vuoi."
+
+> Nota (Sabri): a questi prezzi la leva non è il margine per-cliente ma il **volume** e
+> l'**ARPU** (upsell ai pacchetti). Il "10× valore percepito" resta vero — un sistema che
+> lavora 24/7 con AI inclusa a pochi euro/mese — ma il modello è micro-abbonamento di massa.
 
 ## 4. ROI dimostrato (componente 3) — con prova e disclaimer
 Sabri: dimostra il ritorno, non affermarlo. La nostra prova è la **trasparenza**:
 - Backtest EURUSD 2010–2025 *(simulazione storica)*: **783 operazioni, win rate 96,9%,
   Profit Factor 2,34** — **e** drawdown ~20% e anni negativi mostrati apertamente.
 - Lo **storico consultabile** nell'app + la **Demo** dove lo vedi coi tuoi occhi.
-- *Inquadramento prezzo-ROI*: "97 €/mese è meno di un caffè al giorno per un sistema
-  che lavora sul tuo conto 24 ore su 24."
+- *Inquadramento prezzo-ROI*: "4-12 €/mese è meno di un caffè a settimana per un sistema
+  che lavora sul tuo conto 24 ore su 24, con assistente AI e segnali inclusi."
 
 > ⚠️ Ogni numero porta i disclaimer del [doc 10](10_COMPLIANCE_DISCLAIMER.md):
 > backtest, non promessa. La garanzia è sul **software**, mai sui profitti.
@@ -89,57 +88,60 @@ mostrerebbe spesso *zero operazioni* → la **garanzia** è una prova migliore.
 - È la nostra "prova senza rischio" **al posto** della trial a tempo (che qui fallirebbe).
 - Distrugge l'obiezione n.1 ("sarà la solita truffa").
 
-## 6. Motivo per agire ORA (componente 4: scarsità/urgenza VERA)
-Sabri: l'urgenza deve essere **reale**, o brucia la fiducia. Le nostre fonti oneste:
-- **Capacità di onboarding reale**: il setup e il supporto hanno un limite (es. **50
-  nuovi clienti/mese**). Oltre, lista d'attesa.
-- **Carico del server AI condiviso** (doc 15): l'assistente gira su risorse finite →
-  numero chiuso di licenze attive per non degradare il servizio.
-- **Prezzo di lancio**: i prezzi introduttivi (49/97 €) salgono dopo i primi N clienti.
-- **Bonus a finestra**: i 4 bonus (valore >900 €) inclusi solo per chi entra ora.
-
-> Esempio onesto: "Apriamo **50 posti** questo mese. L'AI gira su un server condiviso:
-> oltre, la qualità calerebbe. Quando finiscono → lista d'attesa, e al prossimo giro
-> il prezzo è più alto."
+## 6. Motivo per agire ORA (componente 4: urgenza VERA, coerente col volume)
+Sabri: l'urgenza deve essere **reale**, o brucia la fiducia. Attenzione: il modello è
+**micro-abbonamento di volume** (obiettivo: tanti utenti) → NON usiamo scarsità finte
+("solo 50 posti") che contraddicono l'obiettivo. Le leve oneste qui sono:
+- **Prezzo di lancio davvero basso**: entri ora al prezzo introduttivo (da 4 €/mese) e
+  lo mantieni finché resti abbonato — un motivo concreto per iniziare oggi.
+- **Carico del server AI condiviso** (doc 15): l'assistente gira su risorse finite; quando
+  la domanda cresce l'AI passa a un piano superiore → chi entra presto trova il servizio più scarico.
+- **Il costo di NON agire**: ogni settimana senza il sistema è una settimana in cui
+  continui a operare al buio (o a non operare affatto). Il rischio di provare è coperto
+  dalla garanzia; il rischio di rimandare no.
 
 ## 7. Il "reason why" (perché è così conveniente)
 Sabri: spiega PERCHÉ, o sembra una fregatura.
-> "Perché 37-97 € e non 300? Perché il nostro obiettivo è far girare PHAI su **tanti
+> "Perché 4-12 € e non 300? Perché il nostro obiettivo è far girare PHAI su **tantissimi
 > conti reali**: più utenti usano il sistema, più dati raccogliamo, più miglioriamo i
-> pattern. Tu ottieni lo strumento a un prezzo onesto, noi costruiamo la rete PHAI.
-> Win-win."
+> pattern. Preferiamo mille abbonati felici a pochi clienti cari. Tu ottieni lo strumento
+> a un prezzo quasi simbolico — con assistente AI e segnali inclusi — noi costruiamo la
+> rete PHAI. Win-win."
 
-## 8. Ascensione (massimizza il LTV — il vero motore del SaaS)
-Dopo l'ingresso, la value ladder sale (doc 11 §3):
-- **Setup "Fatto-Per-Te"** (broker+VPS+install): **+297 €** — *e risolve la frizione
-  d'installazione*, salvando l'attivazione (doc 16 §5).
-- **PHAI Portfolio** (197 €/mese): **tutti i 5 EA** + **AI premium** (nessuna coda, doc 15) +
-  onboarding + VPS inclusa + nuovi EA in anteprima — il gradino sopra il Pacchetto Base.
-- **Community/coaching premium**: call mensili, analisi: **+497 €/anno**.
-- **Upgrade Signals → EA singolo → Pacchetto-motore → Portfolio → Annuale**: percorso naturale di crescita.
+## 8. Ascensione (massimizza l'ARPU/LTV — il vero motore del volume)
+Dopo l'ingresso, la value ladder sale (doc 11 §3). A prezzi così bassi, l'**ARPU via upsell
+ai pacchetti** è la leva economica principale:
+- **Da 1 EA (4 €) → Pacchetto Difensivo (7 €) → Bilanciato (9 €, consigliato) → Completo
+  (12 €)**: il percorso naturale, venduto sul **drawdown che scende** (più EA decorrelati = DD più basso).
+- **Pacchetto Completo** (12 €/mese): **tutti e 5 gli EA** in risk-parity + **assistente AI
+  premium** (nessuna coda, doc 15) + nuovi EA in anteprima — il gradino top.
+- **Assistente + Segnali (5 €)** come porta d'ingresso per chi non vuole (ancora) un EA →
+  poi sale a un EA/pacchetto.
+- **Setup "Fatto-Per-Te"** (broker+VPS+install) a **€20 una tantum**, servizio opzionale: risolve la frizione
+  d'installazione e salva l'attivazione dei non-tecnici (doc 16 §5).
 
 ## 9. L'offerta completa in formato "pitch" (per VSL/sales page, doc 08)
-> **Ecco cosa sblocchi oggi con PHAI Portfolio:**
-> il sistema PHAI completo (5 EA su 2 motori) + l'app multilingua + il tuo **assistente
-> AI personale 24/7** + l'indicatore + storico/backtest consultabili + notifiche su
-> ogni mossa — **più 4 bonus** (Risk & Sizing, mini-corso pattern, guida setup,
-> community) per oltre 900 €.
-> Valore totale **~3.888 €**. Oggi: **97 €/mese** (o **970 €/anno**, 2 mesi gratis).
-> Vuoi solo i segnali da eseguire a mano? **PHAI Signals a 37 €/mese.**
+> **Ecco cosa sblocchi oggi con il PHAI Pacchetto Completo:**
+> il sistema PHAI completo (5 EA di due tipi decorrelati, in risk-parity, DD storico ~10.3%)
+> + l'app multilingua + il tuo **assistente AI premium 24/7** + i **segnali in tempo reale
+> con notifiche push** + storico/backtest consultabili — **tutto incluso, nessun costo extra**.
+> Oggi: **12 €/mese**, disdici quando vuoi. Preferisci iniziare più leggero?
+> **Bilanciato 9 € (consigliato) · Difensivo 7 € · una singola strategia 4 €** — sempre con
+> **assistente AI e segnali inclusi**. Solo assistente + segnali senza EA? **5 €/mese.**
 > Protetto dalla **Garanzia Sereno 30 giorni** (rimborso totale sul software).
-> **50 posti questo mese. Poi lista d'attesa e prezzo più alto.**
 > *Puoi vederlo dal vivo adesso: apri la **Demo gratuita**.*
 
 ## 10. Checklist Godfather (criteri di Sabri — tutti spuntati?)
-- [x] **USP unica** con nome (i due motori PHAI: Base + Reversione)
-- [x] **Valore percepito ≥ 10×** il prezzo (~4.500 € → 197 €/mese; 49 € una singola strategia)
+- [x] **USP unica** con nome (5 strategie decorrelate: trend + reversione)
+- [x] **Valore percepito ≥ 10×** il prezzo (sistema 24/7 + app + AI inclusa → da 4 €/mese)
 - [x] **ROI dimostrato** con prova/trasparenza (backtest + Demo) e disclaimer
-- [x] **Motivo per agire ORA** reale (50 posti, server AI, prezzo di lancio, bonus)
+- [x] **Motivo per agire ORA** reale (prezzo di lancio basso, server AI, costo del rimandare)
 - [x] **Inversione del rischio** (garanzia 30gg "meglio che gratis")
-- [x] **Più veicoli di prezzo** (Demo/Signals/EA singolo/Pacchetti/Portfolio/Annuale)
-- [x] **Reason why** credibile
-- [x] **Barriera d'ingresso bassa** (Demo gratis + Signals 37€)
-- [x] **Ascensione** definita (DFY/Portfolio/community/upgrade)
+- [x] **Più veicoli di prezzo** (Demo/Assistente+Segnali/EA singolo/Pacchetti)
+- [x] **Reason why** credibile (volume: tanti utenti a prezzo simbolico)
+- [x] **Barriera d'ingresso bassa** (Demo gratis + Assistente+Segnali 3€ + EA 5€)
+- [x] **Ascensione** definita (EA→Difensivo→Bilanciato→Completo, + DFY opzionale)
+- [x] **Segnali + assistente AI INCLUSI** in ogni EA/pacchetto (nessun costo extra)
 
 ---
 

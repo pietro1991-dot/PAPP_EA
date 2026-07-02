@@ -65,8 +65,8 @@ Tutto in italiano (mercato di lancio); la localizzazione EN/FR/ES è un pass suc
 | Mar | Reel/TikTok | Short F (Confronto) |
 | Mer | IG/FB feed | Post 1 var. (Anti-truffa) + CTA Demo |
 | Gio | Reel/TikTok | Short A var. (Anti-truffa) |
-| Ven | IG/FB feed | Storia + offerta soft (50 posti) |
-| Sab | Story | Countdown "posti del mese" |
+| Ven | IG/FB feed | Storia + offerta soft (da 5€/mese, AI inclusa) |
+| Sab | Story | "Prezzo di lancio: entra ora e lo blocchi" |
 | Dom | Tutti | Recap + CTA forte (Demo / report) |
 
 > Poi si ricomincia il ciclo con varianti. **Misura** cosa funziona (salvataggi,

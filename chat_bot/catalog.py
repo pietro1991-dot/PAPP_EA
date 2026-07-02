@@ -10,7 +10,7 @@ Modello commerciale (micro-abbonamento di volume):
   evidenza come esca; upsell ai pacchetti-portafoglio che si vendono sulla STABILITÀ
   (drawdown basso grazie alla diversificazione). Assistente AI come add-on.
 
-  Singolo 4€ -> Difensivo 7€ -> Bilanciato 9€ -> Completo 12€ ; + Assistente 5€.
+  Singolo 5€ -> Difensivo 7€ -> Bilanciato 9€ -> Completo 12€ ; + Assistente 3€.
 
 NB: la vecchia navigazione "per Motore" è stata TOLTA dal prodotto. Il tipo di
 strategia (trend / reversione) resta solo come ETICHETTA descrittiva su ogni EA e
@@ -145,8 +145,9 @@ PORTFOLIO = {
     "price": _price("PACK_COMPLETO", 12),
 }
 
-SINGLE_PRICE = _price("SINGLE_EA", 4)      # prezzo di un singolo EA (esca, molto basso)
-SIGNALS_PRICE = _price("ASSISTANT", 5)     # piano Assistente + Segnali (SKU "signals")
+SINGLE_PRICE = _price("SINGLE_EA", 5)      # prezzo di un singolo EA (esca, molto basso)
+SIGNALS_PRICE = _price("ASSISTANT", 3)     # piano Assistente + Segnali (SKU "signals")
+DFY_PRICE = _price("DFY", 20)              # "Fatto-Per-Te": setup broker+VPS+install, UNA TANTUM (fee simbolico)
 
 # --- Piano ASSISTENTE + SEGNALI (senza EA): l'ingresso a più bassa frizione ---
 # Non serve MT5 né broker: ricevi i SEGNALI via PUSH e l'ASSISTENTE AI ti guida.
@@ -231,7 +232,7 @@ def offer_for_ea(ea_id: str):
 
 def is_valid_sku(sku: str) -> bool:
     sku = (sku or "").strip().lower()
-    if sku in ("portfolio", "elite", "pro", "signals", "starter", "pack_base", "pack_rev"):
+    if sku in ("portfolio", "elite", "pro", "signals", "starter", "pack_base", "pack_rev", "dfy"):
         return True
     if sku.startswith("pack_"):
         return sku in PACK_BY_ID
@@ -247,6 +248,8 @@ def sku_label_price(sku: str, lang: str = "it"):
         return (tr(PORTFOLIO["name"], lang), PORTFOLIO["price"])
     if sku in ("signals", "starter"):
         return (tr(ASSISTANT["name"], lang), SIGNALS_PRICE)
+    if sku == "dfy":
+        return ("Setup Fatto-Per-Te (una tantum)", DFY_PRICE)
     if sku in ("pro", "pack_base"):
         p = PACK_BY_ID.get("pack_completo")
         return ("PHAI Autopilot", p["price"] if p else 12)

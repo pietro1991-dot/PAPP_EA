@@ -1,7 +1,7 @@
 # PAPP_EA — Sistema di trading multi-simbolo (motore base linea-prezzo)
 
 Sistema basato su **crossover di medie mobili ancorate al giornaliero (D1)**, prodotte
-dall'indicatore `PaPP_Median`. Il codice (indicatore, export, miner) è **condiviso**; i
+dall'indicatore `PHAI_Median`. Il codice (indicatore, export, miner) è **condiviso**; i
 **pattern validati** e i **dati** sono per-simbolo, con una **copia dell'EA per simbolo**.
 
 > **Motore base linea-prezzo**: gli EA entrano/escono solo su **crossover prezzo-linea**
@@ -15,8 +15,8 @@ dall'indicatore `PaPP_Median`. Il codice (indicatore, export, miner) è **condiv
 PAPP_EA/
 ├── Motore base _linea-prezzo/        ← IL SISTEMA ATTUALE
 │   ├── Indicatore/                     codice e doc CONDIVISI
-│   │   ├── PaPP_Median.mq5 (+.ex5)       indicatore (7 MA + mediana, ancorato D1)
-│   │   ├── INDICATORE_PaPP_Median.md     → come funziona l'indicatore
+│   │   ├── PHAI_Median.mq5 (+.ex5)       indicatore (7 MA + mediana, ancorato D1)
+│   │   ├── INDICATORE_PHAI_Median.md     → come funziona l'indicatore
 │   │   ├── Export_PAPP.mq5 (+.ex5)       script: esporta il CSV per il miner
 │   │   ├── EXPORT_PAPP.md                → come funziona l'export
 │   │   ├── pattern_mining.py             miner: trova e valida i pattern
@@ -41,7 +41,7 @@ Indicatore  →  Export  →  Miner  →  EA
  ancorate D1)       barra)         i pattern OOS)    validati per simbolo)
 ```
 
-1. **Indicatore** `PaPP_Median`: calcola 7 medie + la loro mediana, tutto su D1.
+1. **Indicatore** `PHAI_Median`: calcola 7 medie + la loro mediana, tutto su D1.
 2. **Export** `Export_PAPP`: salva una riga per barra (prezzi, medie, crossover, metriche) in CSV.
 3. **Miner** `pattern_mining.py`: prova le combinazioni di entrata/uscita, le valida su
    train+test (anti-overfitting), e produce `analisi_oos.txt`.

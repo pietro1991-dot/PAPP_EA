@@ -2,7 +2,7 @@
 //|                                                     EA_Pattern.mq5 |
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
-#property copyright "PaPP v2"
+#property copyright "PHAI v2"
 #property version   "2.09"
 #property description "Multi-Pattern EA - Fino a 10 pattern configurabili da input"
 #property description "Ogni pattern: Entry, Exit, SL, TP, Direction. Tutti in simultanea."
@@ -12,10 +12,10 @@
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include <Trade\AccountInfo.mqh>
-#include <papp_push.mqh>          // libreria condivisa (mettila in MQL5/Include)
+#include <phai_push.mqh>          // libreria condivisa (mettila in MQL5/Include)
 
 input group "======  GENERALE / RISCHIO  ======"
-input string  InpIndicatorName = "PaPP_Median.ex5";
+input string  InpIndicatorName = "PHAI_Median.ex5";
 
 input double  InpRiskPct       = 12.0;           // Rischio % per trade
 input double  InpQuotaConto     = 100.0;          // SINGOLO: conto dedicato -> usa tutto il capitale (100%).
@@ -370,7 +370,7 @@ bool ReadCalcD1(int buf, double &val)
 
 //+------------------------------------------------------------------+
 // Push FEATURE di mercato (Volatilità/Cluster/… + distanze dalle medie) lette da
-// PaPP_Median. Scrive nel log locale (ponte) e via HTTP. t = barra D1 corrente ->
+// PHAI_Median. Scrive nel log locale (ponte) e via HTTP. t = barra D1 corrente ->
 // il backend fa upsert (aggiorna ai valori freschi della giornata).
 void LogFeatures()
 {
@@ -552,8 +552,8 @@ void LogAccountSnapshot()
 // === PHAI SERVER: licenza + telemetria via WebRequest ===
 // L'EA invia gli eventi (open/close/skip/account/market) e valida la licenza.
 // In ingresso parla JSON; le risposte sono key=value (facili da parsare).
-// === PHAI: adapter sottili verso la libreria condivisa papp_push.mqh (logica single-source) ===
-// La logica vera (WebRequest, licenza+grazia+kill-switch, parsing) vive in papp_push.mqh.
+// === PHAI: adapter sottili verso la libreria condivisa phai_push.mqh (logica single-source) ===
+// La logica vera (WebRequest, licenza+grazia+kill-switch, parsing) vive in phai_push.mqh.
 // Qui restano solo wrapper col nome storico, così i punti di chiamata non cambiano.
 string PhaiEsc(string s){ return PappEsc(s); }
 string PhaiHttpPost(string path, string body){ return PappPost(path, body); }

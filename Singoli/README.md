@@ -21,5 +21,5 @@ USD/CHF e GBP/CHF rendono meglio **dentro un portafoglio**. Vedi `PORTAFOGLI_EA.
 
 ## Installazione
 1. Copia il `.mq5` in `MQL5/Experts/` e **ricompila (F7)** (i `.ex5` vanno rigenerati).
-2. Dipendenze: `PaPP_Median.ex5` in `MQL5/Indicators/`, `papp_push.mqh` in `MQL5/Include/`.
+2. Dipendenze: `PHAI_Median.ex5` in `MQL5/Indicators/`, `phai_push.mqh` in `MQL5/Include/`.
 3. Metti l'EA sul grafico del suo simbolo. `QuotaConto` resta 100 (conto dedicato).

@@ -11,12 +11,12 @@
 //|  o dopo MaxHold barre. Una posizione/volta. Lotto a RISCHIO %.     |
 //|  Mettere su grafico EURGBP (lavora internamente su H6).           |
 //+------------------------------------------------------------------+
-#property copyright "PaPP v2"
+#property copyright "PHAI v2"
 #property version   "1.10"
 #property description "Relative-value mean-reversion EURGBP H6 - lotto a rischio %"
 
 #include <Trade/Trade.mqh>
-#include <papp_push.mqh>          // libreria condivisa (mettila in MQL5/Include)
+#include <phai_push.mqh>          // libreria condivisa (mettila in MQL5/Include)
 
 // --- Sizing: percentuale di capitale, scala col BALANCE attuale ---
 // PctCapitale = 100 -> 1 lotto ogni 10.000 di balance corrente. Cresce col conto:

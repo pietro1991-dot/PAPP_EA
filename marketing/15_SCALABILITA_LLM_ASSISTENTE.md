@@ -59,7 +59,7 @@ riscrivere niente — si cambiano **configurazione e piano**.
 2. **Alza la concorrenza** del worker (più richieste LLM in parallelo) e il
    `LLM_RPM`, una volta sul piano a pagamento.
 3. **Quote per piano** (cost-control + upsell):
-   - Signals/singolo = N domande/giorno · Pacchetto = di più · Portfolio = priorità + nessun limite pratico.
+   - Assistente+Segnali/singolo EA = N domande/giorno · Pacchetti = di più · Completo = priorità + nessun limite pratico.
    - Così il costo LLM per cliente è **prevedibile e marginale**, e diventa una **leva
      di vendita** (chi vuole di più sale di piano).
 4. **Cache sempre più aggressiva** + risposte precalcolate → ogni domanda servita
@@ -68,7 +68,8 @@ riscrivere niente — si cambiano **configurazione e piano**.
 ### L'economia (perché il margine resta altissimo)
 - Una domanda costa **frazioni di centesimo** su un modello economico a pagamento.
 - Anche stimando **100 domande/cliente/mese**, sono **pochi centesimi** di costo LLM
-  contro **49–97 €/mese** di abbonamento → margine **>90%**.
+  contro **4–12 €/mese** di abbonamento → margine in % ancora **alto** (la cache lo tiene basso;
+  a questi prezzi tieni comunque d'occhio il costo LLM per-utente sul volume totale).
 - La cache abbatte ulteriormente le chiamate reali (le domande comuni non costano nulla).
 
 > Tradotto: l'abbonamento dei clienti **paga abbondantemente** l'LLM a pagamento.
@@ -79,7 +80,7 @@ riscrivere niente — si cambiano **configurazione e piano**.
 |---|---|
 | Lancio / primi clienti (free regge) | Resta sul gratuito + cache + rate limit. **Monitora** "servizio al limite". |
 | Vedi spesso "servizio al limite" o code | Passa l'`OPENCODE_API_KEY` a un **piano a pagamento**, alza `LLM_RPM` e la concorrenza. |
-| Cresci (decine/centinaia di attivi) | **Quote per piano** (Signals/Pacchetto/Portfolio) + cache aggressiva. Valuta **Claude Haiku** per qualità. |
+| Cresci (decine/centinaia di attivi) | **Quote per piano** (Assistente+Segnali/EA/Pacchetti/Completo) + cache aggressiva. Valuta **Claude Haiku** per qualità. |
 | Il web/DB rallenta (molto più avanti) | Aumenta le risorse della VPS o separa il Postgres. (Succede **molto** dopo l'LLM.) |
 
 ## 6. Risposte secche alle tue domande
@@ -104,22 +105,22 @@ guidato da `.env`. Di default **tutti restano sul free** (mimo/deepseek) → cos
 finché non vendi. Per attivare Claude (o qualsiasi modello a pagamento):
 
 ```ini
-# Modello per i clienti Pro (tier "paid"). Vuoto = restano sul free.
+# Modello per i clienti a pagamento (EA/pacchetti, tier "paid"). Vuoto = restano sul free.
 LLM_PAID_MODEL=<id-modello-claude>
-# Modello per i clienti Portfolio (tier "premium"). Vuoto = usa il paid.
+# Modello per i clienti Pacchetto Completo (tier "premium"). Vuoto = usa il paid.
 LLM_PREMIUM_MODEL=<id-modello-claude-piu-capace>
 # Se il modello NON passa da OpenCode Zen (es. API Anthropic OpenAI-compatibile):
 LLM_PAID_BASE_URL=<endpoint>      # vuoto = stesso endpoint del free (Zen)
 LLM_PAID_API_KEY=<chiave>         # vuoto = stessa chiave del free
 ```
 
-Mappatura piano → modello: **Demo/Signals → free**, **singolo EA/Pacchetto → paid**, **Portfolio → premium**.
+Mappatura piano → modello: **Demo/Assistente+Segnali → free**, **singolo EA/Pacchetti (Difensivo/Bilanciato) → paid**, **Pacchetto Completo → premium**.
 La cache è separata per tier (un cliente paid non riceve mai una risposta del free, e
 viceversa). Nessuna riscrittura: basta riavviare il servizio dopo aver impostato le env.
 
 > Strategia consigliata (doc): parti col free per tutti; al primo cliente pagante metti
 > `LLM_PAID_MODEL` su un Claude economico (es. Haiku) → i paganti salgono di qualità e
-> si **isolano** dalla fragilità del free; tieni il premium (Sonnet) come leva Portfolio.
+> si **isolano** dalla fragilità del free; tieni il premium (Sonnet) come leva del Pacchetto Completo.
 
 ---
 

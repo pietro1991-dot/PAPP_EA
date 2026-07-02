@@ -1,8 +1,8 @@
 //+------------------------------------------------------------------+
-//|                                                   PaPP_Median.mq5 |
+//|                                                   PHAI_Median.mq5 |
 //|                                                        PaPP v2    |
 //+------------------------------------------------------------------+
-#property copyright "PaPP v2"
+#property copyright "PHAI v2"
 #property version   "2.02"
 #property description "PaPP Median - Mediana 7 MA (3g-1y)"
 #property description "Calcolo ancorato a D1 = linea uguale su ogni timeframe"

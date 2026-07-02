@@ -19,7 +19,7 @@ prezzi, economia unitaria e piano di attivazione.
 | # | Modello | In una riga |
 |---|---|---|
 | A | **Licenza una tantum** | Paghi 997 € una volta, software tuo per sempre |
-| B | **Abbonamento SaaS** | Paghi 49–97 €/mese per EA + app + AI |
+| B | **Abbonamento SaaS** | Micro-abbonamento di volume: 4–12 €/mese per EA/pacchetto + app + AI |
 | C | **Ibrido (one-time + sub)** | Lifetime a chi vuole, abbonamento come default |
 | D | **Freemium** | App/EA base gratis, paghi per pro (coppie, AI, segnali) |
 | E | **IB / Broker rebate** | EA economico/gratis, guadagni dal rebate sul volume tradato |
@@ -64,17 +64,17 @@ Subito dietro, il suo stesso cuore: B (abbonamento puro, 32).
 ### B — Abbonamento SaaS (32) ⭐
 - ✅ **Ricavo ricorrente prevedibile** (MRR), LTV alto, valutazione aziendale alta
   (un business SaaS vale multipli del fatturato ricorrente).
-- ✅ **Copre i costi ricorrenti** del prodotto (server/AI) per definizione.
-- ✅ Barriera d'ingresso bassa (49 €/mese vs 997 € secchi) → **più clienti nel mondo**.
+- ✅ **Copre i costi ricorrenti** del prodotto (server/AI) per definizione (costo marginale LLM ~0).
+- ✅ Barriera d'ingresso **bassissima** (4 €/mese vs 997 € secchi) → **volume enorme di clienti nel mondo**.
 - ✅ **Il prodotto è GIÀ costruito per questo**: SaaS su VPS, license key, AI condivisa.
 - ❌ Churn: se l'utente perde sul mercato può disdire. → mitigazione nel §5.
 - Verdetto: il **cuore** del business.
 
 ### C — Ibrido (33) 🏆
-- = Abbonamento **per-EA** come default **+** Annuale **+** ascensione (Pacchetti/Portfolio).
-- ✅ Prende il meglio di A e B: **ricorrente** dalla maggioranza + **iniezioni di
-  cassa** da chi odia gli abbonamenti + ancora di prezzo che fa sembrare l'abbonamento
-  un affare.
+- = Micro-abbonamento **per-EA** come default **+** ascensione ai **pacchetti-portafoglio**
+  (venduti sul drawdown basso) **+** opzione lifetime/DFY come iniezione di cassa.
+- ✅ Prende il meglio di A e B: **ricorrente di volume** dalla maggioranza + **iniezioni di
+  cassa** da chi vuole servizi one-time + una scala di prezzo che porta all'ARPU alto.
 - ✅ Massima flessibilità per il cliente = massima conversione (più "veicoli" di
   acquisto, principio di Sabri, doc 03 §2).
 - Verdetto: **la scelta.** È B reso ancora più forte.
@@ -123,33 +123,34 @@ Subito dietro, il suo stesso cuore: B (abbonamento puro, 32).
 
 ## 4. LA SCELTA — Modello Ibrido "abbonamento-first" con value ladder
 
-> **PHAI Trading è un business SaaS in abbonamento**, con un'opzione lifetime per la
-> cassa e una scala di ascensione per il LTV. Acquisizione tramite demo gratuita
-> (effetto freemium senza i costi). Eventuale flusso secondario IB **solo se
-> trasparente**.
+> **PHAI Trading è un micro-abbonamento SaaS di volume** (prezzi bassi, obiettivo tanti
+> utenti, disdici quando vuoi), con opzione lifetime/DFY per la cassa e una scala di
+> ascensione ai pacchetti per l'ARPU/LTV. Acquisizione tramite demo gratuita (effetto
+> freemium senza i costi). Eventuale flusso secondario IB **solo se trasparente**.
+>
+> **Nota prodotto:** niente navigazione "per motore". "Trend" e "reversione" restano solo
+> come *tipo* di strategia (e come spiegazione del perché i pacchetti sono decorrelati = DD basso).
+> **Segnali + assistente AI sono INCLUSI con ogni EA o pacchetto**, senza costi extra.
 
 ### I piani (proposta concreta)
 
 | Piano | Prezzo | Cosa include | A chi |
 |---|---|---|---|
 | **Demo** | Gratis | Dashboard read-only con dati reali, AI a domande limitate | Acquisizione/lead (doc 04) |
-| **PHAI Signals** | **37 €/mese** | Tutti i segnali (esecuzione manuale), app, AI base, notifiche | Barriera bassissima |
-| **EA singolo** | **49 €/mese** | **1 EA automatico** a scelta + app + AI + storico/backtest | Tripwire |
-| **Pacchetto Reversione** | **67 €/mese** | I **2 EA del Motore Reversione** (EUR/GBP, GBP/CHF) | Bundle-motore |
-| **Pacchetto Base** ⭐ | **97 €/mese** | I **3 EA del Motore Base** (EUR/USD, GBP/USD, USD/CHF) | Il piano-cuore |
-| **PHAI Portfolio** | **197 €/mese** | **Tutti i 5 EA**, 2 motori, AI premium, VPS, nuovi EA inclusi | Eroe/decoy |
-| **Annuale Portfolio** | **1.970 €/anno** (2 mesi gratis) | Portfolio annuale | Riduce churn, anticipa cassa |
+| **Assistente + Segnali** | **5 €/mese** | Segnali real-time + push (entrata/TP/SL) + **AI illimitato**, senza EA | Ingresso a più bassa frizione |
+| **EA singolo** | **4 €/mese** | **1 EA** a scelta (best-seller EUR/USD) + **segnali + AI inclusi** + storico/backtest | Tripwire |
+| **Pacchetto Difensivo** | **7 €/mese** | 2 EA (EUR/USD + EUR/GBP), **DD ~12.5%** | Il portafoglio più tranquillo |
+| **Pacchetto Bilanciato** ⭐ | **9 €/mese** | 3 EA (EUR/USD + EUR/GBP + GBP/CHF), **DD ~11.5%** — CONSIGLIATO | Il piano-cuore |
+| **Pacchetto Completo** | **12 €/mese** | **Tutti e 5 gli EA** in risk-parity, **DD ~10.3%**, CAGR storico ~12%/anno, **AI premium** | Eroe: max valore, min DD |
 
-**Ascensione (LTV — doc 03 §7):**
-- **Setup "Fatto-Per-Te"** (broker+VPS+install): +297 € una tantum.
-- **PHAI Portfolio**: tutti gli EA + AI premium prioritaria + nuovi EA in anteprima +
-  community: +30 €/mese sopra il Pro.
-- **Community/coaching** premium: +497 €/anno.
+**Ascensione (ARPU/LTV — doc 03 §8):**
+- **Da 1 EA (5€) → Difensivo (7€) → Bilanciato (9€) → Completo (12€)**: il percorso naturale,
+  venduto sul **drawdown che scende** (più EA decorrelati = DD più basso).
+- **Setup "Fatto-Per-Te"** (broker+VPS+install): servizio opzionale, **€20 una tantum**.
 
-> Ancoraggio (Sabri): mostra prima il **value stack ~4.500 €** e l'**Annuale**
-> (doc 03). A quel punto **197 €/mese** (tutto) sembra ragionevole, **97 €** (un motore)
-> facile, e **49 €** (una strategia) un
-> no-brainer per provare.
+> Ancoraggio (Sabri): i pacchetti si vendono sul **drawdown basso**. Mostra prima il
+> **Completo (12 €, tutto, DD ~10.3%)**: dopo, il **Bilanciato 9 €** sembra ovvio, e
+> **4 €** (una strategia) un no-brainer per provare.
 
 ---
 
@@ -157,25 +158,28 @@ Subito dietro, il suo stesso cuore: B (abbonamento puro, 32).
 
 ### Costi ricorrenti per cliente (stima)
 - Server/VPS (condiviso) + AI/LLM (modello gratuito Zen, costo marginale ~0) +
-  pagamenti (~3–5%) → **costo variabile per cliente molto basso** (pochi €/mese).
-- Margine lordo su un Pro a 97 €/mese: **molto alto** (>85–90%). È il bello del SaaS
-  software: il costo non cresce quasi con i clienti.
+  pagamenti (~3–5% + fee fissa per transazione, che a 4-12 € **pesa in %**) → **costo
+  variabile per cliente basso in assoluto**, ma la fee fissa va tenuta d'occhio a questi prezzi.
+- Margine lordo su un Bilanciato a 9 €/mese: **alto** in %, ma **pochi € in assoluto** →
+  il business si regge sul **volume** e sull'**ARPU** (upsell ai pacchetti), non sul per-cliente.
 
-### Il numero che decide tutto: LTV vs CAC
+### Il numero che decide tutto: LTV vs CAC (e il volume)
 ```
-Pacchetto Base 97 €/mese · permanenza media stimata 8 mesi  → LTV ≈ 776 € (solo sub)
-+ ascensione (30% prende Setup DFY 297 €)         → LTV ≈ 865 €+
-CAC obiettivo (doc 09): < 250 €
-Rapporto LTV:CAC ≈ 3,5 : 1   →  business sano e scalabile
+Pacchetto Bilanciato 9 €/mese · permanenza media stimata 8 mesi  → LTV ≈ 72 € (solo sub)
++ ascensione al Completo / DFY                     → LTV ≈ 90–110 €
+CAC obiettivo: deve restare ≪ LTV → pochi € (via organico/referral, non ads cari)
+Rapporto LTV:CAC ≥ 3:1   →  sano solo se il CAC resta molto basso
+
+Obiettivo dichiarato ~100k€/mese → servono ~12–20k utenti paganti.
+La leva è VOLUME (acquisizione/retention) × ARPU (upsell pacchetti), non il prezzo alto.
 ```
 - Con la **licenza una tantum** (A), il LTV sarebbe ~997 € *una volta* e poi stop.
-- Con l'**ibrido**, un cliente paga ricorrente **per mesi/anni** + upsell → LTV
-  cumulato **superiore** e, soprattutto, **prevedibile** (puoi pianificare e
-  reinvestire in ads con sicurezza).
+- Con l'**ibrido di volume**, un cliente paga ricorrente **per mesi/anni** + sale di pacchetto
+  → LTV cumulato **prevedibile**; moltiplicato per **decine di migliaia di utenti** fa il fatturato.
 
 ### Perché alta probabilità di successo
 1. **Prodotto già pronto per questo modello** (zero rework: SaaS, licenze, AI).
-2. **Barriera bassa** (49 €) → più conversioni dal traffico mondiale.
+2. **Barriera bassissima** (4 €, AI inclusa) → conversioni di volume dal traffico mondiale.
 3. **Ricorrente** → ogni cliente nuovo si somma ai vecchi (crescita composta del MRR).
 4. **Demo gratuita** → abbatte il rischio percepito senza bruciare margine.
 5. **Trasparenza** come anti-churn e anti-truffa (il nostro differenziatore, doc 01).
@@ -183,7 +187,7 @@ Rapporto LTV:CAC ≈ 3,5 : 1   →  business sano e scalabile
 ### Mitigazione del churn (il rischio #1 del SaaS di trading)
 - Il valore NON è solo il P&L: è **lo strumento** (app, AI, trasparenza, educazione)
   → l'utente resta anche in mesi piatti perché il tool gli serve.
-- **Annuale scontato** sposta i clienti fuori dal churn mensile.
+- **Prezzo così basso** che disdire per risparmiare pochi euro ha poco senso → churn strutturalmente contenuto.
 - Onboarding curato (doc 07) → time-to-value rapido → meno disdette precoci.
 - Comunicazione onesta sui drawdown → aspettative corrette → meno rimborsi/abbandoni.
 
@@ -204,30 +208,30 @@ Se vuoi un secondo motore di ricavo:
 ## 7. Roadmap del business (fasi)
 | Fase | Quando | Modello attivo | Obiettivo |
 |---|---|---|---|
-| **1 — Lancio** | Mesi 1–3 | Per-EA (Signals/singolo/Pacchetti/Portfolio) + Demo gratis | Validare funnel, primi MRR |
-| **2 — Scala** | Mesi 4–9 | + Annuale, + ascensione (DFY/Portfolio), + IB opz. | Crescere MRR, alzare LTV |
+| **1 — Lancio** | Mesi 1–3 | Per-EA (Assistente+Segnali/singolo/Pacchetti) + Demo gratis | Validare funnel, primi MRR |
+| **2 — Scala** | Mesi 4–9 | + ascensione ai pacchetti (Difensivo/Bilanciato/Completo), + DFY, + IB opz. | Crescere volume e ARPU |
 | **3 — Espansione** | Mesi 10+ | + White-label/B2B, + nuove coppie/mercati, marketplace come vetrina | Grandi contratti, nuovi canali |
 
 ## 8. KPI specifici di questo modello (oltre al doc 09)
 - **MRR** (ricavo ricorrente mensile) e sua **crescita %**.
+- **N° utenti paganti** (la leva del modello: ~12–20k per ~100k€/mese).
 - **Churn mensile** (target < 8–10% all'inizio, da abbassare).
-- **LTV:CAC** ≥ 3:1.
-- **% Annuale** sul totale (più alta = meno churn, più cassa).
-- **Tasso di ascensione** (quanti clienti salgono a DFY/Portfolio).
+- **LTV:CAC** ≥ 3:1 (con CAC molto basso) e **ARPU**.
+- **Tasso di ascensione** (quanti clienti salgono ai pacchetti).
 - **Conversione Demo→pagante**.
 
 ---
 
 ## 9. Decisione finale (riassunto)
-> **Modello scelto: SaaS abbonamento-first, per-EA.**
-> Abbonamento mensile (da 49 € a 197 €) come cuore ricorrente, **+** Annuale
-> (2 mesi gratis) per cassa e anti-churn, **+** Demo gratuita come acquisizione,
-> **+** ascensione (DFY, Portfolio, community) per il LTV, **+** eventuale IB rebate
-> trasparente come secondo motore.
+> **Modello scelto: micro-abbonamento SaaS di volume, per-EA.**
+> Abbonamento mensile (da 4 € a 12 €, disdici quando vuoi) come cuore ricorrente,
+> **+** Demo gratuita come acquisizione, **+** ascensione ai pacchetti-portafoglio
+> (venduti sul drawdown basso) per l'ARPU/LTV, **+** eventuale DFY/IB come flusso secondario.
+> **Segnali + assistente AI inclusi in ogni EA/pacchetto.**
 >
-> **Perché:** massimo punteggio (33/35), massimo ricavo ricorrente e LTV,
-> sfrutta al 100% il prodotto già costruito, barriera d'ingresso bassa per vendere
-> nel mondo, e usa la trasparenza (la nostra arma) come difesa dal churn.
+> **Perché:** massimo punteggio (33/35), massimo ricavo ricorrente, sfrutta al 100% il
+> prodotto già costruito, barriera d'ingresso quasi nulla per fare **volume nel mondo**
+> (obiettivo ~12–20k utenti → ~100k€/mese), e usa la trasparenza come difesa dal churn.
 
 ---
 

@@ -115,7 +115,7 @@ le operazioni a livello broker (sistema copy/MAM/PAMM del broker).
 | Livello | Per chi | Come gira | Chi paga l'hosting |
 |---|---|---|---|
 | **Self-serve** | Tecnico/autonomo | EA sul suo MT5 + **MT5 VPS one-click** | Cliente (~10–15 $/mese a MetaQuotes) |
-| **Fatto-Per-Te** (upsell) | Non vuole toccare niente | Glielo configuri tu (MT5 VPS o Forex VPS) | Cliente, ma lo imposti tu (+297 € una tantum, doc 03) |
+| **Fatto-Per-Te** (upsell) | Non vuole toccare niente | Glielo configuri tu (MT5 VPS o Forex VPS) | Cliente, ma lo imposti tu (setup DFY a pagamento una tantum, doc 03) |
 | **Managed** (futuro) | Vuole zero coinvolgimento | Copy/MAM da master, a livello broker | Modello regolamentato, tier premium |
 
 La **maggioranza** sta nel Self-serve (scala da sola). Il DFY monetizza i

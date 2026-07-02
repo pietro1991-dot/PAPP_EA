@@ -1,7 +1,7 @@
 # EURUSD — Configurazione canonica (solo P1-P6)
 
 Backtest MT5 del **2026-06-26** (deposito 10.000 €, EURUSD D1, 2010.01.01 → 2025.12.31,
-broker MetaQuotes-Demo, leva 1:33). Indicatore `PaPP_Median` **v2.02** (post-fix history-jitter).
+broker MetaQuotes-Demo, leva 1:33). Indicatore `PHAI_Median` **v2.02** (post-fix history-jitter).
 
 Questi valori sono i **default attuali** di [EA_EURUSD.mq5](EA_EURUSD.mq5). Config scelta per il
 **miglior profilo di rischio** (la variante con P8 faceva più profitto ma drawdown doppio).
@@ -52,7 +52,7 @@ più profitto ma quasi tutto il drawdown (vedi variante con P8: DD equity 34% vs
 - Profilo TP-stretto / SL-largo (MA365): win rate alto, le poche perdite sono più grosse.
   Ma con solo i pattern stoppati il sistema è molto più sano (PF 2.34, Recovery 4.63).
 - Bug indicatore risolto in v2.02: prima i backtest si "fermavano" al 2016 perché
-  `PaPP_Median` andava "MA not ready" su ogni barra.
+  `PHAI_Median` andava "MA not ready" su ogni barra.
 
 ## File collegati
 

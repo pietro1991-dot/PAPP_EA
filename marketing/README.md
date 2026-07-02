@@ -12,10 +12,16 @@ acquisizione prevedibile.
 > testo di marketing qui dentro va usato CON i disclaimer indicati.
 
 > 🧭 **Modello commerciale ATTUALE (fonte di verità: `chat_bot/catalog.py`).**
-> PHAI = **5 strategie su 2 motori decorrelati**: *Motore Base* (EUR/USD, GBP/USD,
-> USD/CHF) e *Motore Reversione* (EUR/GBP, GBP/CHF). Scala d'acquisto **per-EA**:
-> Demo (gratis) · **Signals 37€** · **EA singolo 49€** · **Pacchetto Reversione 67€**
-> · **Pacchetto Base 97€** · **Portfolio 197€** · Annuale (2 mesi gratis).
+> PHAI è un **micro-abbonamento di volume**: prezzi bassi, obiettivo tanti utenti,
+> disdici quando vuoi. **Niente navigazione "per motore"**: "trend" e "reversione"
+> restano solo come *tipo* di strategia (e come spiegazione del perché i pacchetti
+> sono decorrelati = drawdown basso). PHAI = **5 EA**: EUR/USD (best-seller/flagship),
+> GBP/USD, USD/CHF (trend) · EUR/GBP, GBP/CHF (reversione). Prodotti e prezzi:
+> **Assistente + Segnali 3€/mese** (segnali real-time + push + AI illimitato, senza EA)
+> · **singolo EA 5€/mese** · **Pacchetto Difensivo 7€** (EUR/USD+EUR/GBP, DD ~12.5%)
+> · **Bilanciato 9€** (EUR/USD+EUR/GBP+GBP/CHF, DD ~11.5%, CONSIGLIATO)
+> · **Completo 12€** (tutti e 5 in risk-parity, DD ~10.3%, CAGR storico ~12%/anno, AI premium).
+> **Segnali + assistente AI sono INCLUSI con OGNI EA o pacchetto**, senza costi extra.
 > Le pagine live (`/`, `/risultati`, `/checkout`) e l'app riflettono questo modello;
 > alcuni doc qui sotto possono ancora citare prezzi/strutture precedenti negli esempi.
 

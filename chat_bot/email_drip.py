@@ -59,7 +59,7 @@ VALID_PLANS = ("starter", "pro", "elite")
 
 LINKS = {
     "{{demo}}": f"{APP}/demo", "{{sblocca}}": f"{APP}/checkout?plan=pro",
-    "{{report}}": f"{APP}/report", "{{guida}}": f"{APP}/report",
+    "{{report}}": f"{APP}/report/leggi", "{{guida}}": f"{APP}/report/leggi",
     "{{dfy}}": f"{APP}/checkout?plan=pro", "{{app}}": APP, "{{referral}}": f"{APP}/referral",
 }
 
@@ -67,8 +67,26 @@ LINKS = {
 _NAME_PH = r"\[(?:Nome|Name|Nom|Nombre|nome)\]"
 
 
+def _price_map():
+    """Prezzi DINAMICI nelle email: i token {{P_*}} → valori di catalog.py (un solo listino)."""
+    try:
+        import catalog
+        return {
+            "{{P_SINGLE}}": f"{catalog.SINGLE_PRICE:.0f}",
+            "{{P_ASSIST}}": f"{catalog.SIGNALS_PRICE:.0f}",
+            "{{P_DIF}}": f"{catalog.PACKS[0]['price']:.0f}",
+            "{{P_BIL}}": f"{catalog.PACKS[1]['price']:.0f}",
+            "{{P_COM}}": f"{catalog.PACKS[2]['price']:.0f}",
+            "{{P_AUTO}}": f"{catalog.PORTFOLIO['price']:.0f}",
+        }
+    except Exception:
+        return {}
+
+
 def _personalize(text, email, name="", license_key=""):
     for k, v in LINKS.items():
+        text = text.replace(k, v)
+    for k, v in _price_map().items():
         text = text.replace(k, v)
     text = text.replace("{{unsubscribe}}", f"{APP}/unsub?e={email}")
     text = text.replace("{{license_key}}", license_key or "")

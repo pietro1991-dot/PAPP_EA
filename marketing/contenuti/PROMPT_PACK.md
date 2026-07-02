@@ -108,7 +108,7 @@ bold white headline text "12 DOMANDE prima di comprare un robot di trading", sma
 "PHAI TRADING" logotype top-left, premium fintech minimal style, 4:5
 ```
 > I testi esatti dei caroselli — "12 domande", "EA da 30€ vs PHAI" e **"Le 5 strategie
-> PHAI" (i due motori)** — sono in [POST_SOCIAL.md](POST_SOCIAL.md): incolla una slide per
+> PHAI" (due tipi decorrelati: trend + reversione)** — sono in [POST_SOCIAL.md](POST_SOCIAL.md): incolla una slide per
 > immagine cambiando la headline.
 
 **In alternativa (Canva, zero AI-render)**: crea un template 4:5 navy/oro e incolla i testi

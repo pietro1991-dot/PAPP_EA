@@ -173,14 +173,15 @@ CTA primaria: **la Demo** (`/demo`), i **Risultati** (`/risultati`, prova pubbli
 
 ---
 
-## ANGOLO 8 — I due motori / 5 strategie (differenziatore + diversificazione)
+## ANGOLO 8 — 5 strategie, due tipi decorrelati (differenziatore + diversificazione = DD basso)
 
 **IG/FB feed — Post 8**
-> Non è UN robot. Sono **DUE motori** che guadagnano in modi diversi.
+> Non è UN robot. Sono **5 strategie** di **due tipi che guadagnano in modi diversi**.
 >
-> Il **Motore Base** legge le linee del prezzo (EUR/USD, GBP/USD, USD/CHF). Il **Motore
-> Reversione** ignora le linee e legge il **valore relativo** tra due valute correlate, sui
-> cross (EUR/GBP, GBP/CHF). Sono **decorrelati**: quando uno fatica, spesso l'altro lavora.
+> Le strategie **trend** leggono le linee del prezzo (EUR/USD, GBP/USD, USD/CHF). Quelle
+> **reversione** ignorano le linee e leggono il **valore relativo** tra due valute correlate,
+> sui cross (EUR/GBP, GBP/CHF). Sono **decorrelate**: quando un tipo fatica, spesso l'altro
+> lavora → **il drawdown del portafoglio scende**.
 >
 > Non è magia, è diversificazione vera — 5 strategie, non una scommessa sola.
 >
@@ -189,30 +190,30 @@ CTA primaria: **la Demo** (`/demo`), i **Risultati** (`/risultati`, prova pubbli
 > #trading #forex #algotrading #MetaTrader5 #diversificazione
 
 **Carosello (6 slide) — "Le 5 strategie PHAI, in chiaro"**
-1. (Cover) "Non 1 robot. **5 strategie su 2 motori decorrelati**."
-2. "Motore BASE → legge le linee del prezzo · EUR/USD, GBP/USD, USD/CHF."
-3. "Motore REVERSIONE → legge il valore relativo tra valute · cross EUR/GBP, GBP/CHF."
-4. "**Decorrelati**: i loro anni buoni e cattivi non coincidono. Quando uno soffre, spesso l'altro compensa."
+1. (Cover) "Non 1 robot. **5 strategie, due tipi decorrelati** → drawdown basso."
+2. "Tipo TREND → legge le linee del prezzo · EUR/USD, GBP/USD, USD/CHF."
+3. "Tipo REVERSIONE → legge il valore relativo tra valute · cross EUR/GBP, GBP/CHF."
+4. "**Decorrelate**: i loro anni buoni e cattivi non coincidono. Quando una soffre, spesso l'altra compensa → DD del pacchetto più basso."
 5. "Ogni strategia col SUO backtest reale: grafico, win rate, drawdown. Niente nascosto."
 6. (CTA) "Guardali tutti PRIMA di registrarti → link in bio (Risultati)."
 
 **TikTok/Reel — caption**
-> Tutti vendono UN robot. Noi ne abbiamo 5, su 2 motori che lavorano in modi opposti — e
+> Tutti vendono UN robot. Noi ne abbiamo 5, di due tipi che lavorano in modi opposti — e
 > ti mostro i grafici reali di tutti, prima di pagare. (link in bio) #trading #forex
 > #tradingautomatico *Backtest storico. Il trading comporta rischi.*
 
 **X / Thread (5 tweet)**
-1. La maggior parte degli EA è UNA strategia. Se smette di funzionare, sei fermo. Noi ne abbiamo 5, su 2 motori decorrelati. Ti spiego perché conta. 🧵
-2. Motore 1 (Base): legge la struttura del prezzo — incroci tra il prezzo e 8 linee sul grafico giornaliero. Su EUR/USD, GBP/USD, USD/CHF.
-3. Motore 2 (Reversione): non guarda le linee. Misura quanto due valute correlate si sono "allontanate" e scommette sul ritorno alla media. Sui cross EUR/GBP, GBP/CHF.
-4. La chiave: sono **decorrelati**. I loro anni buoni e cattivi NON coincidono → quando uno soffre, spesso l'altro compensa. Diversificazione, non promesse.
+1. La maggior parte degli EA è UNA strategia. Se smette di funzionare, sei fermo. Noi ne abbiamo 5, di due tipi decorrelati. Ti spiego perché conta (e perché abbassa il drawdown). 🧵
+2. Tipo 1 (trend): legge la struttura del prezzo — incroci tra il prezzo e 8 linee sul grafico giornaliero. Su EUR/USD, GBP/USD, USD/CHF.
+3. Tipo 2 (reversione): non guarda le linee. Misura quanto due valute correlate si sono "allontanate" e scommette sul ritorno alla media. Sui cross EUR/GBP, GBP/CHF.
+4. La chiave: sono **decorrelati**. I loro anni buoni e cattivi NON coincidono → quando uno soffre, spesso l'altro compensa → **drawdown del portafoglio più basso**. Diversificazione, non promesse.
 5. E ti mostriamo il backtest reale di ognuno — grafico, win rate, drawdown — prima che tu paghi. [link Risultati]. *Backtest storico, non risultati futuri. Il trading comporta rischi.*
 
 ---
 
 ## Bio / Link
 - **Bio IG/TikTok**: "Trading automatico su MT5 che ti SPIEGA ogni mossa 🤖📊 · Trasparente, non una scatola nera · Guardalo dal vivo 👇 · ⚠️ Il trading comporta rischi"
-- **Link in bio** → la landing (`/`), la Demo (`/demo`) o i **Risultati** (`/risultati`, ideale per gli angoli "prova/trasparenza/motori").
+- **Link in bio** → la landing (`/`), la Demo (`/demo`) o i **Risultati** (`/risultati`, ideale per gli angoli "prova/trasparenza/5 strategie").
 
 ## Calendario rapido (ruota gli angoli, non ripeterti)
 | Giorno | Canale | Angolo |
@@ -222,7 +223,7 @@ CTA primaria: **la Demo** (`/demo`), i **Risultati** (`/risultati`, prova pubbli
 | Mer | IG/FB feed | Trasparenza |
 | Gio | Reel/TikTok | Comodità |
 | Ven | IG/FB feed | Pazienza |
-| Sab | Story/X | Dietro le quinte / **Due motori** |
+| Sab | Story/X | Dietro le quinte / **5 strategie (trend+reversione)** |
 | Dom | Carosello | Confronto / **5 strategie** |
 
 > Vedi il calendario completo a 4 settimane in [README.md](README.md).

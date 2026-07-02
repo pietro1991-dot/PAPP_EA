@@ -9,14 +9,14 @@
 
 ## 1. Perché rivedere: da "vendita una tantum" a "abbonamento"
 Quando l'obiettivo era vendere l'EA a 997 € una volta, il marketing puntava a
-**massimizzare le vendite secche**. Con l'abbonamento per-EA (Demo / Signals 37€ / singolo 49€ /
-Pacchetti 67-97€ / Portfolio 197€) l'obiettivo è un altro:
+**massimizzare le vendite secche**. Con il micro-abbonamento di volume (Demo / Assistente+Segnali 3€ /
+singolo EA 5€ / Pacchetti Difensivo 7€–Bilanciato 9€–Completo 12€) l'obiettivo è un altro:
 
-| Prima (one-time) | Ora (abbonamento-first) |
+| Prima (one-time) | Ora (micro-abbonamento di volume) |
 |---|---|
-| Metrica chiave: numero di vendite | Metrica chiave: **MRR, churn, LTV:CAC, attivazione** |
+| Metrica chiave: numero di vendite | Metrica chiave: **MRR, n° utenti, churn, LTV:CAC, ARPU, attivazione** |
 | Successo = incasso al checkout | Successo = cliente che **resta mesi** |
-| Barriera alta (997 € secchi) | Barriera **bassa** (Demo gratis, EA singolo 49€) |
+| Barriera alta (997 € secchi) | Barriera **bassissima** (Demo gratis, EA singolo 5€, AI inclusa) |
 | Marketing finisce alla vendita | Marketing continua: **onboarding + retention** |
 | Si vende "il prodotto" | Si vende **l'accesso continuativo a un servizio** |
 
@@ -67,10 +67,10 @@ LEAD: Demo gratuita (hero asset) + HVCO ──────► doc 04
 ATTIVAZIONE ⭐ NUOVO: registra → installa EA → primo dato
         │  lo SNODO CRITICO (l'install ha frizione → doc §5)
         ▼
-ABBONAMENTO: singolo 49€ / Pacchetto 97€ / Portfolio 197€ ─► doc 03/08
-        │  ingresso facile; Annuale come ancora e anti-churn
+ABBONAMENTO: EA singolo 5€ / Bilanciato 9€ / Completo 12€ ─► doc 03/08
+        │  ingresso facile; segnali + AI inclusi; disdici quando vuoi
         ▼
-RETENTION + ESPANSIONE: lifecycle, upsell, referral ► doc §6
+RETENTION + ESPANSIONE: lifecycle, upsell ai pacchetti, referral ► doc §6
 ```
 
 Differenza chiave: **la "vendita" non è la fine**. Dopo c'è **attivazione** (far
@@ -83,7 +83,7 @@ Quindi il marketing deve presidiare l'**attivazione**:
 
 - **Onboarding aggressivo** (doc 07): email/sequenza "hai installato? serve aiuto?",
   guida "5 minuti" (doc 14), check del primo dato ricevuto.
-- **DFY come riduttore di frizione**: "non vuoi installarlo? lo facciamo noi" (+297€)
+- **DFY come riduttore di frizione**: "non vuoi installarlo? lo facciamo noi" (setup a pagamento una tantum)
   → trasforma la frizione in **ricavo** e salva l'attivazione dei non-tecnici.
 - **Metrica nuova da tracciare**: **tasso di attivazione** (% iscritti che arrivano
   a un EA che invia dati). Se basso, è lì che si perde il business, non negli ads.
@@ -108,25 +108,27 @@ niente"**. Il marketing/lifecycle deve **comunicare valore anche a mercato fermo
 | **Attivazione** (iscritto → EA che invia dati) | Lo snodo dove si perde di più |
 | **Demo → pagante** | Efficacia del prodotto-come-esca |
 | **Churn mensile** | Il buco da tappare (target < 8–10% iniziale) |
-| **LTV:CAC** (≥ 3:1) e **payback period** | Sostenibilità: con l'abbonamento puoi |
-| **% Annuale** | spendere di più per acquisire (vedi §8) e ridurre churn |
+| **LTV:CAC** (≥ 3:1) e **payback period** | Sostenibilità: a questi prezzi il CAC deve restare molto basso |
+| **N° utenti paganti** e **ARPU** | La leva del volume (~12–20k utenti per ~100k€/mese) e dell'upsell ai pacchetti |
 
 ## 8. La logica di budget cambia (cohort & payback)
-Con la vendita una tantom, dovevi recuperare il CAC **subito**. Con l'abbonamento:
-- puoi permetterti un **CAC anche > primo mese** di ricavo, perché il cliente paga per
-  **mesi** (es. CAC 150€ recuperato in ~3 mesi di Pro, poi è margine).
-- la domanda non è più "ho guadagnato su questa vendita?" ma **"in quanti mesi rientro
-  del CAC?" (payback period)** e **"quanto vale il cliente nella sua vita?" (LTV)**.
-- questo **sblocca budget pubblicitario**: puoi scalare gli ads finché LTV:CAC ≥ 3:1 e
-  il payback è accettabile, anche se il mese 1 va in pari o leggermente sotto.
+Con la vendita una tantum, dovevi recuperare il CAC **subito**. Con l'abbonamento paghi per mesi,
+ma attenzione: qui l'ARPU è di **pochi euro/mese**, quindi:
+- puoi permetterti un CAC **> primo mese** di ricavo, ma il payback resta accettabile solo se il
+  CAC è **molto basso** (es. CAC ~10€ recuperato in qualche mese di Bilanciato, poi è margine).
+- la domanda non è "ho guadagnato su questa vendita?" ma **"in quanti mesi rientro del CAC?"
+  (payback)** e **"quanto vale il cliente nella sua vita?" (LTV)** — moltiplicato per il **volume**.
+- questo NON sblocca ads costosi: a questi prezzi le leve sono **organico, referral e retention**
+  (CAC quasi nullo) più l'**ARPU via upsell ai pacchetti**. Ads a pagamento solo se il CAC resta minimo.
 
-> Tradotto: l'abbonamento ti permette di **comprare clienti più aggressivamente** dei
-> competitor che vendono una tantum — un vantaggio competitivo reale.
+> Tradotto: il modello vince per **volume** (tanti utenti a prezzo simbolico) + **ARPU**
+> (upsell), non comprando clienti a caro prezzo. La virale/organico è il motore principale.
 
 ## 9. Cosa aggiornare nei documenti esistenti
 Non riscriviamo tutto; ritocchiamo con questa lente:
-- **03 (Offerta)**: mettere in evidenza **Demo + EA singolo 49€** come ingresso; Portfolio
-  197€ / Annuale come **ancora**, non come ask principale. Garanzia 30gg = "prova senza rischio".
+- **03 (Offerta)**: mettere in evidenza **Demo + EA singolo 5€** come ingresso; il **Pacchetto
+  Completo 12€** come ancora (venduto sul drawdown basso), il **Bilanciato 9€** come consigliato.
+  Ricordare che **segnali + assistente AI sono inclusi in ogni EA/pacchetto**. Garanzia 30gg = "prova senza rischio".
 - **04 (HVCO)**: promuovere la **Demo read-only** come lead magnet n.1 accanto al report.
 - **05 (Funnel)**: inserire la fase **Attivazione** e la **Retention** come fasi piene.
 - **06 (Annunci)**: CTA verso la **Demo** ("guardalo dal vivo"), tono "pazienza/serenità".

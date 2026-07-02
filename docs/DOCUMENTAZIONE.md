@@ -28,7 +28,7 @@
 >
 > Per **come funzionano** i singoli componenti, i riferimenti aggiornati sono i tre documenti
 > in `Motore base _linea-prezzo/Indicatore/`:
-> `INDICATORE_PaPP_Median.md`, `EXPORT_PAPP.md`, `MINER_pattern_mining.md`.
+> `INDICATORE_PHAI_Median.md`, `EXPORT_PAPP.md`, `MINER_pattern_mining.md`.
 > Questo file resta la documentazione **tecnica del sistema** (le 3 analisi, architettura EA,
 > risk management, limitazioni). Le sezioni 5–10 descrivono l'esplorazione storica: vanno
 > lette come contesto, la configurazione attiva è nei default di ogni EA.
@@ -103,7 +103,7 @@ gestione del rischio sono decisivi (vedi §11).
 
 ## 1. Visione d'Insieme
 
-PAPP_EA è un sistema di trading algoritmico per MetaTrader 5 basato su **crossover di medie mobili calcolate su timeframe giornaliero (D1)**. Utilizza l'indicatore personalizzato `PaPP_Median.ex5` che analizza 8 linee sul prezzo EURUSD:
+PAPP_EA è un sistema di trading algoritmico per MetaTrader 5 basato su **crossover di medie mobili calcolate su timeframe giornaliero (D1)**. Utilizza l'indicatore personalizzato `PHAI_Median.ex5` che analizza 8 linee sul prezzo EURUSD:
 
 | Linea            | Periodo | Nome nel codice    | Descrizione                                                   |
 | ---------------- | ------- | ------------------ | ------------------------------------------------------------- |
@@ -146,7 +146,7 @@ EA_Pattern.mq5 (MQL5, esecuzione in tempo reale)
 
 Script MQL5 puro (`#property script_show_inputs`, funzioni `OnStart()`) che:
 
-1. Si connette all'indicatore `PaPP_Median.ex5` su EURUSD D1
+1. Si connette all'indicatore `PHAI_Median.ex5` su EURUSD D1
 2. Itera su tutte le barre D1 disponibili nel history
 3. Per ogni barra, calcola:
    - **Prezzi OHLC**: open, high, low, close
@@ -827,7 +827,7 @@ L'EA ha 6 controlli sequenziali prima di aprire una posizione:
 ### 12.1 Installazione
 
 1. Copiare `EA/EA_Pattern.mq5` in `MetaTrader 5/MQL5/Experts/` (oppure il file direttamente dalla root `EA_Pattern.mq5`)
-2. Copiare `Indicatori/PaPP_Median.ex5` in `MetaTrader 5/MQL5/Indicators/`
+2. Copiare `Indicatori/PHAI_Median.ex5` in `MetaTrader 5/MQL5/Indicators/`
 3. Aprire MetaEditor (F4), compilare l'EA (F7)
 4. Trascinare `EA_Pattern` su un chart EURUSD (qualsiasi TF, raccomandato M30+)
 5. Abilitare Algo Trading
@@ -946,7 +946,7 @@ Tutti e 6 restano **positivi out-of-sample** (PnL > 0, win ~90%), con Sharpe per
 
 ## 14. Limitazioni e Rischi Noti
 
-### 14.1 Dipendenza dall'Indicatore PaPP_Median.ex5
+### 14.1 Dipendenza dall'Indicatore PHAI_Median.ex5
 
 L'EA dipende dall'indicatore personalizzato per tutti i valori delle 8 linee. Se l'indicatore:
 
@@ -954,7 +954,7 @@ L'EA dipende dall'indicatore personalizzato per tutti i valori delle 8 linee. Se
 - Ha un bug nei buffer oltre l'indice 1 → crossover errati
 - Non calcola correttamente su D1 → fallback chart TF con possibili discrepanze
 
-**Il fix del dead-code branch in PaPP_Median.OnCalculate() è ancora aperto.**
+**Il fix del dead-code branch in PHAI_Median.OnCalculate() è ancora aperto.**
 
 ### 14.3 Gap Intraday
 
@@ -1032,7 +1032,7 @@ distanza dello SL, così la perdita per trade resta controllata nonostante lo SL
 
 | File | Path nel repo | Descrizione |
 | --- | --- | --- |
-| `PaPP_Median.mq5` (+.ex5) | `Motore base _linea-prezzo/Indicatore/` | indicatore (7 MA + mediana, D1) |
+| `PHAI_Median.mq5` (+.ex5) | `Motore base _linea-prezzo/Indicatore/` | indicatore (7 MA + mediana, D1) |
 | `Export_PAPP.mq5` (+.ex5) | `Motore base _linea-prezzo/Indicatore/` | script esportazione CSV |
 | `pattern_mining.py` | `Motore base _linea-prezzo/Indicatore/` | miner (analisi/validazione) |
 | `EA_<SIMBOLO>.mq5` (+.ex5) | `Motore base _linea-prezzo/<SIMBOLO>/` | EA coi pattern del simbolo |
